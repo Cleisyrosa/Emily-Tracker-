@@ -280,12 +280,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   };
 
   const MED_PRESETS = [
-    const MED_PRESETS = [
-{nome: lang === 'fr' ? "Vitamine D" : lang === 'en' ? "Vitamin D" : "Vitamina D", 
-  dose: lang === 'fr' ? "1 goutte/jour (400 IU)" : lang === 'en' ? "1 drop/day (400 IU)" : "1 gota/dia (400 UI)", 
-  intervaloHoras:20, maxVezesDia:1, horario:"08:00", notificacoes:true, tipo:"receitado"},{nome: getMedName("Vitamina D"), dose:"1 gota/dia (400 UI)", intervaloHoras:20, maxVezesDia:1, horario:"08:00", notificacoes:true, tipo:"receitado"},
-{nome: getMedName("Vitamina D")", dose:"120mg", intervaloHoras:6, maxVezesDia:4, horario:"", notificacoes:true, tipo:"receitado"},
-{nome: getMedName("Vitamina D"), dose:"50mg", intervaloHoras:8, maxVezesDia:3, horario:"", notificacoes:true, tipo:"receitado"},
+    {nome:"Vitamina D", dose:"1 gota/dia (400 UI)", intervaloHoras:20, maxVezesDia:1, horario:"08:00", notificacoes:true, tipo:"receitado"},
+    {nome:"Paracetamol", dose:"120mg", intervaloHoras:6, maxVezesDia:4, horario:"", notificacoes:true, tipo:"receitado"},
+    {nome:"Ibuprofeno", dose:"50mg", intervaloHoras:8, maxVezesDia:3, horario:"", notificacoes:true, tipo:"receitado"},
   ];
 
   const ACCENTS = [
@@ -362,10 +359,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     "Peso (kg)":{fr:"Poids (kg)",en:"Weight (kg)"}, "Altura (cm)":{fr:"Taille (cm)",en:"Height (cm)"},
     "Morada":{fr:"Adresse",en:"Address"}, "Telefone":{fr:"Téléphone",en:"Phone"}, "Email":{fr:"E-mail",en:"Email"},
     "Reação":{fr:"Réaction",en:"Reaction"}, "Local":{fr:"Lieu",en:"Location"},
-    "Especialista":{fr:"Spécialiste",en:"Specialist"},
-    "Clínica / hospital":{fr:"Clinique / hôpital",en:"Clinic / hospital"},
-"Resumo da consulta":{fr:"Résumé de la consultation",en:"Summary of appointment"},
-"Exames pedidos":{fr:"Examens demandés",en:"Tests ordered"},    // ---- Início ----
+
+    // ---- Início ----
     "Estás a ver dados de exemplo.":{fr:"Tu vois des données d'exemple.",en:"You're viewing example data."},
     "Começar do zero":{fr:"Repartir de zéro",en:"Start fresh"},
     "Já passaram mais de 4h desde a última refeição registada.":{fr:"Plus de 4h se sont écoulées depuis le dernier repas enregistré.",en:"It's been over 4h since the last logged feeding."},
@@ -1887,7 +1882,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const todayMins=S.sono.filter(l=>inRange(l.inicio,t0,t1)||inRange(l.fim,t0,t1)).reduce((s,l)=>s+(l.duracaoMin||0),0);
     const months = ageInfo(S.crianca.dataNascimento).months;
     const [lo,hi]=sleepTargetH(months);
-    const  hoursToday = todayMins/60; 
+    const hoursToday = todayMins/60;
+    const status = hoursToday>=lo ? (hoursToday<=hi+2?'good':'good') : (hoursToday>=lo-2?'warn':'crit');
     const statusLabel = status==='good'?'🟢 '+tr('OK'):status==='warn'?'🟡 '+tr('BAIXO'):'🔴 '+tr('CRÍTICO');
     const avgQual = S.sono.length ? (S.sono.reduce((s,l)=>s+(l.qualidade||0),0)/S.sono.length).toFixed(1) : '—';
     const days=last7();

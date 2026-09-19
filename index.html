@@ -280,9 +280,12 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   };
 
   const MED_PRESETS = [
-    {nome:"Vitamina D", dose:"1 gota/dia (400 UI)", intervaloHoras:20, maxVezesDia:1, horario:"08:00", notificacoes:true, tipo:"receitado"},
-    {nome:"Paracetamol", dose:"120mg", intervaloHoras:6, maxVezesDia:4, horario:"", notificacoes:true, tipo:"receitado"},
-    {nome:"Ibuprofeno", dose:"50mg", intervaloHoras:8, maxVezesDia:3, horario:"", notificacoes:true, tipo:"receitado"},
+    const MED_PRESETS = [
+{nome: lang === 'fr' ? "Vitamine D" : lang === 'en' ? "Vitamin D" : "Vitamina D", 
+  dose: lang === 'fr' ? "1 goutte/jour (400 IU)" : lang === 'en' ? "1 drop/day (400 IU)" : "1 gota/dia (400 UI)", 
+  intervaloHoras:20, maxVezesDia:1, horario:"08:00", notificacoes:true, tipo:"receitado"},{nome: getMedName("Vitamina D"), dose:"1 gota/dia (400 UI)", intervaloHoras:20, maxVezesDia:1, horario:"08:00", notificacoes:true, tipo:"receitado"},
+{nome: getMedName("Vitamina D")", dose:"120mg", intervaloHoras:6, maxVezesDia:4, horario:"", notificacoes:true, tipo:"receitado"},
+{nome: getMedName("Vitamina D"), dose:"50mg", intervaloHoras:8, maxVezesDia:3, horario:"", notificacoes:true, tipo:"receitado"},
   ];
 
   const ACCENTS = [
@@ -1884,8 +1887,10 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const todayMins=S.sono.filter(l=>inRange(l.inicio,t0,t1)||inRange(l.fim,t0,t1)).reduce((s,l)=>s+(l.duracaoMin||0),0);
     const months = ageInfo(S.crianca.dataNascimento).months;
     const [lo,hi]=sleepTargetH(months);
-    const hoursToday = todayMins/60;
-    const status = hoursToday>=lo ? (hoursToday<=hi+2?'good':'good') : (hoursToday>=lo-2?'warn':'crit');
+    const  hoursToday = todayMins/60; 
+    const formattedHours = Math.floor(hoursToday);
+const formattedMins = Math.round((hoursToday - formattedHours) * 60);
+const hoursStr = formattedHours + 'h ' + formattedMins + 'm';
     const statusLabel = status==='good'?'🟢 '+tr('OK'):status==='warn'?'🟡 '+tr('BAIXO'):'🔴 '+tr('CRÍTICO');
     const avgQual = S.sono.length ? (S.sono.reduce((s,l)=>s+(l.qualidade||0),0)/S.sono.length).toFixed(1) : '—';
     const days=last7();

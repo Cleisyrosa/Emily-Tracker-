@@ -6,20 +6,22 @@
 <title>Emily Tracker v5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Mulish:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Baloo+2:wght@500;600;700;800&family=Mulish:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
-  --bg:#faf7f2; --surface:#ffffff; --surface-2:#f5f0e8; --border:#e6dcc9;
+  --bg:#fffaf3; --surface:#ffffff; --surface-2:#f5f0e8; --border:#f0e6d6;
   --ink:#5a4a42; --ink-muted:#8a7a6e; --ink-faint:#ab9d90;
-  --accent:#f8d7e6; --accent-ink:#5a4a42; --brand:#c9a876;
-  --good:#2f6b4f; --good-soft:#c3e4d4;
+  --accent:#f6c9dc; --accent-ink:#7a3350; --brand:#c9a876;
+  --good:#2f6b4f; --good-soft:#dcefd4;
   --warn:#8a6a10; --warn-soft:#fce4a4;
   --crit:#93332b; --crit-soft:#f5c4c4;
   --info:#2f5a86; --info-soft:#d9e8f7;
-  --feed:#b8567a; --feed-soft:#f8d7e6; --diaper:#a06a3a; --diaper-soft:#f0e2c9; --sleepc:#6b5aa8; --sleepc-soft:#e2dcf0;
+  --feed:#b8567a; --feed-soft:#f6c9dc; --diaper:#a06a3a; --diaper-soft:#f0e2c9; --sleepc:#6b5aa8; --sleepc-soft:#e2dcf0;
   --shadow:0 1px 2px rgba(90,74,66,.08), 0 10px 26px -14px rgba(90,74,66,.25);
   --bg-scrim:rgba(250,247,242,.40); --topbar-scrim-a:rgba(248,215,230,.55); --topbar-scrim-b:rgba(255,255,255,.35);
+  --header-bg:#f6c9dc; --header-ink:#7a3350; --header-ink-soft:#a35e78;
+  --header-chip-bg:rgba(255,255,255,.75); --header-chip-ink:#7a3350;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
@@ -33,6 +35,8 @@
     --feed:#e8a0be; --feed-soft:#4a2f3a; --diaper:#d9a468; --diaper-soft:#3f3222; --sleepc:#b3a3e0; --sleepc-soft:#332c47;
     --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -14px rgba(0,0,0,.55);
     --bg-scrim:rgba(42,38,34,.40); --topbar-scrim-a:rgba(248,215,230,.32); --topbar-scrim-b:rgba(61,57,53,.35);
+    --header-bg:#4a2f3a; --header-ink:#f8d7e6; --header-ink-soft:#e8a0be;
+    --header-chip-bg:rgba(0,0,0,.28); --header-chip-ink:#f8d7e6;
   }
 }
 :root[data-theme="dark"]{
@@ -46,11 +50,13 @@
   --feed:#e8a0be; --feed-soft:#4a2f3a; --diaper:#d9a468; --diaper-soft:#3f3222; --sleepc:#b3a3e0; --sleepc-soft:#332c47;
   --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -14px rgba(0,0,0,.55);
   --bg-scrim:rgba(42,38,34,.40); --topbar-scrim-a:rgba(248,215,230,.32); --topbar-scrim-b:rgba(61,57,53,.35);
+  --header-bg:#4a2f3a; --header-ink:#f8d7e6; --header-ink-soft:#e8a0be;
+  --header-chip-bg:rgba(0,0,0,.28); --header-chip-ink:#f8d7e6;
 }
 *{box-sizing:border-box;}
 html,body{background:var(--bg);}
 body{ color:var(--ink); font-family:'Mulish',system-ui,-apple-system,sans-serif; -webkit-tap-highlight-color:transparent; }
-h1,h2,h3,.display{ font-family:'Fraunces',Georgia,serif; font-weight:600; text-wrap:balance; color:var(--ink); margin:0; }
+h1,h2,h3,.display{ font-family:'Baloo 2','Fraunces',Georgia,serif; font-weight:700; text-wrap:balance; color:var(--ink); margin:0; }
 .mono{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; }
 button{ font-family:inherit; } input,select,textarea{ font-family:inherit; }
 :focus-visible{ outline:2px solid var(--brand); outline-offset:2px; }
@@ -60,13 +66,14 @@ a{ color:inherit; }
 .phone{ max-width:480px; margin:0 auto; min-height:100vh; background:var(--bg); display:flex; flex-direction:column; }
 @media (min-width:540px){ body{ padding:22px 12px; } .phone{ min-height:calc(100vh - 44px); border-radius:26px; box-shadow:var(--shadow); border:1px solid var(--border); overflow:hidden; } }
 
-.topbar{ display:flex; align-items:center; gap:12px; padding:14px 16px 12px; background:linear-gradient(160deg, var(--accent), var(--surface) 78%); border-bottom:1px solid var(--border); }
-.avatar{ width:50px; height:50px; border-radius:15px; background:var(--brand); color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Fraunces'; font-size:1.3rem; font-weight:600; flex:none; overflow:hidden; box-shadow:var(--shadow); }
+.topbar{ position:relative; display:flex; align-items:center; gap:12px; padding:16px 16px 18px; background:var(--header-bg); border-radius:0 0 26px 26px; overflow:hidden; }
+.topbar .confetti{ position:absolute; pointer-events:none; opacity:.8; }
+.avatar{ position:relative; width:52px; height:52px; border-radius:50%; background:var(--surface); color:var(--header-ink); display:flex; align-items:center; justify-content:center; font-family:'Baloo 2'; font-size:1.35rem; font-weight:700; flex:none; overflow:hidden; box-shadow:0 6px 16px -6px rgba(122,51,80,.35); border:3px solid #fff; }
 .avatar img{ width:100%; height:100%; object-fit:cover; }
-.topbar-text{ flex:1; min-width:0; }
-.topbar-text h1{ font-size:1.15rem; line-height:1.2; }
-.topbar-text .age{ font-size:.76rem; color:var(--ink-muted); font-weight:600; }
-.blood-chip{ background:var(--crit-soft); color:var(--crit); font-weight:800; font-size:.78rem; padding:5px 10px; border-radius:9px; flex:none; text-align:center; line-height:1.1; border:1px solid var(--crit); }
+.topbar-text{ position:relative; flex:1; min-width:0; }
+.topbar-text h1{ font-size:1.2rem; line-height:1.2; color:var(--header-ink); }
+.topbar-text .age{ font-size:.78rem; color:var(--header-ink-soft); font-weight:700; }
+.blood-chip{ position:relative; background:var(--header-chip-bg); color:var(--header-chip-ink); font-weight:800; font-size:.78rem; padding:5px 10px; border-radius:10px; flex:none; text-align:center; line-height:1.1; border:none; }
 .blood-chip small{ display:block; font-size:.55rem; font-weight:700; letter-spacing:.03em; }
 
 main{ flex:1; overflow-y:auto; padding:14px 14px 84px; }
@@ -76,28 +83,32 @@ main.fade-in{ animation:fadeIn .22s ease; }
 .panel{ display:none; animation:fade .2s ease; } .panel.active{ display:block; }
 @keyframes fade{ from{opacity:0; transform:translateY(4px);} to{opacity:1;transform:translateY(0);} }
 
-.card{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:15px; margin-bottom:12px; box-shadow:var(--shadow); transition:box-shadow .15s ease; }
+.card{ background:var(--surface); border:2px solid var(--surface-2); border-radius:20px; padding:15px; margin-bottom:12px; box-shadow:var(--shadow); transition:box-shadow .15s ease; }
 .card h2{ font-size:1.02rem; margin-bottom:2px; }
 .muted{ color:var(--ink-muted); font-size:.83rem; }
 .section-label{ font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; font-weight:800; color:var(--brand); margin:0 0 10px; }
-.demo-banner{ display:flex; align-items:center; gap:10px; background:var(--warn-soft); border:1px solid var(--warn); color:var(--warn); border-radius:12px; padding:10px 14px; font-size:.8rem; margin-bottom:14px; font-weight:700; }
-.demo-banner button{ margin-left:auto; background:none; border:1px solid var(--warn); color:var(--warn); border-radius:8px; padding:4px 10px; font-size:.72rem; font-weight:700; cursor:pointer; flex:none; }
+.demo-banner{ display:flex; align-items:center; gap:10px; background:var(--warn-soft); border:2px solid var(--warn); color:var(--warn); border-radius:18px; padding:10px 14px; font-size:.8rem; margin-bottom:14px; font-weight:700; }
+.demo-banner button{ margin-left:auto; background:none; border:1px solid var(--warn); color:var(--warn); border-radius:10px; padding:4px 10px; font-size:.72rem; font-weight:700; cursor:pointer; flex:none; }
 
 .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:9px; }
-.stat{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:11px 13px; display:flex; flex-direction:column; gap:3px; box-shadow:var(--shadow); }
-.stat .ic{ width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--accent); color:var(--brand); margin-bottom:2px;}
+.stat{ background:var(--surface); border:2px solid var(--surface-2); border-radius:18px; padding:12px 13px; display:flex; flex-direction:column; gap:3px; box-shadow:var(--shadow); }
+.stat .ic{ width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--accent); color:var(--brand); margin-bottom:2px;}
 .stat .ic.sleepc{ background:var(--sleepc-soft); color:var(--sleepc); }
 .stat .ic.feed{ background:var(--feed-soft); color:var(--feed); }
 .stat .ic.diaper{ background:var(--diaper-soft); color:var(--diaper); }
 .stat .lbl{ font-size:.65rem; letter-spacing:.03em; text-transform:uppercase; color:var(--ink-faint); font-weight:700; }
-.stat .val{ font-family:'Fraunces'; font-size:1.02rem; }
+.stat .val{ font-family:'Baloo 2'; font-size:1.05rem; }
 .stat .sub{ font-size:.72rem; color:var(--ink-muted); }
 
 .qa-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
 .qa-grid.g3{ grid-template-columns:repeat(3,1fr); }
-.qa-tile{ border:1px solid var(--border); background:var(--surface); border-radius:13px; padding:10px 4px; display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer; box-shadow:var(--shadow); color:var(--ink); text-align:center; }
+.qa-tile{ border:2px solid var(--surface-2); background:var(--surface-2); border-radius:18px; padding:10px 4px; display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; color:var(--ink); text-align:center; min-height:64px; justify-content:center; }
 .qa-tile:hover{ border-color:var(--brand); }
-.qa-tile .ic{ width:32px; height:32px; border-radius:10px; background:var(--accent); color:var(--brand); display:flex; align-items:center; justify-content:center; }
+.qa-tile .ic{ width:34px; height:34px; border-radius:50%; background:var(--surface); color:var(--brand); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px -2px rgba(90,74,66,.2); }
+.qa-tile .ic.feed{ background:var(--feed-soft); color:var(--feed); }
+.qa-tile .ic.diaper{ background:var(--diaper-soft); color:var(--diaper); }
+.qa-tile .ic.sleepc{ background:var(--sleepc-soft); color:var(--sleepc); }
+.qa-tile .ic.good{ background:var(--good-soft); color:var(--good); }
 .qa-tile.running{ border-color:var(--good); background:var(--good-soft); }
 .qa-tile .lbl{ font-size:.68rem; font-weight:700; }
 
@@ -111,7 +122,8 @@ main.fade-in{ animation:fadeIn .22s ease; }
 input[type=number],input[type=text],input[type=date],input[type=time],select,textarea{ width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:9px; background:var(--surface); color:var(--ink); font-size:.83rem; }
 textarea{ min-height:56px; resize:vertical; }
 input.demo-ex,textarea.demo-ex{ font-style:italic; color:var(--ink-muted); border-style:dashed; background:var(--surface-2); }
-.btn{ padding:9px 16px; border-radius:10px; border:none; background:var(--brand); color:#fff; font-weight:700; font-size:.83rem; cursor:pointer; }
+input.remembered-fill,textarea.remembered-fill{ /* dado real guardado, não é exemplo — mantém aspeto normal, só limpa ao tocar */ }
+.btn{ padding:10px 18px; border-radius:14px; border:none; background:var(--brand); color:#fff; font-weight:700; font-size:.83rem; cursor:pointer; }
 .btn.ghost{ background:transparent; border:1px solid var(--border); color:var(--ink-muted); }
 .btn.crit{ background:var(--crit); }
 .btn.wide{ width:100%; }
@@ -131,11 +143,11 @@ input.demo-ex,textarea.demo-ex{ font-style:italic; color:var(--ink-muted); borde
 .log-del:hover{ color:var(--crit); }
 .empty{ color:var(--ink-faint); font-size:.8rem; font-style:italic; padding:8px 3px; }
 
-.alert{ display:flex; gap:8px; align-items:flex-start; padding:10px 12px; border-radius:10px; font-size:.8rem; font-weight:600; margin-bottom:10px; }
-.alert.crit{ background:var(--crit-soft); color:var(--crit); border:1px solid var(--crit); }
-.alert.warn{ background:var(--warn-soft); color:var(--warn); border:1px solid var(--warn); }
-.alert.good{ background:var(--good-soft); color:var(--good); border:1px solid var(--good); }
-.alert.info{ background:var(--info-soft); color:var(--info); border:1px solid var(--info); }
+.alert{ display:flex; gap:8px; align-items:flex-start; padding:10px 14px; border-radius:16px; font-size:.8rem; font-weight:600; margin-bottom:10px; }
+.alert.crit{ background:var(--crit-soft); color:var(--crit); border:2px solid var(--crit); }
+.alert.warn{ background:var(--warn-soft); color:var(--warn); border:2px solid var(--warn); }
+.alert.good{ background:var(--good-soft); color:var(--good); border:2px solid var(--good); }
+.alert.info{ background:var(--info-soft); color:var(--info); border:2px solid var(--info); }
 
 details.acc{ border:1px solid var(--border); border-radius:12px; margin-bottom:8px; background:var(--surface); overflow:hidden; }
 details.acc summary{ cursor:pointer; padding:12px 13px; font-weight:700; font-size:.86rem; list-style:none; display:flex; align-items:center; gap:9px; background:var(--surface-2); }
@@ -155,8 +167,10 @@ details.acc[open] summary .car{ transform:rotate(180deg); }
 .dose-btn{ background:var(--accent); color:var(--ink); border:none; border-radius:8px; padding:6px 10px; font-size:.72rem; font-weight:700; cursor:pointer; flex:none; }
 
 .critical-block{ background:var(--crit-soft); border:2px solid var(--crit); border-radius:14px; padding:14px; margin-bottom:12px; text-align:center; }
-.critical-block .bt{ font-family:'Fraunces'; font-size:2.1rem; font-weight:700; color:var(--crit); line-height:1; }
+.critical-block .bt{ font-family:'Baloo 2'; font-size:2.1rem; font-weight:700; color:var(--crit); line-height:1; }
 .critical-block .rh{ font-size:.78rem; color:var(--crit); font-weight:700; margin-top:2px; }
+/* A aba SOS mantém um registo mais sóbrio — letra direta, sem o tom brincalhão do resto da app */
+.sos-serious h1, .sos-serious h2, .sos-serious h3, .sos-serious .display, .sos-serious .critical-block .bt{ font-family:'Fraunces',Georgia,serif; font-weight:600; }
 
 .vax-group{ border-top:1px solid var(--border); padding:9px 0; }
 .vax-group:first-child{ border-top:none; }
@@ -170,7 +184,7 @@ details.acc[open] summary .car{ transform:rotate(180deg); }
 
 .milestone-band{ border-top:1px solid var(--border); padding:10px 0; }
 .milestone-card{ border-radius:22px; padding:28px 22px; text-align:center; color:#3d3935; box-shadow:0 8px 24px -10px rgba(0,0,0,.25); }
-.milestone-card .mc-name{ font-family:'Fraunces',Georgia,serif; font-weight:700; font-size:1.4rem; }
+.milestone-card .mc-name{ font-family:'Baloo 2',Georgia,serif; font-weight:700; font-size:1.4rem; }
 .milestone-card .mc-week{ display:inline-block; margin:8px 0 14px; padding:5px 14px; border-radius:999px; background:rgba(0,0,0,.06); font-weight:700; font-size:.8rem; }
 .milestone-card .mc-text{ font-size:1.05rem; line-height:1.5; margin-bottom:16px; }
 .milestone-card .mc-brand{ font-size:.75rem; font-weight:700; color:#8a7a6e; letter-spacing:.03em; }
@@ -211,16 +225,17 @@ details.acc[open] summary .car{ transform:rotate(180deg); }
 
 .summary-box{ margin-top:10px; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:13px 14px; font-size:.83rem; white-space:pre-wrap; line-height:1.6; }
 
-nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); border-top:1px solid var(--border); padding:7px 3px calc(7px + env(safe-area-inset-bottom)); overflow-x:auto; gap:1px; }
-.tab-btn{ flex:1 0 56px; display:flex; flex-direction:column; align-items:center; gap:2px; background:none; border:none; color:var(--ink-faint); cursor:pointer; padding:4px 2px; border-radius:9px; }
-.tab-btn.active{ color:var(--brand); }
+nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); margin:0 10px calc(10px + env(safe-area-inset-bottom)); border-radius:22px; box-shadow:0 10px 26px -14px rgba(90,74,66,.35), 0 1px 2px rgba(90,74,66,.08); padding:6px 4px; overflow-x:auto; gap:2px; }
+.tab-btn{ flex:1 0 56px; display:flex; flex-direction:column; align-items:center; gap:2px; background:none; border:none; color:var(--ink-faint); cursor:pointer; padding:6px 4px; border-radius:14px; }
+.tab-btn.active{ color:var(--feed); background:var(--feed-soft); }
 .tab-btn .lbl{ font-size:.56rem; font-weight:700; white-space:nowrap; }
 
 .swatch-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:9px; }
 .swatch{ aspect-ratio:1; border-radius:11px; border:2px solid transparent; cursor:pointer; position:relative; display:flex; align-items:center; justify-content:center; }
 .swatch.on{ border-color:var(--ink); }
 .swatch.on::after{ content:"✓"; color:var(--ink); font-weight:900; }
-.icon-btn{ width:36px; height:36px; border-radius:11px; border:1px solid var(--border); background:var(--surface); color:var(--brand); display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; }
+.icon-btn{ position:relative; width:36px; height:36px; border-radius:12px; border:none; background:var(--surface-2); color:var(--brand); display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; }
+.topbar .icon-btn{ background:var(--header-chip-bg); color:var(--header-chip-ink); }
 .icon-btn.on{ background:var(--crit); border-color:var(--crit); color:#fff; animation:pulse 1.2s infinite; }
 @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.55;} }
 .sos-fab{ width:38px; height:38px; border-radius:50%; background:var(--crit); color:#fff; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; box-shadow:var(--shadow); }
@@ -228,6 +243,13 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 @media (min-width:540px){ .voice-panel{ align-items:center; } }
 .voice-card{ background:var(--surface); border-radius:18px 18px 0 0; padding:20px; max-width:460px; width:100%; text-align:center; }
 .voice-card.settings-card{ text-align:left; max-height:85vh; overflow-y:auto; }
+.mais-list{ display:flex; flex-direction:column; gap:6px; }
+.mais-item{ display:flex; align-items:center; gap:12px; width:100%; padding:12px 14px; border:2px solid var(--surface-2); background:var(--surface-2); border-radius:16px; color:var(--ink); font-weight:700; font-size:.88rem; cursor:pointer; text-align:left; }
+.mais-item .ic{ color:var(--feed); flex:none; display:flex; }
+.mais-item .lbl{ flex:1; }
+.mais-item svg:last-child{ color:var(--ink-faint); flex:none; }
+.mais-item.active{ border-color:var(--feed); background:var(--feed-soft); }
+.mais-item.active .ic{ color:var(--feed); }
 .phone.has-bg{ background-size:cover; background-position:center; background-attachment:fixed; }
 .phone.has-bg > main{ background:var(--bg-scrim); }
 .phone.has-bg > main > .card, .phone.has-bg > main > .alert, .phone.has-bg > main > .demo-banner{ box-shadow:0 2px 10px -4px rgba(0,0,0,.18), var(--shadow); }
@@ -247,14 +269,17 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 .doc-item .g-del{ position:absolute; top:2px; right:2px; background:rgba(0,0,0,.55); color:#fff; border:none; border-radius:50%; width:18px; height:18px; font-size:.65rem; cursor:pointer; }
 
 .child-switch{ display:flex; gap:6px; padding:10px 14px 0; overflow-x:auto; }
-.child-chip{ flex:none; padding:6px 12px; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--ink-muted); font-size:.76rem; font-weight:700; cursor:pointer; white-space:nowrap; }
-.child-chip.on{ background:var(--brand); border-color:var(--brand); color:#fff; }
-.child-chip.add{ border-style:dashed; color:var(--brand); border-color:var(--brand); background:transparent; }
+.child-chip{ flex:none; padding:6px 12px; border-radius:999px; border:2px solid var(--surface-2); background:var(--surface); color:var(--ink-muted); font-size:.76rem; font-weight:700; cursor:pointer; white-space:nowrap; }
+.child-chip.on{ background:var(--feed); border-color:var(--feed); color:#fff; }
+.child-chip.add{ border-style:dashed; color:var(--feed); border-color:var(--feed); background:transparent; }
 </style>
 </head>
 <body>
 <div class="phone">
   <div class="topbar">
+    <svg class="confetti" width="16" height="16" viewBox="0 0 24 24" style="top:3px; left:52%;" aria-hidden="true"><path d="M12 2l1.9 5.9L20 9l-6.1 1.7L12 17l-1.9-6.3L4 9l6.1-1.1z" fill="#fff6ea"/></svg>
+    <svg class="confetti" width="8" height="8" viewBox="0 0 24 24" style="top:2px; left:66%;" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffe08a"/></svg>
+    <svg class="confetti" width="7" height="7" viewBox="0 0 24 24" style="top:8px; left:74%;" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#8fd6ae"/></svg>
     <div class="avatar" id="avatarBox">B</div>
     <div class="topbar-text"><h1 id="childName">Bebé</h1><div class="age" id="childAge">—</div></div>
     <div class="blood-chip" id="bloodChip">—<small>tipo sang.</small></div>
@@ -297,6 +322,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     mic:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg>',
     idcard:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M13 10h6M13 14h4M6 16.5c.5-1.5 2-2 2-2s1.5.5 2 2"/></svg>',
     cup:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h10l-1 12a4 4 0 0 1-4 4h0a4 4 0 0 1-4-4L6 3Z"/><path d="M17 6h1.5a2.5 2.5 0 0 1 0 5H17"/></svg>',
+    more:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>',
+    chevright:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
   };
 
   // ---- WHO reference (girls, approx, kg / cm) at 0,1,2,3,4,5,6,9,12 months ----
@@ -328,11 +355,11 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   ];
 
   const LANGS = {
-    pt:{ home:"Início", inicio:"Início", perfil:"Perfil", mamadas:"Mamadas", fraldas:"Fraldas", sono:"Sono", evolucao:"Evolução", desenv:"Desenv.", vacinas:"Vacinas", consultas:"Consultas", resumo:"Resumo", sos:"SOS",
+    pt:{ home:"Início", inicio:"Início", perfil:"Perfil", mamadas:"Mamadas", fraldas:"Fraldas", sono:"Sono", evolucao:"Evolução", desenv:"Desenv.", vacinas:"Vacinas", consultas:"Consultas", resumo:"Resumo", sos:"SOS", mais:"Mais",
       hoje:"Hoje", acoesRapidas:"Ações rápidas", registos:"Registos", semana:"Semana", tipoSang:"tipo sang." },
-    fr:{ home:"Accueil", inicio:"Accueil", perfil:"Profil", mamadas:"Repas", fraldas:"Couches", sono:"Sommeil", evolucao:"Croissance", desenv:"Dévelop.", vacinas:"Vaccins", consultas:"Consultations", resumo:"Résumé", sos:"SOS",
+    fr:{ home:"Accueil", inicio:"Accueil", perfil:"Profil", mamadas:"Repas", fraldas:"Couches", sono:"Sommeil", evolucao:"Croissance", desenv:"Dévelop.", vacinas:"Vaccins", consultas:"Consultations", resumo:"Résumé", sos:"SOS", mais:"Plus",
       hoje:"Aujourd'hui", acoesRapidas:"Actions rapides", registos:"Historique", semana:"Semaine", tipoSang:"groupe sang." },
-    en:{ home:"Home", inicio:"Home", perfil:"Profile", mamadas:"Feeds", fraldas:"Diapers", sono:"Sleep", evolucao:"Growth", desenv:"Milestones", vacinas:"Vaccines", consultas:"Appointments", resumo:"Summary", sos:"SOS",
+    en:{ home:"Home", inicio:"Home", perfil:"Profile", mamadas:"Feeds", fraldas:"Diapers", sono:"Sleep", evolucao:"Growth", desenv:"Milestones", vacinas:"Vaccines", consultas:"Appointments", resumo:"Summary", sos:"SOS", mais:"More",
       hoje:"Today", acoesRapidas:"Quick actions", registos:"Log", semana:"Week", tipoSang:"blood type" },
   };
   function t(key){ const lang=(S.settings&&S.settings.lang)||'pt'; return (LANGS[lang]&&LANGS[lang][key]) || LANGS.pt[key] || key; }
@@ -359,6 +386,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     "Apagar esta foto?":{fr:"Supprimer cette photo ?",en:"Delete this photo?"},
     "Apagar esta consulta?":{fr:"Supprimer ce rendez-vous ?",en:"Delete this appointment?"},
     "Apagar":{fr:"Supprimer",en:"Delete"}, "Apagar foto":{fr:"Supprimer la photo",en:"Delete photo"},
+    "Mamadas":{fr:"Repas",en:"Feeds"}, "Fraldas":{fr:"Couches",en:"Diapers"},
+    "peito":{fr:"sein",en:"breast"}, "em biberões":{fr:"en biberons",en:"from bottles"},
     "Nova criança":{fr:"Nouvel enfant",en:"New child"}, "Nome":{fr:"Nom",en:"Name"},
     "Data de nascimento":{fr:"Date de naissance",en:"Date of birth"},
     "Escreve o nome da criança.":{fr:"Écris le nom de l'enfant.",en:"Enter the child's name."},
@@ -1128,6 +1157,20 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function inRange(ts,a,b){ return ts>=a && ts<b; }
   function last7(){ return Array.from({length:7},(_,i)=>daysAgoISO(6-i)); }
 
+  function lastFormulaBrand(c){
+    if(c.alimentacao && c.alimentacao.formula && c.alimentacao.formula.trim()) return c.alimentacao.formula.trim();
+    const found = (c.mamadas||[]).find(m=>m.tipo==='biberao' && m.marcaFormula);
+    return found ? found.marcaFormula : '';
+  }
+  function lastFeedType(c){
+    const list = c.mamadas||[];
+    return list.length ? list[0].tipo : 'peito-esq';
+  }
+  function formulaBrandOptions(c){
+    const seen=new Set(); const opts=[];
+    (c.mamadas||[]).forEach(m=>{ if(m.tipo==='biberao' && m.marcaFormula && !seen.has(m.marcaFormula)){ seen.add(m.marcaFormula); opts.push(m.marcaFormula); } });
+    return opts.map(o=>`<option value="${o}"></option>`).join('');
+  }
   function feedLabel(l){
     if(l.tipo==='biberao'){
       const parts=[];
@@ -1170,9 +1213,28 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   ];
   let activeTab="inicio", openForm=null, editId=null;
 
+  const PRIMARY_TAB_IDS = ["inicio","mamadas","fraldas","sono"];
   function renderTabbar(){
-    document.getElementById('tabbar').innerHTML = TABS.map(tb=>`<button class="tab-btn${tb.id===activeTab?' active':''}" data-tab="${tb.id}" type="button" aria-label="${t(tb.id)}"${tb.id===activeTab?' aria-current="page"':''}>${ICONS[tb.ic]}<span class="lbl">${t(tb.id)}</span></button>`).join('');
-    document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click', ()=>{ activeTab=b.dataset.tab; openForm=null; editId=null; render(); }));
+    const primary = TABS.filter(tb=>PRIMARY_TAB_IDS.includes(tb.id));
+    const secondary = TABS.filter(tb=>!PRIMARY_TAB_IDS.includes(tb.id));
+    const secondaryActive = secondary.some(tb=>tb.id===activeTab);
+    const bar = primary.map(tb=>`<button class="tab-btn${tb.id===activeTab?' active':''}" data-tab="${tb.id}" type="button" aria-label="${t(tb.id)}"${tb.id===activeTab?' aria-current="page"':''}>${ICONS[tb.ic]}<span class="lbl">${t(tb.id)}</span></button>`).join('')
+      + `<button class="tab-btn${secondaryActive?' active':''}" id="tabMais" type="button" aria-label="${t('mais')}" aria-haspopup="true">${ICONS.more}<span class="lbl">${t('mais')}</span></button>`;
+    document.getElementById('tabbar').innerHTML = bar;
+    document.querySelectorAll('.tab-btn[data-tab]').forEach(b=>b.addEventListener('click', ()=>{ activeTab=b.dataset.tab; openForm=null; editId=null; render(); }));
+    const maisBtn = document.getElementById('tabMais');
+    if(maisBtn) maisBtn.addEventListener('click', ()=>showMaisMenu(secondary));
+  }
+  function showMaisMenu(secondary){
+    showOverlay(`<div class="voice-panel"><div class="voice-card" style="text-align:left; padding:14px;">
+      <p style="font-weight:800; font-size:.95rem; margin:0 0 10px;">${t('mais')}</p>
+      <div class="mais-list">${secondary.map(tb=>`<button class="mais-item${tb.id===activeTab?' active':''}" data-tab="${tb.id}" type="button">
+          <span class="ic">${ICONS[tb.ic]}</span><span class="lbl">${t(tb.id)}</span>${ICONS.chevright}
+        </button>`).join('')}</div>
+    </div></div>`);
+    document.querySelectorAll('.mais-item').forEach(b=>b.addEventListener('click', ()=>{
+      activeTab=b.dataset.tab; openForm=null; editId=null; closeOverlay(); render();
+    }));
   }
   function renderHeader(){
     const c=S.crianca;
@@ -1549,10 +1611,10 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 
     <div class="card"><div class="section-label">${tr('Ações rápidas')}</div>
       <div class="qa-grid">
-        <div class="qa-tile" data-quick="mamadas">${ICONS.bottle}<span class="lbl">${tr('Mamada')}</span></div>
-        <div class="qa-tile" data-quick="fraldas">${ICONS.drop}<span class="lbl">${tr('Fralda')}</span></div>
-        <div class="qa-tile${isSleeping?' running':''}" data-quick="sono">${ICONS.moon}<span class="lbl">${isSleeping?tr('Terminar'):tr('Sono')}</span></div>
-        <div class="qa-tile" data-quick="med">${ICONS.pill}<span class="lbl">${tr('Medicação')}</span></div>
+        <div class="qa-tile" data-quick="mamadas"><div class="ic feed">${ICONS.bottle}</div><span class="lbl">${tr('Mamada')}</span></div>
+        <div class="qa-tile" data-quick="fraldas"><div class="ic diaper">${ICONS.drop}</div><span class="lbl">${tr('Fralda')}</span></div>
+        <div class="qa-tile${isSleeping?' running':''}" data-quick="sono"><div class="ic sleepc">${ICONS.moon}</div><span class="lbl">${isSleeping?tr('Terminar'):tr('Sono')}</span></div>
+        <div class="qa-tile" data-quick="med"><div class="ic good">${ICONS.pill}</div><span class="lbl">${tr('Medicação')}</span></div>
       </div>
     </div>`;
     document.getElementById('main').innerHTML = html;
@@ -1775,7 +1837,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
           <button class="btn" id="addIntro" type="button">💾 ${tr('Guardar')}</button>
         </div>
         <div class="section-label" style="margin-top:8px;">${tr('Hidratação hoje')}</div>
-        <div class="counter-row"><span id="hidrTotal">0ml</span><button class="counter-btn" id="hidrAdd" type="button">+50ml</button></div>
+        <div class="counter-row"><button class="counter-btn" id="hidrSub" type="button">-50ml</button><span id="hidrTotal">0ml</span><button class="counter-btn" id="hidrAdd" type="button">+50ml</button></div>
         <button class="btn wide" id="saveAlimentacao" type="button" style="margin-top:10px;">💾 ${tr('Guardar')}</button>
       </div>
     </details>
@@ -1867,6 +1929,12 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     document.querySelectorAll('[data-rmIntro]').forEach(b=>b.addEventListener('click', ()=>{ showConfirm(tr('Apagar este alimento da lista?'), ()=>{ c.alimentacao.introducao=c.alimentacao.introducao.filter(f=>f.id!==b.dataset.rmintro); save(); renderPerfil(); }); }));
     document.getElementById('hidrAdd').addEventListener('click', ()=>{
       c.hidratacao=c.hidratacao||[]; c.hidratacao.push({id:uid(), ts:Date.now(), ml:50}); save();
+      document.getElementById('hidrTotal').textContent = hidrTotalToday(c)+'ml';
+    });
+    document.getElementById('hidrSub').addEventListener('click', ()=>{
+      c.hidratacao=c.hidratacao||[];
+      if(hidrTotalToday(c)<=0) return;
+      c.hidratacao.push({id:uid(), ts:Date.now(), ml:-50}); save();
       document.getElementById('hidrTotal').textContent = hidrTotalToday(c)+'ml';
     });
     document.getElementById('hidrTotal').textContent = hidrTotalToday(c)+'ml';
@@ -1968,7 +2036,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const totalMl = today.reduce((s,l)=> s + (l.tipo==='biberao' ? (l.mlBebido||l.mlOferecido||0) : 0), 0);
     const last = lastOf(S.mamadas);
     const days = last7();
-    const bars = days.map(d=>{ const a=new Date(d+"T00:00:00").getTime(), b=a+86400000; return {v:S.mamadas.filter(l=>inRange(l.ts,a,b)).length, label:new Date(d+"T00:00:00").toLocaleDateString(localeTag(),{weekday:'narrow'})}; });
+    const bars = days.map(d=>{ const a=new Date(d+"T00:00:00").getTime(), b=a+86400000; return {v:S.mamadas.filter(l=>inRange(l.ts,a,b)).length, label:new Date(d+"T00:00:00").toLocaleDateString(localeTag(),{weekday:'narrow'}), date:d}; });
 
     let html = '';
     const H=3600000;
@@ -1995,8 +2063,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function renderFeedForm(){
     const holder=document.getElementById('formHolder'); if(!holder) return;
     if(openForm!=='new'){ holder.innerHTML=''; return; }
+    const c = S.crianca;
     const editing = editId ? S.mamadas.find(l=>l.id===editId) : null;
-    let tipo = editing ? editing.tipo : 'peito-esq';
+    let tipo = editing ? editing.tipo : lastFeedType(c);
     holder.innerHTML = `<div class="form-panel">
       ${editing ? `<p class="muted" style="margin:0 0 4px;font-weight:700;">${tr('A editar registo')}</p>` : ''}
       <div class="form-row"><div style="flex:1;"><label>${tr('Hora')}</label><input type="time" id="fHora" value="${editing?fmtTimeOnly(editing.ts):new Date().toTimeString().slice(0,5)}"></div></div>
@@ -2012,9 +2081,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const seg=document.getElementById('fTipo'), extra=document.getElementById('fExtra');
     function drawExtra(){
       extra.innerHTML = tipo==='biberao'
-        ? `<div class="form-row"><div style="flex:1;"><label>${tr('Marca fórmula')}</label><input type="text" id="fMarca" placeholder="" value="${editing&&editing.marcaFormula?editing.marcaFormula:''}"></div></div>
-           <div class="form-row"><div style="flex:1;"><label>${tr('Oferecido (ml)')}</label><input type="number" id="fOfer" value="${editing&&editing.mlOferecido!=null?editing.mlOferecido:150}"></div><div style="flex:1;"><label>${tr('Bebido (ml)')}</label><input type="number" id="fBeb" value="${editing&&editing.mlBebido!=null?editing.mlBebido:140}"></div></div>`
-        : `<div class="form-row"><div style="flex:1;"><label>${tr('Duração (min)')}</label><input type="number" id="fDur" value="${editing&&editing.duracaoMin!=null?editing.duracaoMin:15}"></div></div>`;
+        ? `<div class="form-row"><div style="flex:1;"><label>${tr('Marca fórmula')}</label><input type="text" id="fMarca" list="fMarcaList" placeholder="" class="${(!editing&&lastFormulaBrand(c))?'remembered-fill':''}" value="${editing?(editing.marcaFormula||''):lastFormulaBrand(c)}"><datalist id="fMarcaList">${formulaBrandOptions(c)}</datalist></div></div>
+           <div class="form-row"><div style="flex:1;"><label>${tr('Oferecido (ml)')}</label><input type="number" id="fOfer" placeholder="150" value="${editing&&editing.mlOferecido!=null?editing.mlOferecido:''}"></div><div style="flex:1;"><label>${tr('Bebido (ml)')}</label><input type="number" id="fBeb" placeholder="140" value="${editing&&editing.mlBebido!=null?editing.mlBebido:''}"></div></div>`
+        : `<div class="form-row"><div style="flex:1;"><label>${tr('Duração (min)')}</label><input type="number" id="fDur" placeholder="15" value="${editing&&editing.duracaoMin!=null?editing.duracaoMin:''}"></div></div>`;
     }
     seg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); tipo=b.dataset.v; drawExtra(); }));
     drawExtra();
@@ -2050,8 +2119,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     let avgInterval='—';
     if(sorted.length>1){ const diffs=[]; for(let i=1;i<sorted.length;i++) diffs.push(sorted[i].ts-sorted[i-1].ts); avgInterval=durStr(diffs.reduce((a,b)=>a+b,0)/diffs.length/60000); }
     const days=last7();
-    const xixiBars=days.map(d=>{ const a=new Date(d+"T00:00:00").getTime(),b=a+86400000; return {v:S.fraldas.filter(l=>inRange(l.ts,a,b)&&l.tipo==='xixi').length, label:new Date(d+"T00:00:00").toLocaleDateString(localeTag(),{weekday:'narrow'})}; });
-    const cocoBars=days.map(d=>{ const a=new Date(d+"T00:00:00").getTime(),b=a+86400000; return {v:S.fraldas.filter(l=>inRange(l.ts,a,b)&&l.tipo==='coco').length, label:new Date(d+"T00:00:00").toLocaleDateString(localeTag(),{weekday:'narrow'})}; });
+    const xixiBars=days.map(d=>{ const a=new Date(d+"T00:00:00").getTime(),b=a+86400000; return {v:S.fraldas.filter(l=>inRange(l.ts,a,b)&&l.tipo==='xixi').length, label:new Date(d+"T00:00:00").toLocaleDateString(localeTag(),{weekday:'narrow'}), date:d}; });
+    const cocoBars=days.map(d=>{ const a=new Date(d+"T00:00:00").getTime(),b=a+86400000; return {v:S.fraldas.filter(l=>inRange(l.ts,a,b)&&l.tipo==='coco').length, label:new Date(d+"T00:00:00").toLocaleDateString(localeTag(),{weekday:'narrow'}), date:d}; });
 
     let html='';
     if(xixi>0 && xixi<6){
@@ -2136,7 +2205,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const statusLabel = status==='good'?'🟢 '+tr('OK'):status==='warn'?'🟡 '+tr('BAIXO'):'🔴 '+tr('CRÍTICO');
     const avgQual = S.sono.length ? (S.sono.reduce((s,l)=>s+(l.qualidade||0),0)/S.sono.length).toFixed(1) : '—';
     const days=last7();
-    const bars=days.map(d=>{ const a=new Date(d+"T00:00:00").getTime(),b=a+86400000; const mins=S.sono.filter(l=>inRange(l.inicio,a,b)).reduce((s,l)=>s+(l.duracaoMin||0),0); return {v:+(mins/60).toFixed(1), label:new Date(d+"T00:00:00").toLocaleDateString(localeTag(),{weekday:'narrow'})}; });
+    const bars=days.map(d=>{ const a=new Date(d+"T00:00:00").getTime(),b=a+86400000; const mins=S.sono.filter(l=>inRange(l.inicio,a,b)).reduce((s,l)=>s+(l.duracaoMin||0),0); return {v:+(mins/60).toFixed(1), label:new Date(d+"T00:00:00").toLocaleDateString(localeTag(),{weekday:'narrow'}), date:d}; });
 
     const lang=(S.settings&&S.settings.lang)||'pt';
     const metaLbl = lang==='fr' ? `objectif (${months}m)` : lang==='en' ? `target (${months}m)` : `meta (${months}m)`;
@@ -2179,7 +2248,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       ${(!isSleeping&&!editing) ? `<label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:.82rem;"><input type="checkbox" id="sAindaDorme" style="width:auto;"> ${tr('Ainda está a dormir — registar só a hora que adormeceu')}</label>` : ''}
       <div id="sFimBlock">
         <div class="form-row"><div style="flex:1;"><label>${tr('Acordou')}</label><input type="time" id="sFim" value="${fimVal}"></div></div>
-        <div class="form-row"><div style="flex:1;"><label>${tr('Qualidade (1–10)')}</label><input type="number" id="sQual" min="1" max="10" value="${editing?editing.qualidade:7}"></div><div style="flex:1;"><label>${tr('Interrupções')}</label><input type="number" id="sInter" min="0" value="${editing?editing.interrupcoes:0}"></div></div>
+        <div class="form-row"><div style="flex:1;"><label>${tr('Qualidade (1–10)')}</label><input type="number" id="sQual" min="1" max="10" placeholder="7" value="${editing?editing.qualidade:''}"></div><div style="flex:1;"><label>${tr('Interrupções')}</label><input type="number" id="sInter" min="0" placeholder="0" value="${editing&&editing.interrupcoes?editing.interrupcoes:''}"></div></div>
       </div>
       <textarea id="sObs" placeholder="${tr('Observações (opcional)')}">${editing&&editing.obs?editing.obs:''}</textarea>
       <button class="btn wide" id="sSave" type="button">${editing?tr('Guardar alterações'):tr('Guardar')}</button>
@@ -2211,7 +2280,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   }
   function renderSleepLog(){
     const el=document.getElementById('logList'); if(!el) return;
-    const list=S.sono.slice().sort((a,b)=>b.inicio-a.inicio).slice(0,14);
+    const cutoff = Date.now() - 24*3600000;
+    const list=S.sono.filter(l=>(l.fim||l.inicio)>=cutoff).slice().sort((a,b)=>b.inicio-a.inicio);
     el.innerHTML = list.length ? list.map(l=>`<div class="log-item" data-edit="${l.id}" style="cursor:pointer;"><div class="ic sleepc">${ICONS.moon}</div><div class="body"><div class="title">${l.periodo==='noite'?tr('Noite'):tr('Sesta')} · ${fmtTimeOnly(l.inicio)} → ${fmtTimeOnly(l.fim)}</div><div class="meta">${durStr(l.duracaoMin)} · ${tr('qualidade')} ${l.qualidade}/10${l.interrupcoes?(' · '+l.interrupcoes+' '+tr('interrupções')):''}${l.posicao?(' · '+tr(l.posicao)):''}</div></div><button class="log-del" data-del="${l.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join('') : `<div class="empty">${tr('Sem registos.')}</div>`;
     el.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click', ev=>{ ev.stopPropagation(); showConfirm(tr('Apagar este registo de sono?'), ()=>{ const i=S.sono.findIndex(l=>l.id===b.dataset.del); if(i>-1) S.sono.splice(i,1); save(); renderSleepLog(); }); }));
     el.querySelectorAll('[data-edit]').forEach(row=>row.addEventListener('click', ()=>{ editId=row.dataset.edit; openForm='new'; renderSleepForm(); }));
@@ -2552,6 +2622,7 @@ ${parecerLbl}: ${parecer(m,gm,months)}</div>
     const c=S.crianca;
     const lang=(S.settings&&S.settings.lang)||'pt';
     document.getElementById('main').innerHTML = `
+    <div class="sos-serious">
     <div class="card" style="text-align:center;">
       <div class="photo-box" style="width:80px;height:80px;border-radius:50%;margin:0 auto 8px;">${c.foto?`<img src="${c.foto}">`:ICONS.baby}</div>
       <h2>${c.nome}</h2><p class="muted">${ageInfo(c.dataNascimento).label} · ${tr('nascida')} ${new Date(c.dataNascimento+"T00:00:00").toLocaleDateString(localeTag())}</p>
@@ -2586,7 +2657,8 @@ ${parecerLbl}: ${parecer(m,gm,months)}</div>
       <div class="sos-line"><span>${tr('Morada')}</span><b>${c.moradaAtual||'—'}</b></div>
     </div>
     <button class="btn wide" id="sosPdf" type="button">${tr('Exportar ficha de emergência (PDF)')}</button>
-    <p class="muted" style="text-align:center;margin-top:10px;">${tr('Código QR partilhável — disponível numa próxima versão.')}</p>`;
+    <p class="muted" style="text-align:center;margin-top:10px;">${tr('Código QR partilhável — disponível numa próxima versão.')}</p>
+    </div>`;
     document.getElementById('sosPdf').addEventListener('click', exportSosPdf);
   }
   async function exportSosPdf(){
@@ -2632,9 +2704,11 @@ ${parecerLbl}: ${parecer(m,gm,months)}</div>
     const bw=(w-2*pad-gap*(bars.length-1))/bars.length;
     const bh=v=>(v/max)*(h-2*pad-14);
     const bars_=bars.map((b,i)=>{ const bx=pad+i*(bw+gap), by=h-pad-bh(b.v);
-      return `<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh(b.v).toFixed(1)}" rx="3" fill="var(--brand)"/>
+      const open = b.date ? `<g class="bar-day" data-date="${b.date}" style="cursor:pointer;">` : '<g>';
+      return `${open}<rect x="${bx.toFixed(1)}" y="0" width="${bw.toFixed(1)}" height="${h}" fill="transparent"/>
+        <rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh(b.v).toFixed(1)}" rx="3" fill="var(--brand)"/>
         <text class="axis-label" x="${(bx+bw/2).toFixed(1)}" y="${h-8}" text-anchor="middle">${b.label}</text>
-        <text x="${(bx+bw/2).toFixed(1)}" y="${(by-5).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--ink)">${b.v}</text>`;
+        <text x="${(bx+bw/2).toFixed(1)}" y="${(by-5).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--ink)">${b.v}</text></g>`;
     }).join('');
     const target = opts.targetLine ? `<line x1="${pad}" y1="${(h-pad-bh(opts.targetLine)).toFixed(1)}" x2="${w-8}" y2="${(h-pad-bh(opts.targetLine)).toFixed(1)}" stroke="var(--crit)" stroke-dasharray="4,3" stroke-width="1.2"/>` : '';
     return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="140">
@@ -2715,6 +2789,37 @@ ${parecerLbl}: ${parecer(m,gm,months)}</div>
     else if(activeTab==='resumo') renderResumo();
     else if(activeTab==='sos') renderSos();
     applyDemoExClear();
+    wireDayBars();
+  }
+  function wireDayBars(){
+    document.querySelectorAll('#main .bar-day[data-date]').forEach(g=>{
+      g.addEventListener('click', ()=>showDaySummary(g.dataset.date));
+    });
+  }
+  function showDaySummary(dateISO){
+    const c = S.crianca;
+    const a = new Date(dateISO+"T00:00:00").getTime(), b = a+86400000;
+    const lang=(S.settings&&S.settings.lang)||'pt';
+    const dateLbl = new Date(dateISO+"T00:00:00").toLocaleDateString(lang==='en'?'en-GB':lang==='fr'?'fr-FR':'pt-PT', {weekday:'long', day:'numeric', month:'long'});
+    const feeds = S.mamadas.filter(l=>inRange(l.ts,a,b));
+    const peito = feeds.filter(l=>l.tipo!=='biberao').length;
+    const biberoes = feeds.filter(l=>l.tipo==='biberao');
+    const mlTotal = biberoes.reduce((s,l)=>s+(l.mlBebido||0),0);
+    const diaperToday = S.fraldas.filter(l=>inRange(l.ts,a,b));
+    const xixi = diaperToday.filter(d=>d.tipo==='xixi').length, coco = diaperToday.filter(d=>d.tipo==='coco').length;
+    const sonoDia = S.sono.filter(l=>inRange(l.inicio,a,b));
+    const minsSono = sonoDia.reduce((s,l)=>s+(l.duracaoMin||0),0);
+    const rows = [
+      `${ICONS.bottle} ${tr('Mamadas')}: ${feeds.length}` + (peito?` (${peito} ${tr('peito')})`:'') + (biberoes.length?` — ${mlTotal}ml ${tr('em biberões')}`:''),
+      `${ICONS.drop} ${tr('Fraldas')}: ${xixi} ${tr('xixi')} · ${coco} ${tr('cocó')}`,
+      `${ICONS.moon} ${tr('Sono')}: ${sonoDia.length ? durStr(minsSono) : '—'}`,
+    ];
+    showOverlay(`<div class="voice-panel"><div class="voice-card">
+      <h2 style="margin:0 0 8px;text-transform:capitalize;">${dateLbl}</h2>
+      ${rows.map(r=>`<div class="alert info" style="margin-bottom:6px;">${r}</div>`).join('')}
+      <button class="btn wide" id="mOk" type="button">${tr('Fechar')}</button>
+    </div></div>`);
+    document.getElementById('mOk').addEventListener('click', closeOverlay);
   }
   // Campos com dados de exemplo (perfil demo) ficam marcados "demo-ex" e esvaziam-se
   // sozinhos ao primeiro toque, para não ser preciso apagar tudo à mão para escrever.
@@ -2722,7 +2827,7 @@ ${parecerLbl}: ${parecer(m,gm,months)}</div>
     const c = S.crianca;
     if(!c || !c.seed) return;
     c.seedTouched = c.seedTouched || {};
-    document.querySelectorAll('#main input[type=text][id], #main textarea[id]').forEach(el=>{
+    document.querySelectorAll('#main input[type=text][id], #main textarea[id], #pDob, #alimInicioSolidos, #penData').forEach(el=>{
       if(c.seedTouched[el.id]) return;
       if(!el.value) return;
       el.classList.add('demo-ex');
@@ -2730,11 +2835,18 @@ ${parecerLbl}: ${parecer(m,gm,months)}</div>
   }
   document.addEventListener('focusin', (e)=>{
     const el = e.target;
-    if(!el || !el.classList || !el.classList.contains('demo-ex')) return;
-    el.value=''; el.classList.remove('demo-ex');
-    el.dispatchEvent(new Event('input', {bubbles:true}));
-    const c = S.crianca;
-    if(c){ c.seedTouched = c.seedTouched || {}; c.seedTouched[el.id]=true; }
+    if(!el || !el.classList) return;
+    if(el.classList.contains('demo-ex')){
+      el.value=''; el.classList.remove('demo-ex');
+      el.dispatchEvent(new Event('input', {bubbles:true}));
+      const c = S.crianca;
+      if(c){ c.seedTouched = c.seedTouched || {}; c.seedTouched[el.id]=true; }
+      return;
+    }
+    if(el.classList.contains('remembered-fill')){
+      el.value=''; el.classList.remove('remembered-fill');
+      el.dispatchEvent(new Event('input', {bubbles:true}));
+    }
   });
   function wireFooterSettings(){
     document.getElementById('themeSeg').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ S.settings.theme=b.dataset.v; save(); applyTheme(); render(); renderSettingsOverlay(); }));

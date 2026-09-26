@@ -1716,7 +1716,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 
     <div class="card"><div class="section-label">${tr('Hoje')}</div>
       <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
-        <div class="stat" style="align-items:center;text-align:center;"><div class="val">${feedsToday}</div><div class="sub">${tr('refeições')}</div></div>
+        <div class="stat" style="align-items:center;text-align:center;"><div class="val">${feedsToday}</div><div class="sub">${feedsToday===1?lx('refeição','repas','feeding'):tr('refeições')}</div></div>
         <div class="stat" style="align-items:center;text-align:center;"><div class="val">${xixiToday}x/${cocoToday}x</div><div class="sub">${tr('xixi / cocó')}</div></div>
         <div class="stat" style="align-items:center;text-align:center;"><div class="val">${(sleepMinsToday/60).toFixed(1)}h</div><div class="sub">${tr('sono')}</div></div>
       </div>
@@ -2235,7 +2235,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 
     html += `<div class="card"><div class="section-label">${tr('Hoje')}</div>
       <div class="grid2" style="grid-template-columns:repeat(3,1fr);">
-        <div class="stat" style="text-align:center;"><div class="val">${today.length}</div><div class="sub">${tr('refeições')}</div></div>
+        <div class="stat" style="text-align:center;"><div class="val">${today.length}</div><div class="sub">${today.length===1?lx('refeição','repas','feeding'):tr('refeições')}</div></div>
         <div class="stat" style="text-align:center;"><div class="val">${avgInterval}</div><div class="sub">${tr('intervalo médio')}</div></div>
         <div class="stat" style="text-align:center;"><div class="val">${totalMl}ml</div><div class="sub">${tr('biberão (estim.)')}</div></div>
       </div>
@@ -2425,11 +2425,11 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const qualMedLbl = lang==='fr' ? `Qualité moyenne : ${avgQual}/10` : lang==='en' ? `Average quality: ${avgQual}/10` : `Qualidade média: ${avgQual}/10`;
     const terminarLbl = lang==='fr' ? `Terminer le sommeil (${durStr((Date.now()-S.running.sleepStart)/60000)})` : lang==='en' ? `End sleep (${durStr((Date.now()-S.running.sleepStart)/60000)})` : `Terminar sono (${durStr((Date.now()-S.running.sleepStart)/60000)})`;
     const horasDiaLbl = lang==='fr' ? `heures par jour · objectif ${lo}–${hi}h` : lang==='en' ? `hours per day · target ${lo}–${hi}h` : `horas por dia · meta ${lo}–${hi}h`;
-    const napsToday = S.sono.filter(l=>inRange(l.inicio,t0,t1)).length;
+    const napsToday = S.sono.filter(l=>inRange(l.inicio,t0,t1) && l.periodo==='sesta').length;   // só sestas; noites e "sem período" não são sonecas
     let html = `<div class="card"><div class="section-label">${tr('Hoje')}</div>
       <div class="grid2" style="grid-template-columns:repeat(3,1fr);">
         <div class="stat" style="text-align:center;align-items:center;"><div class="ic sleepc">${ICONS.moon}</div><div class="val">${hoursToday.toFixed(1)}h</div><div class="sub">${tr('total')}</div></div>
-        <div class="stat" style="text-align:center;align-items:center;"><div class="ic sleepc">${ICONS.moon}</div><div class="val">${napsToday}</div><div class="sub">${tr('sonecas hoje')}</div></div>
+        <div class="stat" style="text-align:center;align-items:center;"><div class="ic sleepc">${ICONS.moon}</div><div class="val">${napsToday}</div><div class="sub">${napsToday===1?lx('soneca hoje','sieste aujourd\'hui','nap today'):tr('sonecas hoje')}</div></div>
         <div class="stat" style="text-align:center;align-items:center;"><div class="ic sleepc">${ICONS.chart}</div><div class="val">${statusLabel}</div><div class="sub">${tr('estado')}</div></div>
       </div>
       <p class="muted" style="margin-top:6px;">${qualMedLbl}</p>
@@ -2922,7 +2922,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       const avgInt=fmtDec(diffs.reduce((s,v)=>s+v,0)/diffs.length,1);
       items.push({ic:ICONS.bottle, txt:lx(`Intervalo médio entre mamadas registadas (últimos 3 dias): ${avgInt}h.`,`Intervalle moyen entre repas enregistrés (3 derniers jours) : ${avgInt}h.`,`Average interval between logged feeds (last 3 days): ${avgInt}h.`)});
     }
-    if(cur.diaper.xixiPerDay!=null){
+    if(cur.diaper.xixiPerDay!=null && cur.diaper.xixi>0){   // sem xixi registado não se mostra "~0,0/dia"
       let txt = `${lx('Fraldas de xixi','Couches mouillées','Wet diapers')}: ~${fmtDec(cur.diaper.xixiPerDay,1)}/${dia} (${pl(cur.diaper.days,'dia com registos','dias com registos','jour avec enregistrements','jours avec enregistrements','day with records','days with records')} ${lx('nos últimos 7 dias','sur les 7 derniers jours','in the last 7 days')})`;
       if(prev.diaper.xixiPerDay && cur.diaper.days>=3 && prev.diaper.days>=3){
         const diffPct=Math.round(((cur.diaper.xixiPerDay-prev.diaper.xixiPerDay)/prev.diaper.xixiPerDay)*100);

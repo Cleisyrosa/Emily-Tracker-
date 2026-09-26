@@ -234,6 +234,8 @@ details.acc[open] summary .car{ transform:rotate(180deg); }
 .week-nav .icon-btn:disabled{ opacity:.35; cursor:default; }
 .week-nav-lbl{ flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; font-size:.86rem; line-height:1.3; }
 .week-nav-lbl .muted{ font-size:.7rem; }
+.field-err{ color:var(--crit); font-size:.74rem; font-weight:700; margin:4px 0 0; }
+input.input-err, select.input-err, textarea.input-err{ border-color:var(--crit); box-shadow:0 0 0 1px var(--crit); }
 .day-sec{ margin-bottom:10px; }
 .day-rec{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:9px 10px; margin-bottom:5px; border:1px solid var(--border); background:var(--surface-2); color:var(--ink); border-radius:10px; font-size:.82rem; cursor:pointer; font-family:inherit; }
 .day-rec > span{ flex:1; }
@@ -762,9 +764,14 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   ];
 
   function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
-  function todayISO(){ return new Date().toISOString().slice(0,10); }
-  function daysAgoISO(n){ const d=new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
-  function monthsAgoISO(n){ const d=new Date(); d.setMonth(d.getMonth()-n); return d.toISOString().slice(0,10); }
+  // Datas de calendário SEMPRE pela hora local do dispositivo (qualquer fuso horário).
+  // Antes usavam toISOString() (UTC): entre 00:00 e ~02:00 no Luxemburgo "hoje" ainda era o dia anterior.
+  // (A limpeza dos dados de exemplo antigos, em purgeDemoData, mantém a sua própria lógica UTC de propósito:
+  //  esses dados foram gerados em UTC e só assim são reconhecidos.)
+  function ymdLocal(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function todayISO(){ return ymdLocal(new Date()); }
+  function daysAgoISO(n){ const d=new Date(); d.setDate(d.getDate()-n); return ymdLocal(d); }
+  function monthsAgoISO(n){ const d=new Date(); d.setMonth(d.getMonth()-n); return ymdLocal(d); }
 
   function blankChildFields(){
     return {
@@ -1241,9 +1248,11 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     if(l.tipo==='peito-dir') return tr("Peito direito")+" · "+durTxt;
     return tr("Mamada");
   }
-  function diaperLabel(l){ return tr(l.tipo==='xixi'?'Xixi':'Cocó')+' · '+tr(l.quantidade)+(l.cor?(' · '+tr(l.cor)):'')+(l.consistencia?(' · '+tr(l.consistencia)):''); }
+  function sleepPeriodLabel(l){ return l.periodo==='noite' ? tr('Noite') : l.periodo==='sesta' ? tr('Sesta') : tr('Sono'); }
+  function diaperLabel(l){ return tr(l.tipo==='xixi'?'Xixi':'Cocó')+(l.quantidade?(' · '+tr(l.quantidade)):'')+(l.cor?(' · '+tr(l.cor)):'')+(l.consistencia?(' · '+tr(l.consistencia)):''); }
   function medIntervalTxt(h,max){
     const lang=(S.settings&&S.settings.lang)||'pt';
+    if(!max){ if(lang==='fr') return `min. ${h}h (pas de maximum par jour défini)`; if(lang==='en') return `min. ${h}h (no daily maximum set)`; return `mín. ${h}h (sem máximo diário definido)`; }
     if(lang==='fr') return `min. ${h}h (max ${max}x/jour)`;
     if(lang==='en') return `min. ${h}h (max ${max}x/day)`;
     return `mín. ${h}h (máx ${max}x/dia)`;
@@ -1521,7 +1530,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     let toast='';
     const c = S.crianca;
     if(low.includes('mamada')||low.includes('biberão')||low.includes('biberao')||low.includes('peito')){
-      let entry = {id:uid(), ts:Date.now(), qualidade:'ativa', obs:''};
+      let entry = {id:uid(), ts:Date.now(), qualidade:null, obs:''};
       if(low.includes('esquerd')){ entry.tipo='peito-esq'; entry.duracaoMin = num?+num:null; }
       else if(low.includes('direit')){ entry.tipo='peito-dir'; entry.duracaoMin = num?+num:null; }
       else { entry.tipo='biberao'; entry.marcaFormula=''; entry.mlOferecido = null; entry.mlBebido = num?+num:null; }
@@ -1633,6 +1642,16 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   }
 
   /* ============ INÍCIO ============ */
+  // Medição mais recente pela DATA do registo (empate na mesma data → a inserida por último).
+  // Usada em Início, referência de dose, SOS — nunca depender da ordem de inserção.
+  function latestMeasure(metric){
+    const arr=(S.evolucao && S.evolucao[metric]) || [];
+    let best=null, bestIdx=-1;
+    arr.forEach((r,i)=>{ if(!r || r.valor==null || r.valor==='') return;
+      const d=String(r.date||''), bd=best?String(best.date||''):null;
+      if(best===null || d>bd || (d===bd && i>bestIdx)){ best=r; bestIdx=i; } });
+    return best;
+  }
   function lastOf(arr){ return arr.slice().sort((a,b)=>b.ts-a.ts)[0]; }
   function timelineSvg(){
     const [t0] = todayRange();
@@ -1665,7 +1684,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const diapersToday=S.fraldas.filter(l=>inRange(l.ts,t0,t1));
     const xixiToday=diapersToday.filter(d=>d.tipo==='xixi').length, cocoToday=diapersToday.filter(d=>d.tipo==='coco').length;
     const sleepMinsToday=S.sono.filter(l=>inRange(l.inicio,t0,t1)||inRange(l.fim,t0,t1)).reduce((s,l)=>s+(l.duracaoMin||0),0);
-    const peso = S.evolucao.peso.length ? S.evolucao.peso[S.evolucao.peso.length-1].valor : null;
+    const peso = latestMeasure('peso') ? latestMeasure('peso').valor : null;
 
     let html='';
     const notice = S.settings.demoCleanupNotice;
@@ -1727,14 +1746,14 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 
   function stopSleep(){
     const start=S.running.sleepStart, end=Date.now();
-    S.sono.unshift({id:uid(), periodo:(new Date(start).getHours()>=20||new Date(start).getHours()<7)?'noite':'sesta', posicao:'costas', inicio:start, fim:end, duracaoMin:(end-start)/60000, qualidade:null, interrupcoes:null, obs:''});
+    S.sono.unshift({id:uid(), periodo:null, posicao:null, inicio:start, fim:end, duracaoMin:(end-start)/60000, qualidade:null, interrupcoes:null, obs:''});   // período/posição: não indicados (a utilizadora não escolheu)
     S.running.sleepStart=null; save(); playChime(); render();
   }
 
   /* ============ PERFIL ============ */
   function renderPerfil(){
     const c=S.crianca;
-    const doseCalcPeso = S.evolucao.peso.length ? S.evolucao.peso[S.evolucao.peso.length-1].valor : null;
+    const doseCalcPeso = latestMeasure('peso') ? latestMeasure('peso').valor : null;
     let html = `<div class="card"><div class="photo-row">
         <div class="photo-box" id="photoBox">${c.foto?`<img src="${c.foto}">`:ICONS.camera}</div>
         <div style="flex:1;"><input type="file" id="photoInput" accept="image/*" style="display:none;"><button class="file-btn" id="photoBtn" type="button">${tr('Mudar foto principal')}</button></div>
@@ -1820,20 +1839,23 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       </div>
     </details>
 
-    <details class="acc"><summary>${ICONS.pill} ${tr('Medicações & remédios tradicionais')} <span class="car">▾</span></summary>
+    <details class="acc" id="accMed"><summary>${ICONS.pill} ${tr('Medicações & remédios tradicionais')} <span class="car">▾</span></summary>
       <div class="acc-body">
         <div class="section-label">${tr('Receitados')}</div>
-        ${c.medicacoes.filter(m=>m.tipo!=='tradicional').map(m=>`<div class="med-row"><span class="body"><b>${m.nome}</b> — ${m.dose} · ${medIntervalTxt(m.intervaloHoras,m.maxVezesDia)}${m.horario?(' · '+tr('horário')+' '+m.horario):''} ${m.notificacoes?'🔔':''}</span>
+        ${c.medicacoes.filter(m=>m.tipo!=='tradicional').map(m=>`<div class="med-row"><span class="body"><b>${m.nome}</b> — ${m.dose} · ${medIntervalTxt(m.intervaloHoras,m.maxVezesDia)}${m.horario?(' · '+tr('horário')+' '+m.horario):''} ${m.notificacoes?'🔔':''}<br><span class="muted">${lx('Hoje','Aujourd\'hui','Today')}: <b>${dosesToday(m).length}${m.maxVezesDia?('/'+m.maxVezesDia):''}</b> ${lx('dose(s)','dose(s)','dose(s)')}</span></span>
           <button class="dose-btn" data-giveDose="${m.id}" type="button">${tr('Dose')}</button>
+          <button class="dose-btn" data-medMax="${m.id}" type="button" title="${lx('Máximo de doses por dia','Maximum de doses par jour','Maximum doses per day')}">${lx('Máx.','Max.','Max')}</button>
           <button class="log-del" data-rmMed="${m.id}" type="button">${ICONS.trash}</button></div>`).join('') || `<span class="muted">${tr('Sem medicação regular.')}</span>`}
         <div class="add-inline" style="flex-wrap:wrap;">
           <input type="text" id="newMedNome" placeholder="${tr('Nome')}" style="flex:1;">
           <input type="text" id="newMedDose" placeholder="${tr('Dose')}" style="flex:1;">
           <input type="number" id="newMedInt" placeholder="${tr('Intervalo (h)')}" style="flex:1;">
+          <input type="number" id="newMedMax" min="1" max="24" placeholder="${lx('Máx. doses/dia (opcional)','Max. doses/jour (facultatif)','Max doses/day (optional)')}" style="flex:1 1 100%;">
           <input type="time" id="newMedHorario" style="flex:1;">
         </div>
         <div class="add-inline"><label style="display:flex;align-items:center;gap:6px;font-size:.78rem;"><input type="checkbox" id="newMedNotif" checked style="width:auto;">${tr('Notificar')}</label><button class="btn" id="addMed" type="button">💾 ${tr('Guardar')}</button></div>
         <div id="doseWarning"></div>
+        ${doseHistoryHtml()}
         ${doseCalcPeso ? `<div class="alert info" style="margin-top:4px;">${ICONS.note} ${doseRefTxt(doseCalcPeso)}</div>` : ''}
         <div class="section-label" style="margin-top:10px;">${tr('Remédios tradicionais')}</div>
         ${c.medicacoes.filter(m=>m.tipo==='tradicional').map(m=>`<div class="med-row"><span class="body"><b>${m.nome}</b> — ${m.dose}</span><button class="log-del" data-rmMed="${m.id}" type="button">${ICONS.trash}</button></div>`).join('') || `<span class="muted">${tr('Nenhum registado.')}</span>`}
@@ -2067,35 +2089,116 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     document.querySelectorAll('[data-rmIntol]').forEach(b=>b.addEventListener('click', ()=>{ c.intolerancias=c.intolerancias.filter(a=>a.id!==b.dataset.rmintol); save(); renderPerfil(); }));
     document.getElementById('addMed').addEventListener('click', ()=>{
       const nome=document.getElementById('newMedNome').value.trim(); if(!nome) return;
-      c.medicacoes.push({id:uid(), nome, dose:document.getElementById('newMedDose').value.trim(), intervaloHoras:+document.getElementById('newMedInt').value||8, maxVezesDia:3,
+      clearFieldErrors(document.getElementById('accMed'));
+      const mx=readNum('newMedMax');
+      if(mx!=null && (Number.isNaN(mx) || !Number.isInteger(mx) || mx<1 || mx>24)){ showFieldErrors([['newMedMax', lx('Máximo: número inteiro de 1 a 24, ou deixa vazio.','Maximum : nombre entier de 1 à 24, ou laisse vide.','Maximum: whole number 1–24, or leave empty.')]]); return; }
+      c.medicacoes.push({id:uid(), nome, dose:document.getElementById('newMedDose').value.trim(), intervaloHoras:+document.getElementById('newMedInt').value||8, maxVezesDia:mx,
         horario:document.getElementById('newMedHorario').value, notificacoes:document.getElementById('newMedNotif').checked, tipo:'receitado'});
-      save(); renderPerfil();
+      save(); rerenderMeds();
     });
     document.querySelectorAll('[data-rmMed]').forEach(b=>b.addEventListener('click', ()=>{ c.medicacoes=c.medicacoes.filter(m=>m.id!==b.dataset.rmmed); save(); renderPerfil(); }));
     document.querySelectorAll('[data-giveDose]').forEach(b=>b.addEventListener('click', ()=>{
       const med = c.medicacoes.find(m=>m.id===b.dataset.givedose);
       giveDose(med);
     }));
+    document.querySelectorAll('[data-medMax]').forEach(b=>b.addEventListener('click', ()=>showMedMaxEditor(b.dataset.medmax)));
+    document.querySelectorAll('[data-doseEdit]').forEach(b=>b.addEventListener('click', ()=>showDoseEditor(b.dataset.doseedit)));
+    document.querySelectorAll('[data-doseDel]').forEach(b=>b.addEventListener('click', ()=>{
+      showConfirm(lx('Apagar esta dose? Deixa de contar para o intervalo e para o máximo diário.','Supprimer cette dose ?','Delete this dose?'), ()=>{
+        const i=S.doses.findIndex(d=>d.id===b.dataset.dosedel); if(i>-1) S.doses.splice(i,1); save(); rerenderMeds();
+      });
+    }));
+  }
+  // Redesenha o Perfil mantendo a secção de medicações aberta (as ações de medicação acontecem lá).
+  function rerenderMeds(){ renderPerfil(); const d=document.getElementById('accMed'); if(d){ d.open=true; } }
+  // Doses de HOJE (dia local) deste medicamento — por id quando existe, senão pelo nome (doses antigas).
+  function dosesToday(med){ const [t0,t1]=todayRange(); return (S.doses||[]).filter(d=>inRange(d.ts,t0,t1) && (d.medId ? d.medId===med.id : d.nome===med.nome)); }
+  function doseHistoryHtml(){
+    const cutoff=Date.now()-7*86400000;
+    const list=(S.doses||[]).filter(d=>d.ts>=cutoff).slice().sort((a,b)=>b.ts-a.ts);
+    const f=ts=>new Date(ts).toLocaleDateString(localeTag(),{weekday:'short',day:'numeric',month:'short'})+' · '+hhmm(ts);
+    return `<div class="section-label" style="margin-top:10px;">${lx('Doses registadas (últimos 7 dias)','Doses enregistrées (7 derniers jours)','Logged doses (last 7 days)')}</div>
+      ${list.length ? list.map(d=>`<div class="med-row"><span class="body"><b>${d.nome}</b>${d.dose?(' — '+d.dose):''}<br><span class="muted">${f(d.ts)}${d.acimaDoMax?' · '+lx('acima do máximo','au-dessus du maximum','above maximum'):''}</span></span>
+        <button class="dose-btn" data-doseEdit="${d.id}" type="button" aria-label="${lx('Corrigir hora','Corriger l\'heure','Fix time')}">✏️</button>
+        <button class="log-del" data-doseDel="${d.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join('') : `<span class="muted">${lx('Nenhuma dose registada.','Aucune dose enregistrée.','No doses logged.')}</span>`}`;
+  }
+  function showDoseEditor(id){
+    const d=(S.doses||[]).find(x=>x.id===id); if(!d) return;
+    showOverlay(`<div class="voice-panel" id="dosePanel"><div class="voice-card" style="text-align:left;">
+      <h2 style="margin:0 0 10px;">${ICONS.pill} ${d.nome}</h2>
+      <div class="form-row"><div style="flex:1;"><label>${tr('Data')}</label><input type="date" id="doseDate" value="${localISO(d.ts)}"></div><div style="flex:1;"><label>${tr('Hora')}</label><input type="time" id="doseTime" value="${hhmm(d.ts)}"></div></div>
+      <button class="btn wide" id="doseSave" type="button" style="margin-top:10px;">${tr('Guardar alterações')}</button>
+      <button class="btn ghost wide" id="doseCancel" type="button" style="margin-top:8px;">${tr('Cancelar')}</button>
+    </div></div>`);
+    const panel=document.getElementById('dosePanel');
+    panel.addEventListener('click', e=>{ if(e.target===panel) closeOverlay(); });
+    document.getElementById('doseCancel').addEventListener('click', closeOverlay);
+    document.getElementById('doseSave').addEventListener('click', ()=>{
+      clearFieldErrors(panel);
+      const ts=dateTimeToTs(document.getElementById('doseDate').value, document.getElementById('doseTime').value, false);
+      if(!showFieldErrors(ts<=Date.now()+FUTURE_TOL_MS ? [] : [['doseTime', msgFuturo()]])) return;
+      d.ts=ts; save(); closeOverlay(); rerenderMeds();
+    });
+  }
+  function showMedMaxEditor(id){
+    const m=S.crianca.medicacoes.find(x=>x.id===id); if(!m) return;
+    showOverlay(`<div class="voice-panel" id="maxPanel"><div class="voice-card" style="text-align:left;">
+      <h2 style="margin:0 0 6px;">${ICONS.pill} ${m.nome}</h2>
+      <p class="muted" style="margin:0 0 10px;">${lx('Máximo de doses por dia, conforme indicado pelo/a médico/a. Deixa vazio para não definir máximo.','Maximum de doses par jour, selon le médecin. Laisse vide pour aucun maximum.','Maximum doses per day, as prescribed. Leave empty for no maximum.')}</p>
+      <div class="form-row"><div style="flex:1;"><label>${lx('Máx. doses/dia','Max. doses/jour','Max doses/day')}</label><input type="number" id="maxVal" min="1" max="24" value="${m.maxVezesDia||''}"></div></div>
+      <button class="btn wide" id="maxSave" type="button" style="margin-top:10px;">${tr('Guardar alterações')}</button>
+      <button class="btn ghost wide" id="maxCancel" type="button" style="margin-top:8px;">${tr('Cancelar')}</button>
+    </div></div>`);
+    const panel=document.getElementById('maxPanel');
+    panel.addEventListener('click', e=>{ if(e.target===panel) closeOverlay(); });
+    document.getElementById('maxCancel').addEventListener('click', closeOverlay);
+    document.getElementById('maxSave').addEventListener('click', ()=>{
+      clearFieldErrors(panel);
+      const v=readNum('maxVal');
+      if(v!=null && (Number.isNaN(v) || !Number.isInteger(v) || v<1 || v>24)){ showFieldErrors([['maxVal', lx('Número inteiro de 1 a 24, ou vazio.','Nombre entier de 1 à 24, ou vide.','Whole number 1–24, or empty.')]]); return; }
+      m.maxVezesDia=v; save(); closeOverlay(); rerenderMeds();
+    });
   }
 
-  function giveDose(med, force){
-    const last = S.doses.filter(d=>d.nome===med.nome).sort((a,b)=>b.ts-a.ts)[0];
-    const hoursSince = last ? (Date.now()-last.ts)/3600000 : Infinity;
+  // opts.overInterval: a utilizadora confirmou registar antes do intervalo mínimo (como antes).
+  // opts.overMax: a utilizadora confirmou EXPLICITAMENTE ultrapassar o máximo diário — vale só para esta dose.
+  function giveDose(med, opts){
+    opts = (opts===true) ? {overInterval:true} : (opts||{});
     const warnEl = document.getElementById('doseWarning');
     const lang=(S.settings&&S.settings.lang)||'pt';
-    if(!force && hoursSince < med.intervaloHoras){
+    const nToday = dosesToday(med).length, max = med.maxVezesDia;
+    if(max && nToday>=max && !opts.overMax){
+      const txt = lx(`Limite diário atingido: ${nToday}/${max} doses de ${med.nome} hoje. Nova dose bloqueada.`,`Limite journalière atteinte : ${nToday}/${max} doses de ${med.nome} aujourd'hui. Nouvelle dose bloquée.`,`Daily limit reached: ${nToday}/${max} doses of ${med.nome} today. New dose blocked.`);
+      if(warnEl){ warnEl.innerHTML = `<div class="alert crit" style="flex-wrap:wrap;">${ICONS.pill} <span style="flex:1;min-width:180px;">${txt}</span> <button class="btn ghost" data-overMax="${med.id}" type="button" style="margin-left:auto;">${lx('Ultrapassar o limite…','Dépasser la limite…','Exceed the limit…')}</button></div>`;
+        warnEl.querySelector('[data-overMax]').addEventListener('click', ()=>showConfirm(
+          lx(`⚠️ Vais registar a ${nToday+1}.ª dose de ${med.nome} hoje, ACIMA do máximo de ${max} configurado. Só continues se o/a médico/a o indicou.`,`⚠️ Tu vas enregistrer la dose n°${nToday+1} de ${med.nome} aujourd'hui, AU-DESSUS du maximum de ${max}. Continue seulement si le médecin l'a indiqué.`,`⚠️ You are logging dose #${nToday+1} of ${med.nome} today, ABOVE the configured maximum of ${max}. Only continue if a doctor said so.`),
+          ()=>giveDose(med, Object.assign({}, opts, {overMax:true}))));
+      }
+      return;
+    }
+    const last = S.doses.filter(d=>d.medId ? d.medId===med.id : d.nome===med.nome).sort((a,b)=>b.ts-a.ts)[0];
+    const hoursSince = last ? (Date.now()-last.ts)/3600000 : Infinity;
+    if(!opts.overInterval && hoursSince < med.intervaloHoras){
       const warnTxt = lang==='fr' ? `Dernière dose de ${med.nome} il y a ${hoursSince.toFixed(1)}h — minimum ${med.intervaloHoras}h.`
         : lang==='en' ? `Last dose of ${med.nome} was ${hoursSince.toFixed(1)}h ago — minimum ${med.intervaloHoras}h.`
         : `Última dose de ${med.nome} há ${hoursSince.toFixed(1)}h — mínimo ${med.intervaloHoras}h.`;
       const forceLbl = lang==='fr' ? 'Enregistrer quand même' : lang==='en' ? 'Log anyway' : 'Registar mesmo assim';
       if(warnEl) warnEl.innerHTML = `<div class="alert crit">${ICONS.pill} ${warnTxt} <button class="btn crit" style="margin-left:8px;" data-forceDose="${med.id}" type="button">${forceLbl}</button></div>`;
       const fb = warnEl ? warnEl.querySelector('[data-forceDose]') : null;
-      if(fb) fb.addEventListener('click', ()=>giveDose(med, true));
+      if(fb) fb.addEventListener('click', ()=>giveDose(med, Object.assign({}, opts, {overInterval:true})));
       return;
     }
-    S.doses.unshift({id:uid(), ts:Date.now(), nome:med.nome, dose:med.dose});
+    const dose = {id:uid(), ts:Date.now(), nome:med.nome, dose:med.dose, medId:med.id};
+    if(opts.overMax) dose.acimaDoMax = true;
+    S.doses.unshift(dose);
+    save(); playChime(); rerenderMeds();
     const doneTxt = lang==='fr' ? `Dose de ${med.nome} enregistrée.` : lang==='en' ? `Dose of ${med.nome} logged.` : `Dose de ${med.nome} registada.`;
-    save(); playChime(); if(warnEl) warnEl.innerHTML = `<div class="alert good">${ICONS.pill} ${doneTxt}</div>`;
+    const w2 = document.getElementById('doseWarning');
+    if(w2){
+      w2.innerHTML = `<div class="alert good" style="flex-wrap:wrap;">${ICONS.pill} <span style="flex:1;">${doneTxt}</span> <button class="btn ghost" id="undoDose" type="button">${lx('Desfazer','Annuler','Undo')}</button></div>`;
+      document.getElementById('undoDose').addEventListener('click', ()=>{ const i=S.doses.findIndex(x=>x.id===dose.id); if(i>-1) S.doses.splice(i,1); save(); rerenderMeds();
+        const w3=document.getElementById('doseWarning'); if(w3) w3.innerHTML=`<div class="alert info">${ICONS.pill} ${lx('Dose anulada.','Dose annulée.','Dose undone.')}</div>`; });
+    }
   }
 
   function renderGallery(){
@@ -2118,7 +2221,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function renderMamadas(){
     const [t0,t1]=todayRange();
     const today = S.mamadas.filter(l=>inRange(l.ts,t0,t1));
-    const sorted = S.mamadas.slice().sort((a,b)=>a.ts-b.ts);
+    const sorted = today.slice().sort((a,b)=>a.ts-b.ts);   // só hoje (o cartão diz "Hoje")
     let avgInterval='—';
     if(sorted.length>1){ const diffs=[]; for(let i=1;i<sorted.length;i++) diffs.push(sorted[i].ts-sorted[i-1].ts); avgInterval = durStr(diffs.reduce((a,b)=>a+b,0)/diffs.length/60000); }
     const totalMl = today.reduce((s,l)=> s + (l.tipo==='biberao' ? (bottleMl(l)||0) : 0), 0);
@@ -2161,7 +2264,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         <div class="seg" id="fTipo"><button data-v="peito-esq" class="${tipo==='peito-esq'?'on':''}">${tr('Peito esq.')}</button><button data-v="peito-dir" class="${tipo==='peito-dir'?'on':''}">${tr('Peito dir.')}</button><button data-v="biberao" class="${tipo==='biberao'?'on':''}">${tr('Biberão')}</button></div>
       </div>
       <div id="fExtra"></div>
-      <div class="seg" id="fQual"><button data-v="ativa" class="${(!editing||editing.qualidade!=='fraca')?'on':''}">${tr('Sucção ativa')}</button><button data-v="fraca" class="${editing&&editing.qualidade==='fraca'?'on':''}">${tr('Sucção fraca')}</button></div>
+      <div class="form-row" style="flex-direction:column;"><label>${lx('Sucção (opcional)','Succion (facultatif)','Sucking (optional)')}</label><div class="seg" id="fQual"><button data-v="ativa" class="${editing&&editing.qualidade==='ativa'?'on':''}">${tr('Sucção ativa')}</button><button data-v="fraca" class="${editing&&editing.qualidade==='fraca'?'on':''}">${tr('Sucção fraca')}</button></div></div>
       <textarea id="fObs" placeholder="${tr('Observações (opcional)')}">${editing&&editing.obs?editing.obs:''}</textarea>
       <button class="btn wide" id="fSave" type="button">${editing?tr('Guardar alterações'):tr('Guardar')}</button>
       ${editing?`<button class="btn ghost wide" id="fCancelEdit" type="button" style="margin-top:8px;">${tr('Cancelar')}</button>`:''}
@@ -2175,16 +2278,33 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     }
     seg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); tipo=b.dataset.v; drawExtra(); }));
     drawExtra();
-    let qualidade = editing ? editing.qualidade : 'ativa';
+    // Sem escolha = não indicado (null). Tocar de novo na opção escolhida desmarca.
+    let qualidade = editing && editing.qualidade ? editing.qualidade : null;
     const qseg=document.getElementById('fQual');
-    qseg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ qseg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); qualidade=b.dataset.v; }));
+    qseg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ const off = qualidade===b.dataset.v; qseg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); qualidade = off ? null : b.dataset.v; if(!off) b.classList.add('on'); }));
     document.getElementById('fSave').addEventListener('click', ()=>{
+      const holderEl=document.getElementById('formHolder'); clearFieldErrors(holderEl);
       const data={ ts:dateTimeToTs(document.getElementById('fData').value, document.getElementById('fHora').value, !editing), tipo, qualidade, obs:document.getElementById('fObs').value.trim(),
         marcaFormula:undefined, mlOferecido:undefined, mlBebido:undefined, duracaoMin:undefined };
       // Campo vazio = sem valor (null). O placeholder "ex. …" é só visual e nunca é gravado.
-      const numOrNull = id => { const v=document.getElementById(id).value.trim(); return v==='' ? null : +v; };
-      if(tipo==='biberao'){ data.marcaFormula=document.getElementById('fMarca').value.trim(); data.mlOferecido=numOrNull('fOfer'); data.mlBebido=numOrNull('fBeb'); }
-      else data.duracaoMin=numOrNull('fDur');
+      const errs=[];
+      if(!(data.ts<=Date.now()+FUTURE_TOL_MS)) errs.push(['fHora', msgFuturo()]);
+      if(tipo==='biberao'){
+        data.marcaFormula=document.getElementById('fMarca').value.trim(); data.mlOferecido=readNum('fOfer'); data.mlBebido=readNum('fBeb');
+        const mlErr = v => (Number.isNaN(v)) ? lx('Número inválido.','Nombre invalide.','Invalid number.')
+          : (v!=null && v<=0) ? lx('Indica um valor maior que 0 ml, ou deixa vazio.','Indique une valeur supérieure à 0 ml, ou laisse vide.','Enter a value above 0 ml, or leave empty.')
+          : (v!=null && v>LIMITS.mlMax) ? lx(`Valor demasiado alto para um biberão (máx. ${LIMITS.mlMax} ml).`,`Valeur trop élevée pour un biberon (max. ${LIMITS.mlMax} ml).`,`Too high for one bottle (max ${LIMITS.mlMax} ml).`) : null;
+        const eo=mlErr(data.mlOferecido), eb=mlErr(data.mlBebido);
+        if(eo) errs.push(['fOfer', eo]);
+        if(eb) errs.push(['fBeb', eb]);
+        if(!eo && !eb && data.mlOferecido!=null && data.mlBebido!=null && data.mlBebido>data.mlOferecido)
+          errs.push(['fBeb', lx(`Bebido (${data.mlBebido} ml) não pode ser mais do que o oferecido (${data.mlOferecido} ml).`,`Bu (${data.mlBebido} ml) ne peut pas dépasser le proposé (${data.mlOferecido} ml).`,`Drunk (${data.mlBebido} ml) cannot exceed offered (${data.mlOferecido} ml).`)]);
+      } else {
+        data.duracaoMin=readNum('fDur');
+        if(Number.isNaN(data.duracaoMin)) errs.push(['fDur', lx('Número inválido.','Nombre invalide.','Invalid number.')]);
+        else if(data.duracaoMin!=null && (data.duracaoMin<=0 || data.duracaoMin>LIMITS.peitoMaxMin)) errs.push(['fDur', lx(`Indica uma duração entre 1 e ${LIMITS.peitoMaxMin} min, ou deixa vazio.`,`Indique une durée entre 1 et ${LIMITS.peitoMaxMin} min, ou laisse vide.`,`Enter a duration between 1 and ${LIMITS.peitoMaxMin} min, or leave empty.`)]);
+      }
+      if(!showFieldErrors(errs)) return;
       if(editing) Object.assign(editing, data); else S.mamadas.unshift({id:uid(), ...data});
       save(); playChime(); openForm=null; editId=null; renderMamadas();
     });
@@ -2195,7 +2315,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const el=document.getElementById('logList'); if(!el) return;
     const [t0,t1]=todayRange();
     const list=S.mamadas.filter(l=>inRange(l.ts,t0,t1)).sort((a,b)=>b.ts-a.ts);
-    el.innerHTML = list.length ? list.map(l=>`<div class="log-item" data-edit="${l.id}" style="cursor:pointer;"><div class="ic feed">${ICONS.bottle}</div><div class="body"><div class="title">${feedLabel(l)}</div><div class="meta">${l.qualidade==='fraca'?tr('sucção fraca'):tr('sucção ativa')}${l.obs?(' · '+l.obs):''}</div></div><div class="time">${fmtTimeOnly(l.ts)}</div><button class="log-del" data-del="${l.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join('') : `<div class="empty">${tr('Sem registos hoje.')}</div>${exampleHint(tr('Biberão')+' · '+tr('Bebido')+' 140ml · 14:30')}${exampleHint(tr('Peito esquerdo')+' · 15min · 17:00')}`;
+    el.innerHTML = list.length ? list.map(l=>`<div class="log-item" data-edit="${l.id}" style="cursor:pointer;"><div class="ic feed">${ICONS.bottle}</div><div class="body"><div class="title">${feedLabel(l)}</div><div class="meta">${[l.qualidade==='fraca'?tr('sucção fraca'):l.qualidade==='ativa'?tr('sucção ativa'):'', l.obs||''].filter(Boolean).join(' · ')}</div></div><div class="time">${fmtTimeOnly(l.ts)}</div><button class="log-del" data-del="${l.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join('') : `<div class="empty">${tr('Sem registos hoje.')}</div>${exampleHint(tr('Biberão')+' · '+tr('Bebido')+' 140ml · 14:30')}${exampleHint(tr('Peito esquerdo')+' · 15min · 17:00')}`;
     el.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click', ev=>{ ev.stopPropagation(); showConfirm(tr('Apagar este registo de mamada?'), ()=>{ const i=S.mamadas.findIndex(l=>l.id===b.dataset.del); if(i>-1) S.mamadas.splice(i,1); save(); renderFeedLog(); }); }));
     el.querySelectorAll('[data-edit]').forEach(row=>row.addEventListener('click', ()=>showRecordDetails('mamada', row.dataset.edit)));
   }
@@ -2205,7 +2325,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const [t0,t1]=todayRange();
     const today=S.fraldas.filter(l=>inRange(l.ts,t0,t1));
     const xixi=today.filter(d=>d.tipo==='xixi').length, coco=today.filter(d=>d.tipo==='coco').length;
-    const sorted=S.fraldas.slice().sort((a,b)=>a.ts-b.ts);
+    const sorted=today.slice().sort((a,b)=>a.ts-b.ts);   // só hoje (o cartão diz "Hoje")
     let avgInterval='—';
     if(sorted.length>1){ const diffs=[]; for(let i=1;i<sorted.length;i++) diffs.push(sorted[i].ts-sorted[i-1].ts); avgInterval=durStr(diffs.reduce((a,b)=>a+b,0)/diffs.length/60000); }
     const days=last7();
@@ -2243,12 +2363,12 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const holder=document.getElementById('formHolder'); if(!holder) return;
     if(openForm!=='new'){ holder.innerHTML=''; return; }
     const editing = editId ? S.fraldas.find(l=>l.id===editId) : null;
-    let tipo = editing ? editing.tipo : 'xixi', quantidade = editing ? editing.quantidade : 'normal';
+    let tipo = editing ? editing.tipo : 'xixi', quantidade = editing && editing.quantidade ? editing.quantidade : null;   // sem escolha = não indicado
     holder.innerHTML = `<div class="form-panel">
       ${editing?`<p class="muted" style="margin:0 0 4px;font-weight:700;">${tr('A editar registo')}</p>`:''}
       <div class="form-row"><div style="flex:1;"><label>${tr('Data')}</label><input type="date" id="dData" value="${localISO(editing?editing.ts:Date.now())}"></div><div style="flex:1;"><label>${tr('Hora')}</label><input type="time" id="dHora" value="${editing?hhmm(editing.ts):new Date().toTimeString().slice(0,5)}"></div></div>
       <div class="form-row" style="flex-direction:column;"><label>${tr('Tipo')}</label><div class="seg" id="dTipo"><button data-v="xixi" class="${tipo==='xixi'?'on':''}">${tr('Xixi')}</button><button data-v="coco" class="${tipo==='coco'?'on':''}">${tr('Cocó')}</button></div></div>
-      <div class="form-row" style="flex-direction:column;"><label>${tr('Quantidade')}</label><div class="seg" id="dQtd"><button data-v="pouco" class="${quantidade==='pouco'?'on':''}">${tr('Pouco')}</button><button data-v="normal" class="${quantidade==='normal'?'on':''}">${tr('Normal')}</button><button data-v="muito" class="${quantidade==='muito'?'on':''}">${tr('Muito')}</button></div></div>
+      <div class="form-row" style="flex-direction:column;"><label>${tr('Quantidade')} ${lx('(opcional)','(facultatif)','(optional)')}</label><div class="seg" id="dQtd"><button data-v="pouco" class="${quantidade==='pouco'?'on':''}">${tr('Pouco')}</button><button data-v="normal" class="${quantidade==='normal'?'on':''}">${tr('Normal')}</button><button data-v="muito" class="${quantidade==='muito'?'on':''}">${tr('Muito')}</button></div></div>
       <div id="dExtra"></div>
       <textarea id="dObs" placeholder="${tr('Observações (opcional)')}">${editing&&editing.obs?editing.obs:''}</textarea>
       <button class="btn wide" id="dSave" type="button">${editing?tr('Guardar alterações'):tr('Guardar')}</button>
@@ -2257,16 +2377,18 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const seg=document.getElementById('dTipo'), extra=document.getElementById('dExtra'), qseg=document.getElementById('dQtd');
     function drawExtra(){
       extra.innerHTML = tipo==='coco' ? `<div class="form-row">
-        <div style="flex:1;"><label>${tr('Cor')}</label><select id="dCor"><option value="Amarelo" ${editing&&editing.cor==='Amarelo'?'selected':''}>${tr('Amarelo')}</option><option value="Verde" ${editing&&editing.cor==='Verde'?'selected':''}>${tr('Verde')}</option><option value="Castanho" ${editing&&editing.cor==='Castanho'?'selected':''}>${tr('Castanho')}</option><option value="Branco (alerta)" ${editing&&editing.cor==='Branco (alerta)'?'selected':''}>${tr('Branco (alerta)')}</option></select></div>
-        <div style="flex:1;"><label>${tr('Consistência')}</label><select id="dCons"><option value="Mole" ${editing&&editing.consistencia==='Mole'?'selected':''}>${tr('Mole')}</option><option value="Normal" ${editing&&editing.consistencia==='Normal'?'selected':''}>${tr('Normal')}</option><option value="Dura" ${editing&&editing.consistencia==='Dura'?'selected':''}>${tr('Dura')}</option><option value="Seca" ${editing&&editing.consistencia==='Seca'?'selected':''}>${tr('Seca')}</option></select></div>
+        <div style="flex:1;"><label>${tr('Cor')}</label><select id="dCor"><option value="" ${!(editing&&editing.cor)?'selected':''}>${lx('— não indicado —','— non indiqué —','— not given —')}</option><option value="Amarelo" ${editing&&editing.cor==='Amarelo'?'selected':''}>${tr('Amarelo')}</option><option value="Verde" ${editing&&editing.cor==='Verde'?'selected':''}>${tr('Verde')}</option><option value="Castanho" ${editing&&editing.cor==='Castanho'?'selected':''}>${tr('Castanho')}</option><option value="Branco (alerta)" ${editing&&editing.cor==='Branco (alerta)'?'selected':''}>${tr('Branco (alerta)')}</option></select></div>
+        <div style="flex:1;"><label>${tr('Consistência')}</label><select id="dCons"><option value="" ${!(editing&&editing.consistencia)?'selected':''}>${lx('— não indicado —','— non indiqué —','— not given —')}</option><option value="Mole" ${editing&&editing.consistencia==='Mole'?'selected':''}>${tr('Mole')}</option><option value="Normal" ${editing&&editing.consistencia==='Normal'?'selected':''}>${tr('Normal')}</option><option value="Dura" ${editing&&editing.consistencia==='Dura'?'selected':''}>${tr('Dura')}</option><option value="Seca" ${editing&&editing.consistencia==='Seca'?'selected':''}>${tr('Seca')}</option></select></div>
       </div>` : '';
     }
     seg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); tipo=b.dataset.v; drawExtra(); }));
-    qseg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ qseg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); quantidade=b.dataset.v; }));
+    qseg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ const off = quantidade===b.dataset.v; qseg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); quantidade = off ? null : b.dataset.v; if(!off) b.classList.add('on'); }));
     drawExtra();
     document.getElementById('dSave').addEventListener('click', ()=>{
+      clearFieldErrors(document.getElementById('formHolder'));
       const data={ ts:dateTimeToTs(document.getElementById('dData').value, document.getElementById('dHora').value, !editing), tipo, quantidade, obs:document.getElementById('dObs').value.trim(), cor:undefined, consistencia:undefined };
-      if(tipo==='coco'){ data.cor=document.getElementById('dCor').value; data.consistencia=document.getElementById('dCons').value; }
+      if(tipo==='coco'){ data.cor=document.getElementById('dCor').value||null; data.consistencia=document.getElementById('dCons').value||null; }
+      if(!showFieldErrors(data.ts<=Date.now()+FUTURE_TOL_MS ? [] : [['dHora', msgFuturo()]])) return;
       if(editing) Object.assign(editing, data); else S.fraldas.unshift({id:uid(), ...data});
       save(); playChime(); openForm=null; editId=null; renderFraldas();
     });
@@ -2333,8 +2455,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const fimVal = editing ? hhmm(editing.fim) : now.toTimeString().slice(0,5);
     holder.innerHTML = `<div class="form-panel">
       ${editing?`<p class="muted" style="margin:0 0 4px;font-weight:700;">${tr('A editar registo')}</p>`:''}
-      <div class="form-row" style="flex-direction:column;"><label>${tr('Período')}</label><div class="seg" id="sPeriodo"><button data-v="noite" class="${(!editing||editing.periodo==='noite')?'on':''}">${tr('Noite')}</button><button data-v="sesta" class="${editing&&editing.periodo==='sesta'?'on':''}">${tr('Sesta')}</button></div></div>
-      <div class="form-row" style="flex-direction:column;"><label>${tr('Posição')}</label><div class="seg" id="sPos"><button data-v="costas" class="${(!editing||editing.posicao==='costas')?'on':''}">${tr('Costas')}</button><button data-v="lado" class="${editing&&editing.posicao==='lado'?'on':''}">${tr('Lado')}</button><button data-v="barriga" class="${editing&&editing.posicao==='barriga'?'on':''}">${tr('Barriga')}</button></div></div>
+      <div class="form-row" style="flex-direction:column;"><label>${tr('Período')} ${lx('(opcional)','(facultatif)','(optional)')} <span class="muted" id="sPeriodoHint" style="font-weight:600;"></span></label><div class="seg" id="sPeriodo"><button data-v="noite" class="${editing&&editing.periodo==='noite'?'on':''}">${tr('Noite')}</button><button data-v="sesta" class="${editing&&editing.periodo==='sesta'?'on':''}">${tr('Sesta')}</button></div></div>
+      <div class="form-row" style="flex-direction:column;"><label>${tr('Posição')} ${lx('(opcional)','(facultatif)','(optional)')}</label><div class="seg" id="sPos"><button data-v="costas" class="${editing&&editing.posicao==='costas'?'on':''}">${tr('Costas')}</button><button data-v="lado" class="${editing&&editing.posicao==='lado'?'on':''}">${tr('Lado')}</button><button data-v="barriga" class="${editing&&editing.posicao==='barriga'?'on':''}">${tr('Barriga')}</button></div></div>
       <div class="form-row"><div style="flex:1;"><label>${tr('Data')}</label><input type="date" id="sData" value="${localISO(editing?editing.inicio:Date.now())}"></div><div style="flex:1;"><label>${tr('Adormeceu')}</label><input type="time" id="sIni" value="${iniVal}"></div></div>
       ${(!isSleeping&&!editing) ? `<label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:.82rem;"><input type="checkbox" id="sAindaDorme" style="width:auto;"> ${tr('Ainda está a dormir — registar só a hora que adormeceu')}</label>` : ''}
       <div id="sFimBlock">
@@ -2345,15 +2467,22 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <button class="btn wide" id="sSave" type="button">${editing?tr('Guardar alterações'):tr('Guardar')}</button>
       ${editing?`<button class="btn ghost wide" id="sCancelEdit" type="button" style="margin-top:8px;">${tr('Cancelar')}</button>`:''}
     </div>`;
-    const seg=document.getElementById('sPeriodo'); let periodo = editing ? editing.periodo : 'noite';
-    seg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); periodo=b.dataset.v; }));
-    const posSeg=document.getElementById('sPos'); let posicao = editing ? editing.posicao : 'costas';
-    posSeg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ posSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); posicao=b.dataset.v; }));
+    // Sem escolha = não indicado (null). A hora só SUGERE Noite/Sesta (texto), nunca grava sozinha.
+    const toggleSeg = (segEl, get, set) => segEl.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ const off = get()===b.dataset.v; segEl.querySelectorAll('button').forEach(x=>x.classList.remove('on')); set(off ? null : b.dataset.v); if(!off) b.classList.add('on'); }));
+    const seg=document.getElementById('sPeriodo'); let periodo = editing && editing.periodo ? editing.periodo : null;
+    toggleSeg(seg, ()=>periodo, v=>{ periodo=v; });
+    const posSeg=document.getElementById('sPos'); let posicao = editing && editing.posicao ? editing.posicao : null;
+    toggleSeg(posSeg, ()=>posicao, v=>{ posicao=v; });
+    const hintEl=document.getElementById('sPeriodoHint');
+    const updHint=()=>{ const t=document.getElementById('sIni').value; if(!hintEl||!t) return; const h=+t.split(':')[0]; hintEl.textContent = '· '+lx('sugestão pela hora: ','suggestion selon l\'heure : ','suggested by time: ')+((h>=20||h<7)?tr('Noite'):tr('Sesta')); };
+    updHint(); document.getElementById('sIni').addEventListener('input', updHint);
     const aindaChk = document.getElementById('sAindaDorme');
     const fimBlock = document.getElementById('sFimBlock');
     if(aindaChk) aindaChk.addEventListener('change', ()=>{ fimBlock.style.display = aindaChk.checked ? 'none' : 'block'; });
     document.getElementById('sSave').addEventListener('click', ()=>{
+      clearFieldErrors(document.getElementById('formHolder'));
       const inicio = dateTimeToTs(document.getElementById('sData').value, document.getElementById('sIni').value, !editing);
+      if(!(inicio<=Date.now()+FUTURE_TOL_MS)){ showFieldErrors([['sIni', msgFuturo()]]); return; }
       if(aindaChk && aindaChk.checked){
         S.running.sleepStart = inicio;
         save(); playChime(); openForm=null; editId=null; renderSono();
@@ -2361,8 +2490,17 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       }
       const [fh,fm]=document.getElementById('sFim').value.split(':').map(Number);
       let fim=new Date(inicio); fim.setHours(fh,fm,0,0);
-      if(fim.getTime()<=inicio) fim.setDate(fim.getDate()+1);
-      const data={ periodo, posicao, inicio, fim:fim.getTime(), duracaoMin:(fim.getTime()-inicio)/60000, qualidade:(v=>v===''?null:+v)(document.getElementById('sQual').value.trim()), interrupcoes:(v=>v===''?null:+v)(document.getElementById('sInter').value.trim()), obs:document.getElementById('sObs').value.trim() };
+      const errs=[];
+      if(fim.getTime()===inicio) errs.push(['sFim', lx('A hora de acordar é igual à de adormecer. Corrige uma das horas.','L\'heure de réveil est égale à celle d\'endormissement.','Wake time equals sleep time. Fix one of them.')]);
+      if(fim.getTime()<inicio) fim.setDate(fim.getDate()+1);   // atravessa a meia-noite (ex. 22:00 → 06:00): permitido
+      const durMin=(fim.getTime()-inicio)/60000;
+      if(!errs.length && durMin>LIMITS.sonoMaxH*60) errs.push(['sFim', lx(`Duração de ${durStr(durMin)} parece impossível (máx. ${LIMITS.sonoMaxH}h por registo). Verifica as horas.`,`Durée de ${durStr(durMin)} impossible (max. ${LIMITS.sonoMaxH}h). Vérifie les heures.`,`Duration of ${durStr(durMin)} looks impossible (max ${LIMITS.sonoMaxH}h). Check the times.`)]);
+      if(!errs.length && fim.getTime()>Date.now()+FUTURE_TOL_MS) errs.push(['sFim', lx('A hora de acordar não pode ser no futuro.','L\'heure de réveil ne peut pas être dans le futur.','Wake time cannot be in the future.')]);
+      const qual=readNum('sQual'), inter=readNum('sInter');
+      if(qual!=null && (Number.isNaN(qual) || !Number.isInteger(qual) || qual<LIMITS.qualMin || qual>LIMITS.qualMax)) errs.push(['sQual', lx('A qualidade tem de ser um número inteiro de 1 a 10.','La qualité doit être un nombre entier de 1 à 10.','Quality must be a whole number from 1 to 10.')]);
+      if(inter!=null && (Number.isNaN(inter) || !Number.isInteger(inter) || inter<0 || inter>LIMITS.interMax)) errs.push(['sInter', lx(`Interrupções: número inteiro de 0 a ${LIMITS.interMax}.`,`Interruptions : nombre entier de 0 à ${LIMITS.interMax}.`,`Interruptions: whole number from 0 to ${LIMITS.interMax}.`)]);
+      if(!showFieldErrors(errs)) return;
+      const data={ periodo, posicao, inicio, fim:fim.getTime(), duracaoMin:durMin, qualidade:qual, interrupcoes:inter, obs:document.getElementById('sObs').value.trim() };
       if(editing) Object.assign(editing, data); else S.sono.unshift({id:uid(), ...data});
       save(); playChime(); openForm=null; editId=null; renderSono();
     });
@@ -2373,7 +2511,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const el=document.getElementById('logList'); if(!el) return;
     const cutoff = Date.now() - 24*3600000;
     const list=S.sono.filter(l=>(l.fim||l.inicio)>=cutoff).slice().sort((a,b)=>b.inicio-a.inicio);
-    el.innerHTML = list.length ? list.map(l=>`<div class="log-item" data-edit="${l.id}" style="cursor:pointer;"><div class="ic sleepc">${ICONS.moon}</div><div class="body"><div class="title">${l.periodo==='noite'?tr('Noite'):tr('Sesta')} · ${fmtTimeOnly(l.inicio)} → ${fmtTimeOnly(l.fim)}</div><div class="meta">${durStr(l.duracaoMin)}${l.qualidade!=null?(' · '+tr('qualidade')+' '+l.qualidade+'/10'):''}${l.interrupcoes?(' · '+l.interrupcoes+' '+tr('interrupções')):''}${l.posicao?(' · '+tr(l.posicao)):''}</div></div><button class="log-del" data-del="${l.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join('') : `<div class="empty">${tr('Sem registos.')}</div>${exampleHint(tr('Sesta')+' · 13:00 → 14:30 · 1h 30min')}`;
+    el.innerHTML = list.length ? list.map(l=>`<div class="log-item" data-edit="${l.id}" style="cursor:pointer;"><div class="ic sleepc">${ICONS.moon}</div><div class="body"><div class="title">${sleepPeriodLabel(l)} · ${fmtTimeOnly(l.inicio)} → ${fmtTimeOnly(l.fim)}</div><div class="meta">${durStr(l.duracaoMin)}${l.qualidade!=null?(' · '+tr('qualidade')+' '+l.qualidade+'/10'):''}${l.interrupcoes?(' · '+l.interrupcoes+' '+tr('interrupções')):''}${l.posicao?(' · '+tr(l.posicao)):''}</div></div><button class="log-del" data-del="${l.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join('') : `<div class="empty">${tr('Sem registos.')}</div>${exampleHint(tr('Sesta')+' · 13:00 → 14:30 · 1h 30min')}`;
     el.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click', ev=>{ ev.stopPropagation(); showConfirm(tr('Apagar este registo de sono?'), ()=>{ const i=S.sono.findIndex(l=>l.id===b.dataset.del); if(i>-1) S.sono.splice(i,1); save(); renderSleepLog(); }); }));
     el.querySelectorAll('[data-edit]').forEach(row=>row.addEventListener('click', ()=>showRecordDetails('sono', row.dataset.edit)));
   }
@@ -2434,8 +2572,14 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     ${measurementsListHtml()}`;
     document.getElementById('gSave').addEventListener('click', ()=>{
       const date=document.getElementById('gDate').value||todayISO();
-      const toNum = v => parseFloat((v||'').replace(',','.'));
-      const weight=toNum(document.getElementById('gWeight').value), height=toNum(document.getElementById('gHeight').value), head=toNum(document.getElementById('gHead').value);
+      clearFieldErrors(document.getElementById('main'));
+      // "6,5" e "6.5" → 6,5 (vírgula ou ponto). Valores fora do intervalo possível são rejeitados junto ao campo.
+      const weight=readNum('gWeight'), height=readNum('gHeight'), head=readNum('gHead');
+      const errs=[];
+      [['gWeight','peso',weight],['gHeight','altura',height],['gHead','pc',head]].forEach(([id,m,v])=>{ const e=measureError(m,v); if(e) errs.push([id,e]); });
+      if(date>todayISO()) errs.push(['gDate', msgFuturo()]);
+      if(!errs.length && weight==null && height==null && head==null) errs.push(['gWeight', lx('Preenche pelo menos um valor.','Remplis au moins une valeur.','Fill in at least one value.')]);
+      if(!showFieldErrors(errs)) return;
       if(weight) S.evolucao.peso.push({date, valor:weight});
       if(height) S.evolucao.altura.push({date, valor:height});
       if(head) S.evolucao.pc.push({date, valor:head});
@@ -2444,6 +2588,14 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     document.querySelectorAll('[data-meas-metric]').forEach(b=>b.addEventListener('click', ()=>showMeasurementDetails(b.dataset.measMetric, +b.dataset.measIdx)));
   }
   const MEAS = { peso:{lbl:'Peso', unit:'kg'}, altura:{lbl:'Altura', unit:'cm'}, pc:{lbl:'Perímetro cefálico', unit:'cm'} };
+  // null (vazio) = sem erro. Devolve a mensagem de erro ou null.
+  function measureError(metric, v){
+    if(v==null) return null;
+    const [lo,hi]=LIMITS[metric], u=MEAS[metric].unit, f=x=>fmtDec(x, x<1?1:0);
+    if(Number.isNaN(v)) return lx('Número inválido. Usa, por exemplo, 6,5 ou 6.5.','Nombre invalide. Utilise par ex. 6,5 ou 6.5.','Invalid number. Use e.g. 6.5.');
+    if(v<lo || v>hi) return lx(`Valor impossível para ${tr(MEAS[metric].lbl).toLowerCase()} (${f(lo)}–${f(hi)} ${u}). Verifica a vírgula: 6,5 é seis vírgula cinco.`,`Valeur impossible (${f(lo)}–${f(hi)} ${u}). Vérifie la virgule : 6,5.`,`Impossible value (${f(lo)}–${f(hi)} ${u}). Check the decimal point: 6.5.`);
+    return null;
+  }
   function measurementsListHtml(){
     const items=[];
     Object.keys(MEAS).forEach(k=>(S.evolucao[k]||[]).forEach((r,i)=>items.push({k,i,r})));
@@ -2460,7 +2612,6 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <h2 style="margin:0 0 10px;display:flex;align-items:center;gap:8px;">${ICONS.chart} ${tr(M.lbl)}</h2>
       ${editing ? `<div class="form-row"><div style="flex:1;"><label>${tr('Data')}</label><input type="date" id="mDate" value="${rec.date||''}"></div>
           <div style="flex:1;"><label>${tr(M.lbl)} (${M.unit})</label><input type="text" inputmode="decimal" id="mVal" value="${rec.valor}"></div></div>
-        <p class="muted" id="mErr" style="min-height:1em;margin:4px 0 0;"></p>
         <button class="btn wide" id="mSave" type="button">${tr('Guardar alterações')}</button>`
       : `<div class="rec-line"><span>${tr('Data')}</span><b>${rec.date ? new Date(rec.date+'T12:00:00').toLocaleDateString(localeTag()) : '—'}</b></div>
         <div class="rec-line"><span>${tr(M.lbl)}</span><b>${rec.valor} ${M.unit}</b></div>
@@ -2475,8 +2626,11 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       const arr=S.evolucao[metric]; const i=arr.indexOf(rec); if(i>-1) arr.splice(i,1); save(); renderEvolucao();
     }));
     const sb=document.getElementById('mSave'); if(sb) sb.addEventListener('click', ()=>{
-      const v=parseFloat((document.getElementById('mVal').value||'').replace(',','.')), d=document.getElementById('mDate').value;
-      if(!(v>0) || !d){ document.getElementById('mErr').textContent = lx('Indica uma data e um valor válido.','Indique une date et une valeur valide.','Enter a date and a valid value.'); return; }
+      clearFieldErrors(document.getElementById('measPanel'));
+      const v=readNum('mVal'), d=document.getElementById('mDate').value, errs=[];
+      if(!d) errs.push(['mDate', lx('Indica a data.','Indique la date.','Enter the date.')]); else if(d>todayISO()) errs.push(['mDate', msgFuturo()]);
+      if(v==null) errs.push(['mVal', lx('Indica o valor.','Indique la valeur.','Enter the value.')]); else { const e=measureError(metric,v); if(e) errs.push(['mVal', e]); }
+      if(!showFieldErrors(errs)) return;
       const arr=S.evolucao[metric]; const i=arr.indexOf(rec); if(i<0){ closeOverlay(); return; }
       rec.valor=v; rec.date=d; save(); closeOverlay(); renderEvolucao();
     });
@@ -2646,7 +2800,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       bottle:{ n:bott.length, ml, noMl:bott.length-withMl.length, days:new Set(bott.map(l=>dayKey(l.ts))).size, mlDays, mlPerDay: mlDays ? ml/mlDays : null },
       breast:{ n:breast.length, left:breast.filter(l=>l.tipo==='peito-esq').length, right:breast.filter(l=>l.tipo==='peito-dir').length,
         durTotal, withDur:withDur.length, avgDur: withDur.length ? durTotal/withDur.length : null, days:new Set(breast.map(l=>dayKey(l.ts))).size },
-      sleep:{ n:sono.length, nights:sono.filter(l=>l.periodo==='noite').length, naps:sono.filter(l=>l.periodo!=='noite').length, min:sonoMin, days:sonoDays, perDay: sonoDays ? sonoMin/sonoDays : null },
+      sleep:{ n:sono.length, nights:sono.filter(l=>l.periodo==='noite').length, naps:sono.filter(l=>l.periodo==='sesta').length, noPeriod:sono.filter(l=>l.periodo!=='noite'&&l.periodo!=='sesta').length, min:sonoMin, days:sonoDays, perDay: sonoDays ? sonoMin/sonoDays : null },
       diaper:{ n:fr.length, xixi, coco, days:frDays, xixiPerDay: frDays ? xixi/frDays : null, cocoPerDay: frDays ? coco/frDays : null },
     };
   }
@@ -2659,6 +2813,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     return {dp,da,np:p.length,na:a.length};
   }
   // Secções do resumo (usadas no ecrã e no PDF). Cada linha é HTML simples (<b>, <span class="muted">).
+  // Singular/plural: pl(1,…) → "1 noite", pl(2,…) → "2 noites". parts() junta só as partes diferentes de zero.
+  function pl(n, ptS, ptP, frS, frP, enS, enP){ return n+' '+(n===1 ? lx(ptS,frS,enS) : lx(ptP,frP,enP)); }
+  function parts(list){ return list.filter(x=>x && x.n>0).map(x=>x.txt).join(' · '); }
   function summarySections(days, weekOffset){
     let cur, prev, g, span=days;
     if(days===7){
@@ -2667,7 +2824,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     } else { cur=periodSummary(days,0); prev=periodSummary(days,days); g=growthDelta(days); }
     const dia=lx('dia','jour','day');
     const daysLine = n => `<b>${n}/${span}</b> ${lx('dias com registos','jours avec enregistrements','days with records')}`+(span<days?` <span class="muted">(${lx('semana em curso','semaine en cours','week in progress')})</span>`:'');
-    const avgNote = n => `<span class="muted">(${lx('média dos','moyenne sur les','average over the')} ${n} ${lx(n===1?'dia com registos':'dias com registos',n===1?'jour avec enregistrements':'jours avec enregistrements',n===1?'day with records':'days with records')})</span>`;
+    const avgNote = n => `<span class="muted">(${n===1 ? lx('só 1 dia com registos','1 seul jour avec enregistrements','only 1 day with records') : lx(`média dos ${n} dias com registos`,`moyenne sur ${n} jours avec enregistrements`,`average over ${n} days with records`)})</span>`;
     const prevLbl = days===7 ? lx('Semana anterior','Semaine précédente','Previous week') : lx(`${days} dias anteriores`,`${days} jours précédents`,`Previous ${days} days`);
     const minDays = days===7 ? 3 : 7; // "dados suficientes" para comparar: nº mínimo de dias com registos nos DOIS períodos
     const canCmp = (c,p) => c>=minDays && p>=minDays;
@@ -2681,25 +2838,27 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       if(B.mlPerDay!=null) lines.push(`<b>~${fmtInt(B.mlPerDay)} ml/${dia}</b> ${avgNote(B.mlDays)}`);
       lines.push(daysLine(B.days));
       let cmp='';
-      if(canCmp(B.mlDays,PB.mlDays)) cmp=`${prevLbl}: ${PB.n} ${lx('biberões','biberons','bottles')} · ${fmtInt(PB.ml)} ml · ~${fmtInt(PB.mlPerDay)} ml/${dia} (${PB.days}/${days}) — ${lx('diferença','différence','difference')}: ${signed(B.mlPerDay-PB.mlPerDay,fmtInt)} ml/${dia}`;
+      if(canCmp(B.mlDays,PB.mlDays)) cmp=`${prevLbl}: ${pl(PB.n,'biberão','biberões','biberon','biberons','bottle','bottles')} · ${fmtInt(PB.ml)} ml · ~${fmtInt(PB.mlPerDay)} ml/${dia} (${PB.days}/${days}) — ${lx('diferença','différence','difference')}: ${signed(B.mlPerDay-PB.mlPerDay,fmtInt)} ml/${dia}`;
       out.push({ic:ICONS.bottle, title:lx('Alimentação · biberão','Alimentation · biberon','Feeding · bottle'), lines, cmp});
     }
     const M=cur.breast, PM=prev.breast;
     if(M.n){
-      const lines=[`<b>${M.n}</b> ${lx(M.n===1?'sessão de amamentação':'sessões de amamentação',M.n===1?'tétée':'tétées',M.n===1?'breastfeeding session':'breastfeeding sessions')} <span class="muted">(${M.left} ${lx('esq.','gauche','left')} · ${M.right} ${lx('dir.','droite','right')})</span>`];
+      const sides = parts([{n:M.left, txt:M.left+' '+lx('esq.','gauche','left')},{n:M.right, txt:M.right+' '+lx('dir.','droite','right')}]);
+      const lines=[`<b>${M.n}</b> ${lx(M.n===1?'sessão de amamentação':'sessões de amamentação',M.n===1?'tétée':'tétées',M.n===1?'breastfeeding session':'breastfeeding sessions')}`+(sides?` <span class="muted">(${sides})</span>`:'')];
       if(M.withDur){
         lines.push(`<b>${durStr(M.durTotal)}</b> ${lx('de duração total registada','de durée totale enregistrée','total duration logged')}`+(M.withDur<M.n?` <span class="muted">(${M.n-M.withDur} ${lx('sem duração','sans durée','without a duration')})</span>`:''));
-        lines.push(`<b>~${Math.round(M.avgDur)} min</b> ${lx('por sessão, em média','par tétée en moyenne','per session on average')} <span class="muted">(${M.withDur} ${lx('sessões com duração','tétées avec durée','sessions with a duration')})</span>`);
+        lines.push(`<b>~${Math.round(M.avgDur)} min</b> ${lx('por sessão, em média','par tétée en moyenne','per session on average')} <span class="muted">(${pl(M.withDur,'sessão com duração','sessões com duração','tétée avec durée','tétées avec durée','session with a duration','sessions with a duration')})</span>`);
       }
       lines.push(daysLine(M.days));
       lines.push(`<span class="muted">${lx('A amamentação é contada em sessões e minutos — não é convertida em ml.','L\'allaitement est compté en tétées et minutes — pas converti en ml.','Breastfeeding is counted in sessions and minutes — never converted to ml.')}</span>`);
       let cmp='';
-      if(canCmp(M.days,PM.days)) cmp=`${prevLbl}: ${PM.n} ${lx('sessões','tétées','sessions')}`+(PM.avgDur!=null?` · ~${Math.round(PM.avgDur)} min/${lx('sessão','tétée','session')}`:'')+` (${PM.days}/${days})`;
+      if(canCmp(M.days,PM.days)) cmp=`${prevLbl}: ${pl(PM.n,'sessão','sessões','tétée','tétées','session','sessions')}`+(PM.avgDur!=null?` · ~${Math.round(PM.avgDur)} min/${lx('sessão','tétée','session')}`:'')+` (${PM.days}/${days})`;
       out.push({ic:ICONS.bottle, title:lx('Alimentação · amamentação','Alimentation · allaitement','Feeding · breastfeeding'), lines, cmp});
     }
     const Z=cur.sleep, PZ=prev.sleep;
     if(Z.n){
-      const lines=[`<b>${Z.n}</b> ${lx('períodos de sono registados','périodes de sommeil enregistrées','sleep periods logged')} <span class="muted">(${Z.nights} ${lx('noites','nuits','nights')} · ${Z.naps} ${lx('sestas','siestes','naps')})</span>`,
+      const kinds = parts([{n:Z.nights, txt:pl(Z.nights,'noite','noites','nuit','nuits','night','nights')},{n:Z.naps, txt:pl(Z.naps,'sesta','sestas','sieste','siestes','nap','naps')},{n:Z.noPeriod, txt:Z.noPeriod+' '+lx('sem período indicado','sans période indiquée','with no period given')}]);
+      const lines=[`<b>${Z.n}</b> ${lx(Z.n===1?'período de sono registado':'períodos de sono registados',Z.n===1?'période de sommeil enregistrée':'périodes de sommeil enregistrées',Z.n===1?'sleep period logged':'sleep periods logged')}`+(kinds?` <span class="muted">(${kinds})</span>`:''),
         `<b>${durStr(Z.min)}</b> ${lx('de sono registado','de sommeil enregistré','of sleep logged')}`,
         `<b>~${durStr(Z.perDay)}/${dia}</b> ${avgNote(Z.days)}`,
         daysLine(Z.days)];
@@ -2709,17 +2868,19 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     }
     const F=cur.diaper, PF=prev.diaper;
     if(F.n){
-      const lines=[`<b>${F.n}</b> ${lx('fraldas registadas','couches enregistrées','diapers logged')} <span class="muted">(${F.xixi} ${tr('xixi')} · ${F.coco} ${tr('cocó')})</span>`,
-        `<b>~${fmtDec(F.xixiPerDay,1)} ${tr('xixi')}/${dia}</b> · ~${fmtDec(F.cocoPerDay,1)} ${tr('cocó')}/${dia} ${avgNote(F.days)}`,
+      const fk = parts([{n:F.xixi, txt:F.xixi+' '+tr('xixi')},{n:F.coco, txt:F.coco+' '+tr('cocó')}]);
+      const perDay = parts([{n:F.xixi, txt:`~${fmtDec(F.xixiPerDay,1)} ${tr('xixi')}/${dia}`},{n:F.coco, txt:`~${fmtDec(F.cocoPerDay,1)} ${tr('cocó')}/${dia}`}]);
+      const lines=[`<b>${F.n}</b> ${lx(F.n===1?'fralda registada':'fraldas registadas',F.n===1?'couche enregistrée':'couches enregistrées',F.n===1?'diaper logged':'diapers logged')}`+(fk?` <span class="muted">(${fk})</span>`:''),
+        `<b>${perDay}</b> ${avgNote(F.days)}`,
         daysLine(F.days)];
       let cmp='';
-      if(canCmp(F.days,PF.days)) cmp=`${prevLbl}: ~${fmtDec(PF.xixiPerDay,1)} ${tr('xixi')}/${dia} · ~${fmtDec(PF.cocoPerDay,1)} ${tr('cocó')}/${dia} (${PF.days}/${days})`;
+      if(canCmp(F.days,PF.days)) cmp=`${prevLbl}: ${parts([{n:PF.xixi, txt:`~${fmtDec(PF.xixiPerDay,1)} ${tr('xixi')}/${dia}`},{n:PF.coco, txt:`~${fmtDec(PF.cocoPerDay,1)} ${tr('cocó')}/${dia}`}])} (${PF.days}/${days})`;
       out.push({ic:ICONS.drop, title:lx('Fraldas','Couches','Diapers'), lines, cmp});
     }
     if(g.dp!=null || g.da!=null){
       const lines=[];
-      if(g.dp!=null) lines.push(`${tr('Peso')}: <b>${g.dp>=0?'+':'−'}${fmtDec(Math.abs(g.dp),2)} kg</b> <span class="muted">(${g.np} ${lx('medições no período','mesures sur la période','measurements in the period')})</span>`);
-      if(g.da!=null) lines.push(`${tr('Altura')}: <b>${g.da>=0?'+':'−'}${fmtDec(Math.abs(g.da),1)} cm</b> <span class="muted">(${g.na} ${lx('medições no período','mesures sur la période','measurements in the period')})</span>`);
+      if(g.dp!=null) lines.push(`${tr('Peso')}: <b>${g.dp>=0?'+':'−'}${fmtDec(Math.abs(g.dp),2)} kg</b> <span class="muted">(${pl(g.np,'medição no período','medições no período','mesure sur la période','mesures sur la période','measurement in the period','measurements in the period')})</span>`);
+      if(g.da!=null) lines.push(`${tr('Altura')}: <b>${g.da>=0?'+':'−'}${fmtDec(Math.abs(g.da),1)} cm</b> <span class="muted">(${pl(g.na,'medição no período','medições no período','mesure sur la période','mesures sur la période','measurement in the period','measurements in the period')})</span>`);
       out.push({ic:ICONS.chart, title:lx('Crescimento','Croissance','Growth'), lines, cmp:''});
     }
     return {cur, sections:out};
@@ -2737,7 +2898,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function summaryPlainText(days, weekOffset){
     const {cur, sections} = summarySections(days, weekOffset);
     const strip = h => h.replace(/<[^>]+>/g,'').replace(/ | /g,' ').replace(/−/g,'-');
-    if(!sections.length) return lx('Sem registos neste período.','Aucun enregistrement sur cette période.','No records in this period.');
+    if(!sections.length) return strip(periodLabel(cur))+'\n\n'+lx('Sem registos neste período.','Aucun enregistrement sur cette période.','No records in this period.');
     return strip(periodLabel(cur))+'\n'+lx('Médias calculadas só sobre os dias com registos.','Moyennes calculées uniquement sur les jours avec enregistrements.','Averages use only days with records.')+'\n\n'+
       sections.map(sec=>strip(sec.title).toUpperCase()+'\n'+sec.lines.map(l=>'  '+strip(l)).join('\n')+(sec.cmp?'\n  '+strip(sec.cmp):'')).join('\n\n');
   }
@@ -2747,7 +2908,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const cur=periodSummary(7,0), prev=periodSummary(7,7);
     const dia=lx('dia','jour','day');
     if(cur.sleep.perDay!=null){
-      let txt = lx('Sono','Sommeil','Sleep')+`: ~${durStr(cur.sleep.perDay)}/${dia} ${lx('nos','sur les','over the')} ${cur.sleep.days} ${lx('dias com registos esta semana','jours avec enregistrements cette semaine','days with records this week')}`;
+      let txt = lx('Sono','Sommeil','Sleep')+`: ~${durStr(cur.sleep.perDay)}/${dia} (${pl(cur.sleep.days,'dia com registos','dias com registos','jour avec enregistrements','jours avec enregistrements','day with records','days with records')} ${lx('nos últimos 7 dias','sur les 7 derniers jours','in the last 7 days')})`;
       if(prev.sleep.perDay!=null && cur.sleep.days>=3 && prev.sleep.days>=3){
         const diffPct=Math.round(((cur.sleep.perDay-prev.sleep.perDay)/prev.sleep.perDay)*100);
         txt += ` (${diffPct>=0?'+':''}${diffPct}% ${lx('vs semana anterior','vs semaine précédente','vs previous week')})`;
@@ -2762,7 +2923,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       items.push({ic:ICONS.bottle, txt:lx(`Intervalo médio entre mamadas registadas (últimos 3 dias): ${avgInt}h.`,`Intervalle moyen entre repas enregistrés (3 derniers jours) : ${avgInt}h.`,`Average interval between logged feeds (last 3 days): ${avgInt}h.`)});
     }
     if(cur.diaper.xixiPerDay!=null){
-      let txt = `${lx('Fraldas de xixi','Couches mouillées','Wet diapers')}: ~${fmtDec(cur.diaper.xixiPerDay,1)}/${dia} ${lx('nos','sur les','over the')} ${cur.diaper.days} ${lx('dias com registos esta semana','jours avec enregistrements cette semaine','days with records this week')}`;
+      let txt = `${lx('Fraldas de xixi','Couches mouillées','Wet diapers')}: ~${fmtDec(cur.diaper.xixiPerDay,1)}/${dia} (${pl(cur.diaper.days,'dia com registos','dias com registos','jour avec enregistrements','jours avec enregistrements','day with records','days with records')} ${lx('nos últimos 7 dias','sur les 7 derniers jours','in the last 7 days')})`;
       if(prev.diaper.xixiPerDay && cur.diaper.days>=3 && prev.diaper.days>=3){
         const diffPct=Math.round(((cur.diaper.xixiPerDay-prev.diaper.xixiPerDay)/prev.diaper.xixiPerDay)*100);
         txt += ` (${diffPct>=0?'+':''}${diffPct}% ${lx('vs semana anterior','vs semaine précédente','vs previous week')})`;
@@ -2875,7 +3036,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       doc.setFontSize(10); doc.text(new Date().toLocaleDateString(lang==='en'?'en-GB':lang==='fr'?'fr-FR':'pt-PT'), 14, 25);
       const childLbl = lang==='fr'?'Enfant':lang==='en'?'Child':'Criança';
       const monthsLbl = lang==='fr'?'mois':lang==='en'?'months':'meses';
-      const lines = doc.splitTextToSize(`${childLbl}: ${S.crianca.nome} (${months} ${monthsLbl})\n\n`+(days===7 ? (()=>{ const w=viewedWeek(weekOffset); const f=ts=>new Date(ts).toLocaleDateString(localeTag(),{day:'numeric',month:'short'}); return f(w.a)+' – '+f(w.b-86400000)+'\n'; })() : '')+summaryPlainText(days, weekOffset), 180);
+      const lines = doc.splitTextToSize(`${childLbl}: ${S.crianca.nome} (${months} ${monthsLbl})\n\n`+summaryPlainText(days, weekOffset), 180);
       doc.text(lines, 14, 36);
       const blob = doc.output('blob');
       const result = await triggerDownload(`emily-tracker-resumo-${label.toLowerCase()}.pdf`, blob);
@@ -2915,8 +3076,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     <a class="call-btn" href="tel:112" style="border-color:var(--crit);"><div class="ic" style="background:var(--crit-soft);color:var(--crit);">${ICONS.phone}</div><div><div class="t1" style="color:var(--crit);">${tr('Emergência — 112')}</div><div class="t2">${tr('Bélgica / Luxemburgo')}</div></div></a>
 
     <div class="card"><div class="section-label">${tr('Dados atuais')}</div>
-      <div class="sos-line"><span>${tr('Peso')}</span><b>${S.evolucao.peso.length?S.evolucao.peso[S.evolucao.peso.length-1].valor+'kg':'—'}</b></div>
-      <div class="sos-line"><span>${tr('Altura')}</span><b>${S.evolucao.altura.length?S.evolucao.altura[S.evolucao.altura.length-1].valor+'cm':'—'}</b></div>
+      <div class="sos-line"><span>${tr('Peso')}</span><b>${latestMeasure('peso')?latestMeasure('peso').valor+'kg':'—'}</b></div>
+      <div class="sos-line"><span>${tr('Altura')}</span><b>${latestMeasure('altura')?latestMeasure('altura').valor+'cm':'—'}</b></div>
       <div class="sos-line"><span>${tr('Alimentação')}</span><b>${tr(c.alimentacao.tipo)}${c.alimentacao.formula?(' · '+c.alimentacao.formula):''}</b></div>
       <div class="sos-line"><span>${tr('Nº documento')}</span><b>${c.documentoId||'—'}</b></div>
       <div class="sos-line"><span>${tr('Sistema de saúde')}</span><b>${c.sistemaSaude||'—'}</b></div>
@@ -3032,10 +3193,83 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <button class="btn ghost wide" id="exportBtn" type="button">${tr('Exportar dados (.json)')}</button>
       <input type="file" id="importInput" accept="application/json" style="display:none;">
       <button class="btn ghost wide" id="importBtn" type="button" style="margin-top:8px;">${tr('Importar dados')}</button>
+      ${readImportBackup() ? `<button class="btn ghost wide" id="restoreBackupBtn" type="button" style="margin-top:8px;">${lx('Repor dados de antes da última importação','Restaurer les données d\'avant la dernière importation','Restore data from before the last import')}</button>` : ''}
       <button class="btn crit wide" id="resetBtn" type="button" style="margin-top:8px;">${tr('Apagar todos os dados')}</button>
       ${S.criancas.length>1 ? `<button class="btn crit wide" id="removeChildBtn" type="button" style="margin-top:8px;">${tr('Remover perfil de')} ${S.crianca.nome}</button>` : ''}
     </div>
     <p class="muted" style="text-align:center;">${tr('Tudo guardado neste dispositivo (localStorage) — sem servidor, sem conta.')}</p>`;
+  }
+
+  /* ============ exportar / importar (Fase 2) ============
+     Exportação: UMA cópia de cada registo (antes o ficheiro tinha os dados 3 vezes: criancas, crianca e mamadas/fraldas/…),
+     sem fotos, documentos digitalizados nem foto de fundo. Continua a usar a chave "criancas", por isso é lido pela importação
+     desta versão e das anteriores; a importação continua a aceitar os formatos antigos. */
+  const IMPORT_BACKUP_KEY = KEY+'-backup-antes-importacao';
+  function exportPayload(){
+    const settings = Object.assign({}, S.settings); delete settings.bgPhoto; delete settings.demoCleanupNotice;
+    return { app:'emily-tracker', formato:2, exportadoEm:new Date().toISOString(), semFotos:true,
+      activeChildId:S.activeChildId, settings, criancas:S.criancas.map(stripHeavy) };
+  }
+  function importChildren(raw){
+    if(raw && Array.isArray(raw.criancas)) return raw.criancas;
+    if(raw && raw.crianca && typeof raw.crianca==='object') return [Object.assign({}, raw.crianca, {mamadas:raw.mamadas, fraldas:raw.fraldas, sono:raw.sono, evolucao:raw.evolucao, doses:raw.doses})];
+    return [];
+  }
+  function isValidImport(raw){
+    if(!raw || typeof raw!=='object' || Array.isArray(raw)) return false;
+    const kids=importChildren(raw);
+    return kids.length>0 && kids.every(c=>c && typeof c==='object' && !Array.isArray(c))
+      && kids.every(c=>['mamadas','fraldas','sono','doses','consultas','medicacoes'].every(k=>c[k]==null || Array.isArray(c[k])));
+  }
+  function countRecords(kids){
+    let n=0;
+    (kids||[]).forEach(c=>{ ['mamadas','fraldas','sono','doses','consultas'].forEach(k=>{ n+=(Array.isArray(c[k])?c[k].length:0); });
+      const e=c.evolucao||{}; ['peso','altura','pc'].forEach(k=>{ n+=(Array.isArray(e[k])?e[k].length:0); }); });
+    return n;
+  }
+  // Fotos, documentos e fundo que não vêm no ficheiro são mantidos a partir dos dados atuais deste dispositivo (mesmo id de criança).
+  function keepLocalMedia(next, raw){
+    const prevById={}; S.criancas.forEach(c=>prevById[c.id]=c);
+    const srcKids=importChildren(raw);
+    next.criancas.forEach(c=>{ const src=srcKids.find(k=>k && k.id===c.id) || {}; const old=prevById[c.id]; if(!old) return;
+      ['foto','fotos','documentos'].forEach(k=>{ if(!(k in src)) c[k]=old[k]; }); });
+    const prevBg = S.settings && S.settings.bgPhoto;
+    if(prevBg && !(raw && raw.settings && raw.settings.bgPhoto)) next.settings.bgPhoto = prevBg;
+    return next;
+  }
+  function readImportBackup(){ try{ const b=JSON.parse(localStorage.getItem(IMPORT_BACKUP_KEY)||'null'); return (b && b.data && b.savedAt) ? b : null; }catch(e){ return null; } }
+  function showImportConfirm(raw){
+    const kids=importChildren(raw), nNew=countRecords(kids), nCur=countRecords(S.criancas);
+    const names=kids.map(c=>c.nome||tr('Bebé')).join(', ');
+    showOverlay(`<div class="voice-panel" id="importPanel"><div class="voice-card" style="text-align:left;">
+      <h2 style="margin:0 0 8px;">${lx('Importar dados?','Importer les données ?','Import data?')}</h2>
+      <div class="rec-line"><span>${lx('No ficheiro','Dans le fichier','In the file')}</span><b>${pl(nNew,'registo','registos','enregistrement','enregistrements','record','records')} · ${names}</b></div>
+      <div class="rec-line"><span>${lx('Neste dispositivo agora','Sur cet appareil','On this device now')}</span><b>${pl(nCur,'registo','registos','enregistrement','enregistrements','record','records')}</b></div>
+      <div class="alert warn" style="margin-top:10px;">${ICONS.note} ${lx('Os dados atuais serão SUBSTITUÍDOS pelos do ficheiro. Antes disso é guardada automaticamente uma cópia de segurança dos dados atuais neste dispositivo.','Les données actuelles seront REMPLACÉES. Une copie de sécurité est enregistrée automatiquement avant.','Current data will be REPLACED. A backup of the current data is saved automatically first.')}</div>
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn ghost wide" id="impCancel" type="button">${tr('Cancelar')}</button>
+        <button class="btn crit wide" id="impOk" type="button">${lx('Substituir e importar','Remplacer et importer','Replace and import')}</button>
+      </div>
+    </div></div>`);
+    document.getElementById('impCancel').addEventListener('click', ()=>{ closeOverlay(); renderSettingsOverlay(); });
+    document.getElementById('impOk').addEventListener('click', async ()=>{
+      // 3) cópia de segurança ANTES de substituir; se não for possível guardar, a importação é cancelada
+      // Cópia COMPLETA (incluindo fotos e documentos): a importação pode trazer outra criança e a reposição tem de devolver tudo.
+      // 1.º neste dispositivo; se não houver espaço, descarrega-se a cópia como ficheiro; se nenhuma for possível, cancela-se.
+      const snapshot={ savedAt:Date.now(), data:{ criancas:S.criancas, activeChildId:S.activeChildId, settings:S.settings } };
+      let backedUp=false;
+      try{ localStorage.setItem(IMPORT_BACKUP_KEY, JSON.stringify(snapshot)); backedUp=true; }catch(err){ backedUp=false; }
+      if(!backedUp){
+        const res = await triggerDownload(`emily-tracker-copia-antes-importacao-${todayISO()}.json`, new Blob([JSON.stringify(snapshot.data,null,2)],{type:'application/json'}));
+        backedUp = res==='saved';
+      }
+      if(!backedUp){ showAlert(lx('Não foi possível criar a cópia de segurança — importação cancelada. Nada foi alterado.','Impossible de créer la copie de sécurité — importation annulée.','Could not create the backup — import cancelled. Nothing was changed.')); return; }
+      // 4) importar; fotos/documentos/fundo que não vêm no ficheiro são mantidos deste dispositivo
+      S = keepLocalMedia(loadState(raw), raw);
+      if(demoCleanupLog.length){ S.settings.demoCleanupNotice=Array.from(new Set(demoCleanupLog)); demoCleanupLog.length=0; }
+      setActiveChild(S.activeChildId); save(); applyTheme(); render();
+      showAlert(lx(`Importação concluída: ${pl(countRecords(S.criancas),'registo','registos','','','','')}. A cópia dos dados anteriores ficou guardada (Definições › Repor dados de antes da última importação).`,`Importation terminée : ${countRecords(S.criancas)} enregistrement(s). La copie des données précédentes est conservée.`,`Import complete: ${countRecords(S.criancas)} record(s). A copy of the previous data was kept.`));
+    });
   }
 
   /* ============ dispatch ============ */
@@ -3082,7 +3316,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       return row('mamada', l.id, `<b>${hhmm(l.ts)}</b> — ${ml!=null ? `<b>${ml} ml</b>`+extra : `<span class="muted">${lx('sem quantidade','sans quantité','no amount')}</span>`}`); }).join('');
     const breastRows = breast.map(l=>row('mamada', l.id, `<b>${hhmm(l.ts)}</b> — ${feedLabel(l)}`)).join('');
     const diaperRows = diapers.map(l=>row('fralda', l.id, `<b>${hhmm(l.ts)}</b> — ${diaperLabel(l)}`)).join('');
-    const sleepRows = sleeps.map(l=>row('sono', l.id, `<b>${hhmm(l.inicio)} → ${hhmm(l.fim)}</b> — ${l.periodo==='noite'?tr('Noite'):tr('Sesta')} · ${durStr(l.duracaoMin)}`)).join('');
+    const sleepRows = sleeps.map(l=>row('sono', l.id, `<b>${hhmm(l.inicio)} → ${hhmm(l.fim)}</b> — ${sleepPeriodLabel(l)} · ${durStr(l.duracaoMin)}`)).join('');
     showOverlay(`<div class="voice-panel" id="dayPanel"><div class="voice-card" style="text-align:left;max-height:85vh;overflow-y:auto;">
       <h2 style="margin:0 0 4px;">${dateLbl.charAt(0).toUpperCase()+dateLbl.slice(1)}</h2>
       <p class="muted" style="margin:0 0 10px;">${lx('Toca num registo para ver detalhes ou editar.','Touche un enregistrement pour voir les détails ou modifier.','Tap a record to see details or edit.')}</p>
@@ -3098,6 +3332,34 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     panel.addEventListener('click', e=>{ if(e.target===panel) closeOverlay(); });
     panel.querySelectorAll('[data-rec-id]').forEach(btn=>btn.addEventListener('click', ()=>showRecordDetails(btn.dataset.recKind, btn.dataset.recId, ()=>showDaySummary(dateISO))));
   }
+
+  /* ============ validação de formulários (Fase 2) ============
+     Limites de plausibilidade (não clínicos) para apanhar erros de escrita: não existiam limites na app. */
+  const LIMITS = { mlMax:500, peitoMaxMin:180, sonoMaxH:16, qualMin:1, qualMax:10, interMax:50,
+    peso:[0.3,50], altura:[20,150], pc:[20,70] };
+  function clearFieldErrors(scope){ (scope||document).querySelectorAll('.field-err').forEach(e=>e.remove()); (scope||document).querySelectorAll('.input-err').forEach(e=>e.classList.remove('input-err')); }
+  // errs = [[idDoCampo, mensagem], …] → mostra cada mensagem logo a seguir ao campo e foca o primeiro. Devolve true se não houver erros.
+  function showFieldErrors(errs){
+    errs.forEach(([id,msg],i)=>{
+      const el=document.getElementById(id); if(!el) return;
+      el.classList.add('input-err');
+      const p=document.createElement('p'); p.className='field-err'; p.setAttribute('role','alert'); p.textContent=msg;
+      el.insertAdjacentElement('afterend', p);
+      el.addEventListener('input', ()=>{ el.classList.remove('input-err'); if(p.parentNode) p.remove(); }, {once:true});
+      if(i===0 && el.focus) el.focus();
+    });
+    return errs.length===0;
+  }
+  // Lê um número de um campo; aceita vírgula ou ponto decimal ("6,5" e "6.5" → 6.5). Vazio → null; texto inválido → NaN.
+  function readNum(id){
+    const el=document.getElementById(id); if(!el) return null;
+    const raw=String(el.value||'').trim();
+    if(raw==='') return (el.validity && el.validity.badInput) ? NaN : null;
+    const v=parseFloat(raw.replace(/\s/g,'').replace(',','.'));
+    return /^[-+]?\d*[.,]?\d+\s*[a-zA-Z]*$/.test(raw.replace(/\s/g,'')) ? v : NaN;
+  }
+  const FUTURE_TOL_MS = 60000;   // 1 min de tolerância para relógios ligeiramente diferentes
+  const msgFuturo = () => lx('A data/hora não pode ser no futuro.','La date/heure ne peut pas être dans le futur.','Date/time cannot be in the future.');
 
   /* ============ ver detalhes → ✏️ editar / apagar (reutiliza os formulários de edição existentes) ============ */
   function localISO(ts){ const d=new Date(ts); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -3128,13 +3390,13 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         R.push([tr('Tipo'), l.tipo==='peito-esq'?tr('Peito esquerdo'):tr('Peito direito')]);
         R.push([tr('Duração (min)'), l.duracaoMin!=null && l.duracaoMin>0 ? durStr(l.duracaoMin) : dash]);
       }
-      R.push([lx('Sucção','Succion','Sucking'), l.qualidade==='fraca'?tr('sucção fraca'):tr('sucção ativa')]);
+      R.push([lx('Sucção','Succion','Sucking'), l.qualidade==='fraca'?tr('sucção fraca'):l.qualidade==='ativa'?tr('sucção ativa'):lx('não indicado','non indiqué','not given')]);
     } else if(kind==='fralda'){
       R.push([tr('Tipo'), tr(l.tipo==='xixi'?'Xixi':'Cocó')]);
       R.push([tr('Quantidade'), l.quantidade ? tr(l.quantidade) : dash]);
       if(l.tipo==='coco'){ R.push([tr('Cor'), l.cor?tr(l.cor):dash]); R.push([tr('Consistência'), l.consistencia?tr(l.consistencia):dash]); }
     } else {
-      R.push([tr('Período'), l.periodo==='noite'?tr('Noite'):tr('Sesta')]);
+      R.push([tr('Período'), l.periodo==='noite'?tr('Noite'):l.periodo==='sesta'?tr('Sesta'):lx('não indicado','non indiqué','not given')]);
       R.push([tr('Adormeceu'), fmtWhen(l.inicio)]);
       R.push([tr('Acordou'), fmtWhen(l.fim)]);
       R.push([lx('Duração','Durée','Duration'), durStr(l.duracaoMin)]);
@@ -3219,7 +3481,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     document.getElementById('exportBtn').addEventListener('click', async ()=>{
       const btn=document.getElementById('exportBtn'); const orig=btn.textContent;
       try{
-        const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+        const blob=new Blob([JSON.stringify(exportPayload(),null,2)],{type:'application/json'});
         const result = await triggerDownload('emily-tracker-dados.json', blob);
         if(result==='error'){ btn.textContent=tr('Exportação indisponível aqui'); setTimeout(()=>btn.textContent=orig,2000); return; }
         if(result==='declined') return;
@@ -3230,9 +3492,24 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     document.getElementById('importBtn').addEventListener('click', ()=>document.getElementById('importInput').click());
     document.getElementById('importInput').addEventListener('change', e=>{
       const f=e.target.files[0]; if(!f) return;
+      e.target.value='';   // permite escolher o mesmo ficheiro outra vez
       const r=new FileReader();
-      r.onload=()=>{ try{ S=loadState(JSON.parse(r.result)); if(demoCleanupLog.length){ S.settings.demoCleanupNotice=Array.from(new Set(demoCleanupLog)); demoCleanupLog.length=0; } setActiveChild(S.activeChildId); save(); applyTheme(); render(); }catch(err){ showAlert(tr('Ficheiro inválido.')); } };
+      r.onload=()=>{
+        // 1) validar SEM tocar nos dados atuais
+        let raw=null; try{ raw=JSON.parse(r.result); }catch(err){ raw=null; }
+        if(!isValidImport(raw)){ showAlert(lx('Ficheiro inválido — não é uma exportação do Emily Tracker. Nada foi alterado.','Fichier invalide — ce n\'est pas un export Emily Tracker. Rien n\'a été modifié.','Invalid file — not an Emily Tracker export. Nothing was changed.')); return; }
+        // 2) confirmar
+        showImportConfirm(raw);
+      };
+      r.onerror=()=>showAlert(tr('Ficheiro inválido.'));
       r.readAsText(f);
+    });
+    const rb=document.getElementById('restoreBackupBtn');
+    if(rb) rb.addEventListener('click', ()=>{
+      const bk=readImportBackup(); if(!bk) return;
+      showConfirm(lx(`Repor os dados guardados antes da última importação (${new Date(bk.savedAt).toLocaleString(localeTag())})? Os dados atuais serão substituídos.`,`Restaurer les données d'avant la dernière importation (${new Date(bk.savedAt).toLocaleString(localeTag())}) ? Les données actuelles seront remplacées.`,`Restore the data from before the last import (${new Date(bk.savedAt).toLocaleString(localeTag())})? Current data will be replaced.`), ()=>{
+        S=keepLocalMedia(loadState(bk.data), bk.data); setActiveChild(S.activeChildId); save(); applyTheme(); render(); renderSettingsOverlay();
+      });
     });
     document.getElementById('resetBtn').addEventListener('click', ()=>{
       showConfirm(tr('Isto apaga TODOS os dados guardados neste dispositivo. Continuar?'), ()=>{

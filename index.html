@@ -121,7 +121,6 @@ main.fade-in{ animation:fadeIn .22s ease; }
 .seg button.on{ background:var(--brand); border-color:var(--brand); color:#fff; }
 input[type=number],input[type=text],input[type=date],input[type=time],select,textarea{ width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:9px; background:var(--surface); color:var(--ink); font-size:.83rem; }
 textarea{ min-height:56px; resize:vertical; }
-input.demo-ex,textarea.demo-ex{ font-style:italic; color:var(--ink-muted); border-style:dashed; background:var(--surface-2); }
 input.remembered-fill,textarea.remembered-fill{ /* dado real guardado, não é exemplo — mantém aspeto normal, só limpa ao tocar */ }
 .btn{ padding:10px 18px; border-radius:14px; border:none; background:var(--brand); color:#fff; font-weight:700; font-size:.83rem; cursor:pointer; }
 .btn.ghost{ background:transparent; border:1px solid var(--border); color:var(--ink-muted); }
@@ -142,6 +141,8 @@ input.remembered-fill,textarea.remembered-fill{ /* dado real guardado, não é e
 .log-del{ background:none; border:none; color:var(--ink-faint); cursor:pointer; font-size:.85rem; flex:none; padding:4px; }
 .log-del:hover{ color:var(--crit); }
 .empty{ color:var(--ink-faint); font-size:.8rem; font-style:italic; padding:8px 3px; }
+.example-hint{ font-size:.76rem; color:var(--ink-faint); border:1px dashed var(--border); border-radius:10px; padding:7px 10px; margin-top:6px; font-style:italic; }
+.example-hint .ex-tag{ font-style:normal; font-size:.6rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; background:var(--surface-2); color:var(--ink-muted); border-radius:6px; padding:2px 6px; margin-right:6px; }
 
 .alert{ display:flex; gap:8px; align-items:flex-start; padding:10px 14px; border-radius:16px; font-size:.8rem; font-weight:600; margin-bottom:10px; }
 .alert.crit{ background:var(--crit-soft); color:var(--crit); border:2px solid var(--crit); }
@@ -223,6 +224,29 @@ details.acc[open] summary .car{ transform:rotate(180deg); }
 .photo-box img{ width:100%; height:100%; object-fit:cover; }
 .file-btn{ font-size:.76rem; font-weight:700; color:var(--brand); background:none; border:1px dashed var(--brand); border-radius:9px; padding:8px 12px; cursor:pointer; }
 
+.sum-block{ margin-top:10px; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:11px 13px; }
+.sum-title{ display:flex; align-items:center; gap:7px; font-weight:800; font-size:.86rem; margin-bottom:6px; color:var(--ink); }
+.sum-title svg{ color:var(--brand); flex:none; }
+.sum-line{ font-size:.82rem; line-height:1.55; }
+.sum-line .muted{ font-size:.74rem; }
+.week-nav{ display:flex; align-items:center; gap:8px; margin:6px 0 2px; }
+.week-nav .icon-btn{ font-size:1.2rem; font-weight:800; }
+.week-nav .icon-btn:disabled{ opacity:.35; cursor:default; }
+.week-nav-lbl{ flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; font-size:.86rem; line-height:1.3; }
+.week-nav-lbl .muted{ font-size:.7rem; }
+.day-sec{ margin-bottom:10px; }
+.day-rec{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:9px 10px; margin-bottom:5px; border:1px solid var(--border); background:var(--surface-2); color:var(--ink); border-radius:10px; font-size:.82rem; cursor:pointer; font-family:inherit; }
+.day-rec > span{ flex:1; }
+.day-rec svg{ color:var(--ink-faint); flex:none; }
+.rec-line{ display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-top:1px solid var(--border); font-size:.83rem; }
+.rec-line:first-of-type{ border-top:none; }
+.rec-line b{ text-align:right; }
+.mood-row{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+.mood-btn{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 2px; border:2px solid var(--surface-2); background:var(--surface); border-radius:14px; cursor:pointer; color:var(--ink-muted); min-height:64px; }
+.mood-btn .mood-emoji{ font-size:1.35rem; line-height:1; }
+.mood-btn .mood-lbl{ font-size:.62rem; font-weight:700; text-align:center; line-height:1.15; }
+.mood-btn.on{ border-color:var(--brand); background:var(--accent); color:var(--accent-ink); }
+.sum-cmp{ margin-top:6px; padding-top:6px; border-top:1px dashed var(--border); font-size:.74rem; color:var(--ink-muted); }
 .summary-box{ margin-top:10px; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:13px 14px; font-size:.83rem; white-space:pre-wrap; line-height:1.6; }
 
 nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); margin:0 10px calc(10px + env(safe-area-inset-bottom)); border-radius:22px; box-shadow:0 10px 26px -14px rgba(90,74,66,.35), 0 1px 2px rgba(90,74,66,.08); padding:6px 4px; overflow-x:auto; gap:2px; }
@@ -783,9 +807,11 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     if(!c.vacinacao.doses) c.vacinacao.doses={};
     VAX.forEach(v=>v.doses.forEach((label,i)=>{ const k=v.id+'-'+i; if(!c.vacinacao.doses[k]) c.vacinacao.doses[k]={done:null,pais:'',reacao:'',proximaData:''}; }));
     c.doses=c.doses||[];
+    // Reflexão semanal: { 'AAAA-MM-DD' (segunda-feira da semana): {humor:id|null, nota:texto|null, atualizadoEm} }
+    if(!c.reflexoesSemanais || typeof c.reflexoesSemanais!=='object') c.reflexoesSemanais={};
     c.running=c.running||{sleepStart:null};
-    if(c.seed==null) c.seed=false;
-    c.seedTouched = c.seedTouched || {};
+    const demoFound = purgeDemoData(c);
+    if(demoFound.length) demoCleanupLog.push(...demoFound);
     if(!c.id) c.id=uid();
     if(!c.nome) c.nome='Bebé';
     if(!c.dataNascimento) c.dataNascimento=todayISO();
@@ -824,80 +850,126 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   }
 
   function defaultState(){
-    const now = Date.now(); const H=3600000;
-    const child = {
-      id:'c1',
-      seed:true,
-      nome:"Bebé Exemplo", dataNascimento: monthsAgoISO(4), sexo:"F",
-      localNascimento:"—", nacionalidade:"—", documentoId:"",
-      nascimento:{peso:"3.4", altura:"50", pc:"35"},
-      tipoSanguineo:"A+", fatorRh:"Positivo",
-      foto:"", fotos:[], documentos:[],
-      alergiasMed:[{id:uid(), nome:"Exemplo: Penicilina", reacao:"Erupção cutânea", gravidade:"Moderada", alternativa:"Amoxicilina (com supervisão)", status:"ATIVA"}],
-      intolerancias:[{id:uid(), nome:"Exemplo: Lactose", manifestacao:"Cólicas, fezes moles", gravidade:"Moderada", consequencia:"Usar apenas fórmula sem lactose", status:"ATIVA"}],
-      condicoesCronicas:[], deficiencias:[],
-      medicacoes:[
-        {id:uid(), ...MED_PRESETS[0]},
-        {id:uid(), ...MED_PRESETS[1]},
-        {id:uid(), ...MED_PRESETS[2]},
-      ],
-      pediatra:{nome:"Dra. Exemplo", telefone:"+000 000 000 000", email:"exemplo@clinica.example", local:"—", morada:""},
-      mae:{nome:"Mãe Exemplo", nacionalidade:"—", naturalidade:"—", tipoSanguineo:"", antecedentes:"", telefone:"+000 000 000 000"},
-      pai:{nome:"Pai Exemplo", nacionalidade:"—", naturalidade:"—", tipoSanguineo:"", antecedentes:"", telefone:"+000 000 000 000"},
-      contactoEmergencia:{nome:"", relacao:"", telefone:""},
-      hospitalReferencia:{nome:"", morada:"", telefone:""},
-      moradaAtual:"", sistemaSaude:"",
-      alimentacao:{tipo:"Misto", formula:"Fórmula sem lactose (exemplo)", quantidadeRefeicao:"180", dataInicioSolidos:"", introducao:[]},
-      dentes:[],
-      penico:{iniciado:false, dataInicio:"", sucessos:0, acidentes:0, notas:""},
-      hidratacao:[],
-      consultas:[],
-      notas:"",
-      mamadas:[
-        {id:uid(), ts:now-2*H, tipo:"biberao", marcaFormula:"Exemplo", mlOferecido:180, mlBebido:170, qualidade:"ativa", obs:""},
-        {id:uid(), ts:now-6*H, tipo:"peito-esq", duracaoMin:15, qualidade:"ativa", obs:""},
-        {id:uid(), ts:now-10*H, tipo:"peito-dir", duracaoMin:12, qualidade:"fraca", obs:""},
-        {id:uid(), ts:now-24*H-3*H, tipo:"biberao", marcaFormula:"Exemplo", mlOferecido:170, mlBebido:160, qualidade:"ativa", obs:""},
-        {id:uid(), ts:now-24*H-8*H, tipo:"peito-esq", duracaoMin:14, qualidade:"ativa", obs:""},
-        {id:uid(), ts:now-48*H-2*H, tipo:"biberao", marcaFormula:"Exemplo", mlOferecido:180, mlBebido:180, qualidade:"ativa", obs:""},
-      ],
-      fraldas:[
-        {id:uid(), ts:now-1*H, tipo:"xixi", quantidade:"normal", cor:"", consistencia:"", obs:""},
-        {id:uid(), ts:now-4*H, tipo:"coco", quantidade:"normal", cor:"Amarelo", consistencia:"Mole", obs:""},
-        {id:uid(), ts:now-7*H, tipo:"xixi", quantidade:"normal", cor:"", consistencia:"", obs:""},
-        {id:uid(), ts:now-11*H, tipo:"xixi", quantidade:"pouco", cor:"", consistencia:"", obs:""},
-        {id:uid(), ts:now-24*H-2*H, tipo:"coco", quantidade:"normal", cor:"Amarelo", consistencia:"Normal", obs:""},
-        {id:uid(), ts:now-24*H-5*H, tipo:"xixi", quantidade:"normal", cor:"", consistencia:"", obs:""},
-      ],
-      sono:[
-        {id:uid(), periodo:"noite", inicio:now-11*H, fim:now-3*H, duracaoMin:480, qualidade:8, interrupcoes:1, posicao:"costas", obs:""},
-        {id:uid(), periodo:"sesta", inicio:now-16*H, fim:now-14.5*H, duracaoMin:90, qualidade:7, interrupcoes:0, posicao:"costas", obs:""},
-        {id:uid(), periodo:"noite", inicio:now-24*H-11*H, fim:now-24*H-3*H, duracaoMin:470, qualidade:7, interrupcoes:2, posicao:"lado", obs:""},
-        {id:uid(), periodo:"sesta", inicio:now-24*H-17*H, fim:now-24*H-15.5*H, duracaoMin:90, qualidade:8, interrupcoes:0, posicao:"costas", obs:""},
-      ],
-      evolucao:{
-        peso:[{date:monthsAgoISO(4), valor:3.4},{date:monthsAgoISO(3), valor:4.6},{date:monthsAgoISO(2), valor:5.6},{date:monthsAgoISO(1), valor:6.2},{date:todayISO(), valor:6.6}],
-        altura:[{date:monthsAgoISO(4), valor:50},{date:monthsAgoISO(3), valor:53.5},{date:monthsAgoISO(2), valor:55.5},{date:monthsAgoISO(1), valor:57},{date:todayISO(), valor:58.5}],
-        pc:[{date:monthsAgoISO(4), valor:35},{date:monthsAgoISO(3), valor:36.8},{date:monthsAgoISO(2), valor:38},{date:monthsAgoISO(1), valor:39},{date:todayISO(), valor:39.8}],
-      },
-      desenvolvimento:{ done:{ "0-1 mês|Sorri reflexo":daysAgoISO(115),"0-1 mês|Acompanha olhar":daysAgoISO(110),"0-1 mês|Reage a barulhos":daysAgoISO(108),"0-1 mês|Reflexo de sucção":daysAgoISO(120),
-        "1-2 meses|Sorriso social":daysAgoISO(90),"1-2 meses|Emite sons (cooing)":daysAgoISO(85),"1-2 meses|Levanta cabeça ligeiramente":daysAgoISO(88),"1-2 meses|Puxa objetos":daysAgoISO(80),
-        "2-3 meses|Levanta cabeça/peito com braços":daysAgoISO(60),"2-3 meses|Abre/fecha mãos":daysAgoISO(58),"2-3 meses|Vocaliza com sílabas":daysAgoISO(55),"2-3 meses|Segue movimento com olhos":daysAgoISO(57),
-        "3-4 meses|Mão na boca":daysAgoISO(12),"3-4 meses|Sorri para caras":daysAgoISO(3),"3-4 meses|Emite sílabas":daysAgoISO(9),"3-4 meses|Vira para sons":daysAgoISO(7) } },
-      vacinacao:{ doses: (function(){
-        const mk=(date)=>({done:date, pais:"Luxemburgo", reacao:"Nenhuma", proximaData:""});
-        return {
-          "bcg-0":mk(todayISO()), "hepb-0":mk(todayISO()), "hepb-1":mk(todayISO()), "hepb-2":{done:null,pais:"",reacao:"",proximaData:monthsAgoISO(-2)},
-          "penta-0":mk(todayISO()),"penta-1":mk(todayISO()),"penta-2":mk(todayISO()),"penta-3":{done:null,pais:"",reacao:"",proximaData:monthsAgoISO(-2)},
-          "rota-0":mk(todayISO()),"rota-1":mk(todayISO()),"rota-2":mk(todayISO()),
-          "pneumo-0":mk(todayISO()),"pneumo-1":mk(todayISO()),"pneumo-2":mk(todayISO()),"pneumo-3":{done:null,pais:"",reacao:"",proximaData:monthsAgoISO(-2)},
-          "menc-0":{done:null,pais:"",reacao:"",proximaData:monthsAgoISO(-2)},
-        };
-      })() },
-      doses:[],
-      running:{ sleepStart:null },
-    };
-    return { criancas:[child], activeChildId:'c1', settings:{ theme:"system", accentIndex:0, lang:"pt", sound:true } };
+    // Instalação/perfil novo: começa SEM registos. Exemplos existem só como texto de ajuda
+    // (placeholders e etiquetas "Exemplo"), nunca dentro do estado — por isso nunca entram em cálculos.
+    const child = hydrateChild({ id:uid(), seed:false });
+    return { criancas:[child], activeChildId:child.id, settings:{ theme:"system", accentIndex:0, lang:"pt", sound:true } };
+  }
+
+  /* ============ dados de exemplo de versões antigas → removidos, nunca contam como reais ============
+     Versões anteriores punham registos fictícios nos MESMOS arrays dos dados reais (e "Apagar tudo"
+     recriava-os marcados como reais). Cada registo fictício é reconhecido pela assinatura exata com que
+     foi gerado (id criado no mesmo instante que "now", hora = now − k horas, valores fixos), por isso
+     um registo real não é apanhado por engano. */
+  const H_MS = 3600000;
+  const DEMO_PHONE = "+000 000 000 000", DEMO_EMAIL = "exemplo@clinica.example";
+  const DEMO_TEXT = {
+    names:["Bebé Exemplo","Bébé Exemple","Example Baby","Mãe Exemplo","Mère Exemple","Example Mother","Pai Exemplo","Père Exemple","Example Father","Dra. Exemplo","Dr Exemple","Dr. Example"],
+    alergias:["Exemplo: Penicilina","Exemple : Pénicilline","Example: Penicillin"],
+    intol:["Exemplo: Lactose","Exemple : Lactose","Example: Lactose"],
+    formulas:["Fórmula sem lactose (exemplo)","Préparation sans lactose (exemple)","Lactose-free formula (example)"],
+  };
+  const DEMO_LOGS = {
+    mamadas:[ {k:2,m:{tipo:'biberao',mlBebido:170}}, {k:6,m:{tipo:'peito-esq',duracaoMin:15}}, {k:10,m:{tipo:'peito-dir',duracaoMin:12}},
+              {k:27,m:{tipo:'biberao',mlBebido:160}}, {k:32,m:{tipo:'peito-esq',duracaoMin:14}}, {k:50,m:{tipo:'biberao',mlBebido:180}} ],
+    fraldas:[ {k:1,m:{tipo:'xixi',quantidade:'normal'}}, {k:4,m:{tipo:'coco',quantidade:'normal'}}, {k:7,m:{tipo:'xixi',quantidade:'normal'}},
+              {k:11,m:{tipo:'xixi',quantidade:'pouco'}}, {k:26,m:{tipo:'coco',quantidade:'normal'}}, {k:29,m:{tipo:'xixi',quantidade:'normal'}} ],
+    sono:[ {k:11,m:{periodo:'noite',duracaoMin:480}}, {k:16,m:{periodo:'sesta',duracaoMin:90}}, {k:35,m:{periodo:'noite',duracaoMin:470}}, {k:41,m:{periodo:'sesta',duracaoMin:90}} ],
+  };
+  const DEMO_GROWTH = { peso:[[4,3.4],[3,4.6],[2,5.6],[1,6.2],[0,6.6]], altura:[[4,50],[3,53.5],[2,55.5],[1,57],[0,58.5]], pc:[[4,35],[3,36.8],[2,38],[1,39],[0,39.8]] };
+  const DEMO_MILESTONES = { "0-1 mês|Sorri reflexo":115,"0-1 mês|Acompanha olhar":110,"0-1 mês|Reage a barulhos":108,"0-1 mês|Reflexo de sucção":120,
+    "1-2 meses|Sorriso social":90,"1-2 meses|Emite sons (cooing)":85,"1-2 meses|Levanta cabeça ligeiramente":88,"1-2 meses|Puxa objetos":80,
+    "2-3 meses|Levanta cabeça/peito com braços":60,"2-3 meses|Abre/fecha mãos":58,"2-3 meses|Vocaliza com sílabas":55,"2-3 meses|Segue movimento com olhos":57,
+    "3-4 meses|Mão na boca":12,"3-4 meses|Sorri para caras":3,"3-4 meses|Emite sílabas":9,"3-4 meses|Vira para sons":7 };
+  const DEMO_VAX_DONE = ["bcg-0","hepb-0","hepb-1","penta-0","penta-1","penta-2","rota-0","rota-1","rota-2","pneumo-0","pneumo-1","pneumo-2"];
+  const DEMO_VAX_NEXT = ["hepb-2","penta-3","pneumo-3","menc-0"];
+  const demoCleanupLog = [];
+  function idTime(id){ const t=parseInt(String(id||'').slice(0,8),36); return (t>1.5e12 && t<Date.now()+864e5) ? t : null; }
+  function demoLogBase(rec, sigs, tsField){
+    const it=idTime(rec && rec.id), ts=rec && rec[tsField];
+    if(it==null || typeof ts!=='number' || rec.obs) return null;
+    for(const s of sigs){
+      if(Object.keys(s.m).some(k=>rec[k]!==s.m[k])) continue;
+      const d = it - (ts + s.k*H_MS);
+      if(d>=0 && d<=3000) return ts + s.k*H_MS;
+    }
+    return null;
+  }
+  function purgeDemoData(c){
+    const found=[]; const note=k=>{ if(!found.includes(k)) found.push(k); };
+    const bases=[];
+    // 1) registos diários fictícios (biberões, mamadas, fraldas, sono)
+    [['mamadas','ts'],['fraldas','ts'],['sono','inicio']].forEach(([arr,f])=>{
+      if(!Array.isArray(c[arr])) return;
+      const keep=c[arr].filter(r=>{ const b=demoLogBase(r, DEMO_LOGS[arr], f); if(b!=null){ bases.push(b); return false; } return true; });
+      if(keep.length!==c[arr].length){ c[arr].splice(0, c[arr].length, ...keep); note(arr); }
+    });
+    // 2) alergias/intolerâncias "Exemplo: …"
+    [['alergiasMed','alergias'],['intolerancias','intol']].forEach(([arr,k])=>{
+      if(!Array.isArray(c[arr])) return;
+      const keep=c[arr].filter(a=>{ if(DEMO_TEXT[k].includes(a.nome)){ const t=idTime(a.id); if(t) bases.push(t); return false; } return true; });
+      if(keep.length!==c[arr].length){ c[arr]=keep; note(arr); }
+    });
+    // 3) medicações pré-definidas criadas em bloco pelo perfil de exemplo
+    if(Array.isArray(c.medicacoes)){
+      const isPreset = m => MED_PRESETS.some(p=>p.nome===m.nome && p.dose===m.dose && p.intervaloHoras===m.intervaloHoras && p.maxVezesDia===m.maxVezesDia);
+      const pTimes = c.medicacoes.filter(isPreset).map(m=>idTime(m.id)).filter(t=>t!=null);
+      const ref = bases.length ? Math.min(...bases) : null;
+      const keep = c.medicacoes.filter(m=>{
+        if(!isPreset(m)) return true;
+        const t=idTime(m.id); if(t==null) return true;
+        const demo = (ref!=null && Math.abs(t-ref)<5000) || pTimes.filter(x=>Math.abs(x-t)<2000).length>=2;
+        if(demo) bases.push(t);
+        return !demo;
+      });
+      if(keep.length!==c.medicacoes.length){ c.medicacoes=keep; note('medicacoes'); }
+    }
+    // 4) momento em que o exemplo foi criado → datas exatas dos pesos, marcos e vacinas fictícios
+    let baseMs = bases.length ? Math.min(...bases) : null;
+    const doses = (c.vacinacao && c.vacinacao.doses) || {};
+    if(baseMs==null){
+      const byDate={};
+      DEMO_VAX_DONE.forEach(k=>{ const r=doses[k]; if(r && r.done && r.pais==='Luxemburgo' && r.reacao==='Nenhuma') byDate[r.done]=(byDate[r.done]||0)+1; });
+      const hit=Object.keys(byDate).find(d=>byDate[d]>=8);
+      if(hit) baseMs=new Date(hit+'T12:00:00Z').getTime();
+    }
+    if(baseMs!=null){
+      const isoShift = fn => { const d=new Date(baseMs); fn(d); return d.toISOString().slice(0,10); };
+      const dayISO = n => isoShift(d=>d.setDate(d.getDate()-n));
+      const monISO = n => isoShift(d=>d.setMonth(d.getMonth()-n));
+      if(c.evolucao) Object.keys(DEMO_GROWTH).forEach(k=>{
+        const arr=c.evolucao[k]; if(!Array.isArray(arr)) return;
+        const keep=arr.filter(r=>!DEMO_GROWTH[k].some(([n,v])=>r.date===monISO(n) && +r.valor===v));
+        if(keep.length!==arr.length){ arr.splice(0, arr.length, ...keep); note('evolucao'); }
+      });
+      const done = c.desenvolvimento && c.desenvolvimento.done;
+      if(done) Object.keys(DEMO_MILESTONES).forEach(k=>{ if(done[k] && done[k]===dayISO(DEMO_MILESTONES[k])){ delete done[k]; note('marcos'); } });
+      DEMO_VAX_DONE.forEach(k=>{ const r=doses[k]; if(r && r.done===dayISO(0) && r.pais==='Luxemburgo' && r.reacao==='Nenhuma'){ doses[k]={done:null,pais:'',reacao:'',proximaData:''}; note('vacinas'); } });
+      DEMO_VAX_NEXT.forEach(k=>{ const r=doses[k]; if(r && !r.done && r.proximaData===monISO(-2)){ r.proximaData=''; note('vacinas'); } });
+      if(c.dataNascimento && c.dataNascimento===monISO(4)) note('confirmarNascimento');
+    }
+    // 5) textos de exemplo inconfundíveis nos contactos/perfil
+    let profileDemo=false;
+    const clr=(obj,key,pred)=>{ if(obj && obj[key] && pred(obj[key])){ obj[key]=''; profileDemo=true; } };
+    const isName=v=>DEMO_TEXT.names.includes(v);
+    clr(c,'nome',isName);
+    clr(c.pediatra,'nome',isName); clr(c.pediatra,'telefone',v=>v===DEMO_PHONE); clr(c.pediatra,'email',v=>v===DEMO_EMAIL);
+    ['mae','pai'].forEach(k=>{ clr(c[k],'nome',isName); clr(c[k],'telefone',v=>v===DEMO_PHONE); });
+    clr(c.alimentacao,'formula',v=>DEMO_TEXT.formulas.includes(v));
+    if(profileDemo) note('contactos');
+    // 6) restantes valores do perfil de exemplo — só quando há prova de que o perfil veio do exemplo
+    if(profileDemo || baseMs!=null || c.seed===true){
+      const dash=v=>v==='—';
+      clr(c,'localNascimento',dash); clr(c,'nacionalidade',dash); clr(c.pediatra,'local',dash);
+      ['mae','pai'].forEach(k=>{ clr(c[k],'nacionalidade',dash); clr(c[k],'naturalidade',dash); });
+      const n=c.nascimento;
+      if(n && n.peso==='3.4' && n.altura==='50' && n.pc==='35'){ n.peso=''; n.altura=''; n.pc=''; note('nascimento'); }
+      if(c.alimentacao && c.alimentacao.quantidadeRefeicao==='180') c.alimentacao.quantidadeRefeicao='';
+      if(c.tipoSanguineo==='A+' && c.fatorRh==='Positivo'){ c.tipoSanguineo=''; c.fatorRh=''; note('tipoSanguineo'); }
+    }
+    c.seed=false;
+    delete c.seedTouched;
+    return found;
   }
 
   let S;
@@ -919,6 +991,13 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       renderStorageBanner();
       return false;
     }
+  }
+  // Se ao abrir foram encontrados dados de exemplo antigos misturados com os reais, grava já a versão limpa
+  // e deixa um aviso (uma vez) a explicar o que foi removido.
+  if(demoCleanupLog.length){
+    S.settings.demoCleanupNotice = Array.from(new Set(demoCleanupLog.concat(S.settings.demoCleanupNotice||[])));
+    demoCleanupLog.length = 0;
+    saveLocal();
   }
   function save(){ const ok=saveLocal(); scheduleDbPush(); return ok; }
   function renderStorageBanner(){
@@ -963,6 +1042,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     if(!S.criancas.find(c=>c.id===S.activeChildId)) S.activeChildId = S.criancas[0].id;
     setActiveChild(S.activeChildId);
     saveLocal();
+    // Se a cópia partilhada ainda trazia dados de exemplo antigos, já foram retirados acima — envia a versão limpa.
+    if(demoCleanupLog.length){ demoCleanupLog.length = 0; scheduleDbPush(); }
     const tag = document.activeElement && document.activeElement.tagName;
     if(tag==='INPUT' || tag==='TEXTAREA' || tag==='SELECT'){
       renderSyncBadge();
@@ -1031,35 +1112,6 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       phone.style.backgroundImage = '';
       phone.classList.remove('has-bg');
     }
-  }
-
-  /* ============ dados de exemplo por língua ============ */
-  const SEED_TEXT = {
-    pt:{ childName:"Bebé Exemplo", mae:"Mãe Exemplo", pai:"Pai Exemplo", pediatra:"Dra. Exemplo",
-      alergiaNome:"Exemplo: Penicilina", alergiaReacao:"Erupção cutânea", alergiaAlt:"Amoxicilina (com supervisão)",
-      intolNome:"Exemplo: Lactose", intolManif:"Cólicas, fezes moles", intolCons:"Usar apenas fórmula sem lactose",
-      gravidade:"Moderada", formula:"Fórmula sem lactose (exemplo)", marcaBiberao:"Exemplo" },
-    fr:{ childName:"Bébé Exemple", mae:"Mère Exemple", pai:"Père Exemple", pediatra:"Dr Exemple",
-      alergiaNome:"Exemple : Pénicilline", alergiaReacao:"Éruption cutanée", alergiaAlt:"Amoxicilline (sous surveillance)",
-      intolNome:"Exemple : Lactose", intolManif:"Coliques, selles molles", intolCons:"Utiliser uniquement une préparation sans lactose",
-      gravidade:"Modérée", formula:"Préparation sans lactose (exemple)", marcaBiberao:"Exemple" },
-    en:{ childName:"Example Baby", mae:"Example Mother", pai:"Example Father", pediatra:"Dr. Example",
-      alergiaNome:"Example: Penicillin", alergiaReacao:"Skin rash", alergiaAlt:"Amoxicillin (under supervision)",
-      intolNome:"Example: Lactose", intolManif:"Colic, loose stools", intolCons:"Use lactose-free formula only",
-      gravidade:"Moderate", formula:"Lactose-free formula (example)", marcaBiberao:"Example" },
-  };
-  function applySeedLanguage(lang){
-    const c = S.crianca;
-    if(!c || !c.seed) return;
-    const T = SEED_TEXT[lang] || SEED_TEXT.pt;
-    c.nome = T.childName;
-    if(c.mae) c.mae.nome = T.mae;
-    if(c.pai) c.pai.nome = T.pai;
-    if(c.pediatra) c.pediatra.nome = T.pediatra;
-    if(c.alergiasMed && c.alergiasMed[0]){ Object.assign(c.alergiasMed[0], {nome:T.alergiaNome, reacao:T.alergiaReacao, gravidade:T.gravidade, alternativa:T.alergiaAlt}); }
-    if(c.intolerancias && c.intolerancias[0]){ Object.assign(c.intolerancias[0], {nome:T.intolNome, manifestacao:T.intolManif, gravidade:T.gravidade, consequencia:T.intolCons}); }
-    if(c.alimentacao) c.alimentacao.formula = T.formula;
-    (c.mamadas||[]).forEach(m=>{ if(m.tipo==='biberao' && m.marcaFormula) m.marcaFormula = T.marcaBiberao; });
   }
 
   function ageInfo(dob){
@@ -1171,6 +1223,11 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     (c.mamadas||[]).forEach(m=>{ if(m.tipo==='biberao' && m.marcaFormula && !seen.has(m.marcaFormula)){ seen.add(m.marcaFormula); opts.push(m.marcaFormula); } });
     return opts.map(o=>`<option value="${o}"></option>`).join('');
   }
+  // ml de um biberão: o bebido quando existe, senão o oferecido. null = sem quantidade registada.
+  function bottleMl(l){
+    const v = l.mlBebido!=null && l.mlBebido!=='' ? +l.mlBebido : (l.mlOferecido!=null && l.mlOferecido!=='' ? +l.mlOferecido : null);
+    return v>0 ? v : null;
+  }
   function feedLabel(l){
     if(l.tipo==='biberao'){
       const parts=[];
@@ -1179,8 +1236,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       const mlTxt = parts.length ? parts.join(' · ') : '';
       return tr('Biberão')+(mlTxt?(" · "+mlTxt):'')+(l.marcaFormula?(' · '+l.marcaFormula):'');
     }
-    if(l.tipo==='peito-esq') return tr("Peito esquerdo")+" · "+durStr(l.duracaoMin);
-    if(l.tipo==='peito-dir') return tr("Peito direito")+" · "+durStr(l.duracaoMin);
+    const durTxt = l.duracaoMin!=null && l.duracaoMin>0 ? durStr(l.duracaoMin) : lx('duração não indicada','durée non indiquée','duration not given');
+    if(l.tipo==='peito-esq') return tr("Peito esquerdo")+" · "+durTxt;
+    if(l.tipo==='peito-dir') return tr("Peito direito")+" · "+durTxt;
     return tr("Mamada");
   }
   function diaperLabel(l){ return tr(l.tipo==='xixi'?'Xixi':'Cocó')+' · '+tr(l.quantidade)+(l.cor?(' · '+tr(l.cor)):'')+(l.consistencia?(' · '+tr(l.consistencia)):''); }
@@ -1226,8 +1284,11 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     if(maisBtn) maisBtn.addEventListener('click', ()=>showMaisMenu(secondary));
   }
   function showMaisMenu(secondary){
-    showOverlay(`<div class="voice-panel"><div class="voice-card" style="text-align:left; padding:14px;">
-      <p style="font-weight:800; font-size:.95rem; margin:0 0 10px;">${t('mais')}</p>
+    showOverlay(`<div class="voice-panel" id="maisPanel"><div class="voice-card" role="dialog" aria-modal="true" aria-label="${t('mais')}" style="text-align:left; padding:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:0 0 10px;">
+        <p style="font-weight:800; font-size:.95rem; margin:0;">${t('mais')}</p>
+        <button class="icon-btn" id="maisClose" type="button" aria-label="${tr('Fechar')}" title="${tr('Fechar')}">✕</button>
+      </div>
       <div class="mais-list">${secondary.map(tb=>`<button class="mais-item${tb.id===activeTab?' active':''}" data-tab="${tb.id}" type="button">
           <span class="ic">${ICONS[tb.ic]}</span><span class="lbl">${t(tb.id)}</span>${ICONS.chevright}
         </button>`).join('')}</div>
@@ -1235,7 +1296,14 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     document.querySelectorAll('.mais-item').forEach(b=>b.addEventListener('click', ()=>{
       activeTab=b.dataset.tab; openForm=null; editId=null; closeOverlay(); render();
     }));
+    // Sair sem escolher nada: tocar no fundo escuro (fora do cartão) ou no ✕.
+    const panel=document.getElementById('maisPanel');
+    panel.addEventListener('click', e=>{ if(e.target===panel) closeMaisMenu(); });
+    document.getElementById('maisClose').addEventListener('click', closeMaisMenu);
   }
+  function closeMaisMenu(){ if(document.getElementById('maisPanel')) closeOverlay(); }
+  // ESC no computador fecha o menu "Mais" (só este menu — os outros painéis mantêm o comportamento atual).
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeMaisMenu(); });
   function renderHeader(){
     const c=S.crianca;
     document.getElementById('childName').textContent = c.nome||"Bebé";
@@ -1454,9 +1522,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const c = S.crianca;
     if(low.includes('mamada')||low.includes('biberão')||low.includes('biberao')||low.includes('peito')){
       let entry = {id:uid(), ts:Date.now(), qualidade:'ativa', obs:''};
-      if(low.includes('esquerd')){ entry.tipo='peito-esq'; entry.duracaoMin = num?+num:15; }
-      else if(low.includes('direit')){ entry.tipo='peito-dir'; entry.duracaoMin = num?+num:15; }
-      else { entry.tipo='biberao'; entry.marcaFormula=''; entry.mlOferecido = num?+num:150; entry.mlBebido = num?+num:150; }
+      if(low.includes('esquerd')){ entry.tipo='peito-esq'; entry.duracaoMin = num?+num:null; }
+      else if(low.includes('direit')){ entry.tipo='peito-dir'; entry.duracaoMin = num?+num:null; }
+      else { entry.tipo='biberao'; entry.marcaFormula=''; entry.mlOferecido = null; entry.mlBebido = num?+num:null; }
       S.mamadas.unshift(entry); save();
       toast = tr('Mamada registada:')+' '+feedLabel(entry);
     } else if(low.includes('fralda')||low.includes('xixi')||low.includes('cocó')||low.includes('coco')){
@@ -1543,6 +1611,27 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     el.innerHTML = msgs.length ? `<div style="padding:0 14px;">${msgs.map(m=>`<div class="alert warn">${m}</div>`).join('')}</div>` : '';
   }
 
+  /* ============ textos de ajuda "Exemplo" (só visuais — nunca guardados nem contados) ============ */
+  function lx(pt,fr,en){ const lang=(S.settings&&S.settings.lang)||'pt'; return lang==='fr'?fr:lang==='en'?en:pt; }
+  function exampleHint(txt){ return `<div class="example-hint"><span class="ex-tag">${lx('Exemplo','Exemple','Example')}</span>${txt}</div>`; }
+  function demoCleanupText(keys){
+    const N = {
+      mamadas:lx('mamadas/biberões','repas/biberons','feeds/bottles'), fraldas:lx('fraldas','couches','diapers'), sono:lx('sono','sommeil','sleep'),
+      alergiasMed:lx('alergia','allergie','allergy'), intolerancias:lx('intolerância','intolérance','intolerance'), medicacoes:lx('medicações pré-definidas','médicaments prédéfinis','preset medications'),
+      evolucao:lx('pesos/medidas','poids/mesures','weights/measurements'), marcos:lx('marcos de desenvolvimento','étapes de développement','milestones'),
+      vacinas:lx('vacinas marcadas como feitas','vaccins marqués comme faits','vaccines marked as done'), contactos:lx('nomes/contactos "Exemplo"','noms/contacts « Exemple »','"Example" names/contacts'),
+      nascimento:lx('medidas ao nascer','mesures à la naissance','birth measurements'), tipoSanguineo:lx('tipo sanguíneo (A+)','groupe sanguin (A+)','blood type (A+)'),
+    };
+    const removed = keys.filter(k=>N[k]).map(k=>N[k]).join(', ');
+    const check = [];
+    if(keys.includes('tipoSanguineo')) check.push(lx('tipo sanguíneo','groupe sanguin','blood type'));
+    if(keys.includes('nascimento')) check.push(lx('medidas ao nascer','mesures à la naissance','birth measurements'));
+    if(keys.includes('confirmarNascimento')) check.push(lx('data de nascimento','date de naissance','date of birth'));
+    let txt = removed ? lx('Removemos dados de exemplo que estavam misturados com os dados reais: ','Nous avons retiré des données d\'exemple mélangées aux vraies données : ','We removed example data that was mixed in with the real data: ')+removed+'.' : '';
+    if(check.length) txt += ' '+lx('Confirma no Perfil: ','Vérifie dans le Profil : ','Please check in Profile: ')+check.join(', ')+'.';
+    return txt;
+  }
+
   /* ============ INÍCIO ============ */
   function lastOf(arr){ return arr.slice().sort((a,b)=>b.ts-a.ts)[0]; }
   function timelineSvg(){
@@ -1579,7 +1668,14 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const peso = S.evolucao.peso.length ? S.evolucao.peso[S.evolucao.peso.length-1].valor : null;
 
     let html='';
-    if(S.crianca.seed) html += `<div class="demo-banner">${ICONS.note} ${tr('Estás a ver dados de exemplo.')} <button id="clearSeed" type="button">${tr('Começar do zero')}</button></div>`;
+    const notice = S.settings.demoCleanupNotice;
+    if(notice && notice.length) html += `<div class="demo-banner" style="flex-wrap:wrap;">${ICONS.note} <span style="flex:1;min-width:200px;">${demoCleanupText(notice)}</span> <button id="dismissDemoNotice" type="button">${tr('OK')}</button></div>`;
+    if(!S.mamadas.length && !S.fraldas.length && !S.sono.length && !isSleeping){
+      html += `<div class="card"><div class="section-label">${lx('Ainda sem registos','Pas encore d\'enregistrements','No records yet')}</div>
+        <p class="muted" style="margin:0;">${lx('Usa as ações rápidas abaixo para registar. Os resumos e gráficos só usam o que registares.','Utilise les actions rapides ci-dessous. Les résumés et graphiques n\'utilisent que ce que tu enregistres.','Use the quick actions below. Summaries and charts only use what you log.')}</p>
+        ${exampleHint(tr('Biberão')+' · '+tr('Bebido')+' 140ml · 14:30')}
+      </div>`;
+    }
 
     if(xixiToday>0 && xixiToday<6){
       const lang=(S.settings&&S.settings.lang)||'pt';
@@ -1618,16 +1714,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       </div>
     </div>`;
     document.getElementById('main').innerHTML = html;
-    const cs=document.getElementById('clearSeed');
-    if(cs) cs.addEventListener('click', ()=>{
-      showConfirm(tr('Apaga os dados de exemplo deste perfil e começa do zero. Continuar?'), ()=>{
-        const c=S.crianca;
-        c.seed=false; S.mamadas.length=0; S.fraldas.length=0; S.sono.length=0; S.doses.length=0;
-        c.evolucao.peso.length=0; c.evolucao.altura.length=0; c.evolucao.pc.length=0;
-        c.alergiasMed=[]; c.intolerancias=[];
-        save(); render();
-      });
-    });
+    const dn=document.getElementById('dismissDemoNotice');
+    if(dn) dn.addEventListener('click', ()=>{ delete S.settings.demoCleanupNotice; save(); render(); });
     document.querySelectorAll('[data-quick]').forEach(t=>t.addEventListener('click', ()=>{
       const dest=t.dataset.quick;
       if(dest==='sono' && isSleeping){ stopSleep(); return; }
@@ -1639,7 +1727,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 
   function stopSleep(){
     const start=S.running.sleepStart, end=Date.now();
-    S.sono.unshift({id:uid(), periodo:(new Date(start).getHours()>=20||new Date(start).getHours()<7)?'noite':'sesta', posicao:'costas', inicio:start, fim:end, duracaoMin:(end-start)/60000, qualidade:7, interrupcoes:0, obs:''});
+    S.sono.unshift({id:uid(), periodo:(new Date(start).getHours()>=20||new Date(start).getHours()<7)?'noite':'sesta', posicao:'costas', inicio:start, fim:end, duracaoMin:(end-start)/60000, qualidade:null, interrupcoes:null, obs:''});
     S.running.sleepStart=null; save(); playChime(); render();
   }
 
@@ -1687,7 +1775,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     <div class="card" style="border-color:var(--crit);">
       <div class="section-label" style="color:var(--crit);">${tr('Dados críticos')}</div>
       <div class="critical-block">
-        <div class="bt" id="bloodBig">${c.tipoSanguineo}</div>
+        <div class="bt" id="bloodBig">${c.tipoSanguineo||'—'}</div>
         <div class="rh">${tr('Fator Rh:')} ${c.fatorRh}</div>
       </div>
       <div class="form-row">
@@ -2033,7 +2121,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const sorted = S.mamadas.slice().sort((a,b)=>a.ts-b.ts);
     let avgInterval='—';
     if(sorted.length>1){ const diffs=[]; for(let i=1;i<sorted.length;i++) diffs.push(sorted[i].ts-sorted[i-1].ts); avgInterval = durStr(diffs.reduce((a,b)=>a+b,0)/diffs.length/60000); }
-    const totalMl = today.reduce((s,l)=> s + (l.tipo==='biberao' ? (l.mlBebido||l.mlOferecido||0) : 0), 0);
+    const totalMl = today.reduce((s,l)=> s + (l.tipo==='biberao' ? (bottleMl(l)||0) : 0), 0);
     const last = lastOf(S.mamadas);
     const days = last7();
     const bars = days.map(d=>{ const a=new Date(d+"T00:00:00").getTime(), b=a+86400000; return {v:S.mamadas.filter(l=>inRange(l.ts,a,b)).length, label:new Date(d+"T00:00:00").toLocaleDateString(localeTag(),{weekday:'narrow'}), date:d}; });
@@ -2068,7 +2156,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     let tipo = editing ? editing.tipo : lastFeedType(c);
     holder.innerHTML = `<div class="form-panel">
       ${editing ? `<p class="muted" style="margin:0 0 4px;font-weight:700;">${tr('A editar registo')}</p>` : ''}
-      <div class="form-row"><div style="flex:1;"><label>${tr('Hora')}</label><input type="time" id="fHora" value="${editing?fmtTimeOnly(editing.ts):new Date().toTimeString().slice(0,5)}"></div></div>
+      <div class="form-row"><div style="flex:1;"><label>${tr('Data')}</label><input type="date" id="fData" value="${localISO(editing?editing.ts:Date.now())}"></div><div style="flex:1;"><label>${tr('Hora')}</label><input type="time" id="fHora" value="${editing?hhmm(editing.ts):new Date().toTimeString().slice(0,5)}"></div></div>
       <div class="form-row" style="flex-direction:column;"><label>${tr('Tipo')}</label>
         <div class="seg" id="fTipo"><button data-v="peito-esq" class="${tipo==='peito-esq'?'on':''}">${tr('Peito esq.')}</button><button data-v="peito-dir" class="${tipo==='peito-dir'?'on':''}">${tr('Peito dir.')}</button><button data-v="biberao" class="${tipo==='biberao'?'on':''}">${tr('Biberão')}</button></div>
       </div>
@@ -2082,8 +2170,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     function drawExtra(){
       extra.innerHTML = tipo==='biberao'
         ? `<div class="form-row"><div style="flex:1;"><label>${tr('Marca fórmula')}</label><input type="text" id="fMarca" list="fMarcaList" placeholder="" class="${(!editing&&lastFormulaBrand(c))?'remembered-fill':''}" value="${editing?(editing.marcaFormula||''):lastFormulaBrand(c)}"><datalist id="fMarcaList">${formulaBrandOptions(c)}</datalist></div></div>
-           <div class="form-row"><div style="flex:1;"><label>${tr('Oferecido (ml)')}</label><input type="number" id="fOfer" placeholder="150" value="${editing&&editing.mlOferecido!=null?editing.mlOferecido:''}"></div><div style="flex:1;"><label>${tr('Bebido (ml)')}</label><input type="number" id="fBeb" placeholder="140" value="${editing&&editing.mlBebido!=null?editing.mlBebido:''}"></div></div>`
-        : `<div class="form-row"><div style="flex:1;"><label>${tr('Duração (min)')}</label><input type="number" id="fDur" placeholder="15" value="${editing&&editing.duracaoMin!=null?editing.duracaoMin:''}"></div></div>`;
+           <div class="form-row"><div style="flex:1;"><label>${tr('Oferecido (ml)')}</label><input type="number" id="fOfer" placeholder="${lx('ex.','ex.','e.g.')} 150" value="${editing&&editing.mlOferecido!=null?editing.mlOferecido:''}"></div><div style="flex:1;"><label>${tr('Bebido (ml)')}</label><input type="number" id="fBeb" placeholder="${lx('ex.','ex.','e.g.')} 140" value="${editing&&editing.mlBebido!=null?editing.mlBebido:''}"></div></div>`
+        : `<div class="form-row"><div style="flex:1;"><label>${tr('Duração (min)')}</label><input type="number" id="fDur" placeholder="${lx('ex.','ex.','e.g.')} 15" value="${editing&&editing.duracaoMin!=null?editing.duracaoMin:''}"></div></div>`;
     }
     seg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); tipo=b.dataset.v; drawExtra(); }));
     drawExtra();
@@ -2091,10 +2179,12 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const qseg=document.getElementById('fQual');
     qseg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ qseg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); qualidade=b.dataset.v; }));
     document.getElementById('fSave').addEventListener('click', ()=>{
-      const data={ ts:timeStrToTs(document.getElementById('fHora').value), tipo, qualidade, obs:document.getElementById('fObs').value.trim(),
+      const data={ ts:dateTimeToTs(document.getElementById('fData').value, document.getElementById('fHora').value, !editing), tipo, qualidade, obs:document.getElementById('fObs').value.trim(),
         marcaFormula:undefined, mlOferecido:undefined, mlBebido:undefined, duracaoMin:undefined };
-      if(tipo==='biberao'){ data.marcaFormula=document.getElementById('fMarca').value.trim(); data.mlOferecido=+document.getElementById('fOfer').value||0; data.mlBebido=+document.getElementById('fBeb').value||0; }
-      else data.duracaoMin=+document.getElementById('fDur').value||0;
+      // Campo vazio = sem valor (null). O placeholder "ex. …" é só visual e nunca é gravado.
+      const numOrNull = id => { const v=document.getElementById(id).value.trim(); return v==='' ? null : +v; };
+      if(tipo==='biberao'){ data.marcaFormula=document.getElementById('fMarca').value.trim(); data.mlOferecido=numOrNull('fOfer'); data.mlBebido=numOrNull('fBeb'); }
+      else data.duracaoMin=numOrNull('fDur');
       if(editing) Object.assign(editing, data); else S.mamadas.unshift({id:uid(), ...data});
       save(); playChime(); openForm=null; editId=null; renderMamadas();
     });
@@ -2105,9 +2195,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const el=document.getElementById('logList'); if(!el) return;
     const [t0,t1]=todayRange();
     const list=S.mamadas.filter(l=>inRange(l.ts,t0,t1)).sort((a,b)=>b.ts-a.ts);
-    el.innerHTML = list.length ? list.map(l=>`<div class="log-item" data-edit="${l.id}" style="cursor:pointer;"><div class="ic feed">${ICONS.bottle}</div><div class="body"><div class="title">${feedLabel(l)}</div><div class="meta">${l.qualidade==='fraca'?tr('sucção fraca'):tr('sucção ativa')}${l.obs?(' · '+l.obs):''}</div></div><div class="time">${fmtTimeOnly(l.ts)}</div><button class="log-del" data-del="${l.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join('') : `<div class="empty">${tr('Sem registos hoje.')}</div>`;
+    el.innerHTML = list.length ? list.map(l=>`<div class="log-item" data-edit="${l.id}" style="cursor:pointer;"><div class="ic feed">${ICONS.bottle}</div><div class="body"><div class="title">${feedLabel(l)}</div><div class="meta">${l.qualidade==='fraca'?tr('sucção fraca'):tr('sucção ativa')}${l.obs?(' · '+l.obs):''}</div></div><div class="time">${fmtTimeOnly(l.ts)}</div><button class="log-del" data-del="${l.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join('') : `<div class="empty">${tr('Sem registos hoje.')}</div>${exampleHint(tr('Biberão')+' · '+tr('Bebido')+' 140ml · 14:30')}${exampleHint(tr('Peito esquerdo')+' · 15min · 17:00')}`;
     el.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click', ev=>{ ev.stopPropagation(); showConfirm(tr('Apagar este registo de mamada?'), ()=>{ const i=S.mamadas.findIndex(l=>l.id===b.dataset.del); if(i>-1) S.mamadas.splice(i,1); save(); renderFeedLog(); }); }));
-    el.querySelectorAll('[data-edit]').forEach(row=>row.addEventListener('click', ()=>{ editId=row.dataset.edit; openForm='new'; renderFeedForm(); }));
+    el.querySelectorAll('[data-edit]').forEach(row=>row.addEventListener('click', ()=>showRecordDetails('mamada', row.dataset.edit)));
   }
 
   /* ============ FRALDAS ============ */
@@ -2156,7 +2246,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     let tipo = editing ? editing.tipo : 'xixi', quantidade = editing ? editing.quantidade : 'normal';
     holder.innerHTML = `<div class="form-panel">
       ${editing?`<p class="muted" style="margin:0 0 4px;font-weight:700;">${tr('A editar registo')}</p>`:''}
-      <div class="form-row"><div style="flex:1;"><label>${tr('Hora')}</label><input type="time" id="dHora" value="${editing?fmtTimeOnly(editing.ts):new Date().toTimeString().slice(0,5)}"></div></div>
+      <div class="form-row"><div style="flex:1;"><label>${tr('Data')}</label><input type="date" id="dData" value="${localISO(editing?editing.ts:Date.now())}"></div><div style="flex:1;"><label>${tr('Hora')}</label><input type="time" id="dHora" value="${editing?hhmm(editing.ts):new Date().toTimeString().slice(0,5)}"></div></div>
       <div class="form-row" style="flex-direction:column;"><label>${tr('Tipo')}</label><div class="seg" id="dTipo"><button data-v="xixi" class="${tipo==='xixi'?'on':''}">${tr('Xixi')}</button><button data-v="coco" class="${tipo==='coco'?'on':''}">${tr('Cocó')}</button></div></div>
       <div class="form-row" style="flex-direction:column;"><label>${tr('Quantidade')}</label><div class="seg" id="dQtd"><button data-v="pouco" class="${quantidade==='pouco'?'on':''}">${tr('Pouco')}</button><button data-v="normal" class="${quantidade==='normal'?'on':''}">${tr('Normal')}</button><button data-v="muito" class="${quantidade==='muito'?'on':''}">${tr('Muito')}</button></div></div>
       <div id="dExtra"></div>
@@ -2175,7 +2265,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     qseg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ qseg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); quantidade=b.dataset.v; }));
     drawExtra();
     document.getElementById('dSave').addEventListener('click', ()=>{
-      const data={ ts:timeStrToTs(document.getElementById('dHora').value), tipo, quantidade, obs:document.getElementById('dObs').value.trim(), cor:undefined, consistencia:undefined };
+      const data={ ts:dateTimeToTs(document.getElementById('dData').value, document.getElementById('dHora').value, !editing), tipo, quantidade, obs:document.getElementById('dObs').value.trim(), cor:undefined, consistencia:undefined };
       if(tipo==='coco'){ data.cor=document.getElementById('dCor').value; data.consistencia=document.getElementById('dCons').value; }
       if(editing) Object.assign(editing, data); else S.fraldas.unshift({id:uid(), ...data});
       save(); playChime(); openForm=null; editId=null; renderFraldas();
@@ -2187,9 +2277,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const el=document.getElementById('logList'); if(!el) return;
     const [t0,t1]=todayRange();
     const list=S.fraldas.filter(l=>inRange(l.ts,t0,t1)).sort((a,b)=>b.ts-a.ts);
-    el.innerHTML = list.length ? list.map(l=>`<div class="log-item" data-edit="${l.id}" style="cursor:pointer;"><div class="ic diaper">${ICONS.drop}</div><div class="body"><div class="title">${diaperLabel(l)}</div>${l.obs?`<div class="meta">${l.obs}</div>`:''}</div><div class="time">${fmtTimeOnly(l.ts)}</div><button class="log-del" data-del="${l.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join('') : `<div class="empty">${tr('Sem registos hoje.')}</div>`;
+    el.innerHTML = list.length ? list.map(l=>`<div class="log-item" data-edit="${l.id}" style="cursor:pointer;"><div class="ic diaper">${ICONS.drop}</div><div class="body"><div class="title">${diaperLabel(l)}</div>${l.obs?`<div class="meta">${l.obs}</div>`:''}</div><div class="time">${fmtTimeOnly(l.ts)}</div><button class="log-del" data-del="${l.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join('') : `<div class="empty">${tr('Sem registos hoje.')}</div>${exampleHint(tr('Xixi')+' · '+tr('normal')+' · 09:15')}`;
     el.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click', ev=>{ ev.stopPropagation(); showConfirm(tr('Apagar este registo de fralda?'), ()=>{ const i=S.fraldas.findIndex(l=>l.id===b.dataset.del); if(i>-1) S.fraldas.splice(i,1); save(); renderDiaperLog(); }); }));
-    el.querySelectorAll('[data-edit]').forEach(row=>row.addEventListener('click', ()=>{ editId=row.dataset.edit; openForm='new'; renderDiaperForm(); }));
+    el.querySelectorAll('[data-edit]').forEach(row=>row.addEventListener('click', ()=>showRecordDetails('fralda', row.dataset.edit)));
   }
 
   /* ============ SONO ============ */
@@ -2203,7 +2293,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const hoursToday = todayMins/60;
     const status = hoursToday>=lo ? (hoursToday<=hi+2?'good':'good') : (hoursToday>=lo-2?'warn':'crit');
     const statusLabel = status==='good'?'🟢 '+tr('OK'):status==='warn'?'🟡 '+tr('BAIXO'):'🔴 '+tr('CRÍTICO');
-    const avgQual = S.sono.length ? (S.sono.reduce((s,l)=>s+(l.qualidade||0),0)/S.sono.length).toFixed(1) : '—';
+    const withQual = S.sono.filter(l=>typeof l.qualidade==='number' && l.qualidade>0);
+    const avgQual = withQual.length ? (withQual.reduce((s,l)=>s+l.qualidade,0)/withQual.length).toFixed(1) : '—';
     const days=last7();
     const bars=days.map(d=>{ const a=new Date(d+"T00:00:00").getTime(),b=a+86400000; const mins=S.sono.filter(l=>inRange(l.inicio,a,b)).reduce((s,l)=>s+(l.duracaoMin||0),0); return {v:+(mins/60).toFixed(1), label:new Date(d+"T00:00:00").toLocaleDateString(localeTag(),{weekday:'narrow'}), date:d}; });
 
@@ -2238,17 +2329,17 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const editing = editId ? S.sono.find(l=>l.id===editId) : null;
     const now = new Date();
     const isSleeping = !!S.running.sleepStart;
-    const iniVal = editing ? fmtTimeOnly(editing.inicio) : now.toTimeString().slice(0,5);
-    const fimVal = editing ? fmtTimeOnly(editing.fim) : now.toTimeString().slice(0,5);
+    const iniVal = editing ? hhmm(editing.inicio) : now.toTimeString().slice(0,5);
+    const fimVal = editing ? hhmm(editing.fim) : now.toTimeString().slice(0,5);
     holder.innerHTML = `<div class="form-panel">
       ${editing?`<p class="muted" style="margin:0 0 4px;font-weight:700;">${tr('A editar registo')}</p>`:''}
       <div class="form-row" style="flex-direction:column;"><label>${tr('Período')}</label><div class="seg" id="sPeriodo"><button data-v="noite" class="${(!editing||editing.periodo==='noite')?'on':''}">${tr('Noite')}</button><button data-v="sesta" class="${editing&&editing.periodo==='sesta'?'on':''}">${tr('Sesta')}</button></div></div>
       <div class="form-row" style="flex-direction:column;"><label>${tr('Posição')}</label><div class="seg" id="sPos"><button data-v="costas" class="${(!editing||editing.posicao==='costas')?'on':''}">${tr('Costas')}</button><button data-v="lado" class="${editing&&editing.posicao==='lado'?'on':''}">${tr('Lado')}</button><button data-v="barriga" class="${editing&&editing.posicao==='barriga'?'on':''}">${tr('Barriga')}</button></div></div>
-      <div class="form-row"><div style="flex:1;"><label>${tr('Adormeceu')}</label><input type="time" id="sIni" value="${iniVal}"></div></div>
+      <div class="form-row"><div style="flex:1;"><label>${tr('Data')}</label><input type="date" id="sData" value="${localISO(editing?editing.inicio:Date.now())}"></div><div style="flex:1;"><label>${tr('Adormeceu')}</label><input type="time" id="sIni" value="${iniVal}"></div></div>
       ${(!isSleeping&&!editing) ? `<label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:.82rem;"><input type="checkbox" id="sAindaDorme" style="width:auto;"> ${tr('Ainda está a dormir — registar só a hora que adormeceu')}</label>` : ''}
       <div id="sFimBlock">
         <div class="form-row"><div style="flex:1;"><label>${tr('Acordou')}</label><input type="time" id="sFim" value="${fimVal}"></div></div>
-        <div class="form-row"><div style="flex:1;"><label>${tr('Qualidade (1–10)')}</label><input type="number" id="sQual" min="1" max="10" placeholder="7" value="${editing?editing.qualidade:''}"></div><div style="flex:1;"><label>${tr('Interrupções')}</label><input type="number" id="sInter" min="0" placeholder="0" value="${editing&&editing.interrupcoes?editing.interrupcoes:''}"></div></div>
+        <div class="form-row"><div style="flex:1;"><label>${tr('Qualidade (1–10)')}</label><input type="number" id="sQual" min="1" max="10" placeholder="${lx('ex.','ex.','e.g.')} 7" value="${editing&&editing.qualidade!=null?editing.qualidade:''}"></div><div style="flex:1;"><label>${tr('Interrupções')}</label><input type="number" id="sInter" min="0" placeholder="${lx('ex.','ex.','e.g.')} 0" value="${editing&&editing.interrupcoes?editing.interrupcoes:''}"></div></div>
       </div>
       <textarea id="sObs" placeholder="${tr('Observações (opcional)')}">${editing&&editing.obs?editing.obs:''}</textarea>
       <button class="btn wide" id="sSave" type="button">${editing?tr('Guardar alterações'):tr('Guardar')}</button>
@@ -2262,7 +2353,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const fimBlock = document.getElementById('sFimBlock');
     if(aindaChk) aindaChk.addEventListener('change', ()=>{ fimBlock.style.display = aindaChk.checked ? 'none' : 'block'; });
     document.getElementById('sSave').addEventListener('click', ()=>{
-      const inicio = timeStrToTs(document.getElementById('sIni').value);
+      const inicio = dateTimeToTs(document.getElementById('sData').value, document.getElementById('sIni').value, !editing);
       if(aindaChk && aindaChk.checked){
         S.running.sleepStart = inicio;
         save(); playChime(); openForm=null; editId=null; renderSono();
@@ -2271,7 +2362,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       const [fh,fm]=document.getElementById('sFim').value.split(':').map(Number);
       let fim=new Date(inicio); fim.setHours(fh,fm,0,0);
       if(fim.getTime()<=inicio) fim.setDate(fim.getDate()+1);
-      const data={ periodo, posicao, inicio, fim:fim.getTime(), duracaoMin:(fim.getTime()-inicio)/60000, qualidade:+document.getElementById('sQual').value||7, interrupcoes:+document.getElementById('sInter').value||0, obs:document.getElementById('sObs').value.trim() };
+      const data={ periodo, posicao, inicio, fim:fim.getTime(), duracaoMin:(fim.getTime()-inicio)/60000, qualidade:(v=>v===''?null:+v)(document.getElementById('sQual').value.trim()), interrupcoes:(v=>v===''?null:+v)(document.getElementById('sInter').value.trim()), obs:document.getElementById('sObs').value.trim() };
       if(editing) Object.assign(editing, data); else S.sono.unshift({id:uid(), ...data});
       save(); playChime(); openForm=null; editId=null; renderSono();
     });
@@ -2282,9 +2373,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const el=document.getElementById('logList'); if(!el) return;
     const cutoff = Date.now() - 24*3600000;
     const list=S.sono.filter(l=>(l.fim||l.inicio)>=cutoff).slice().sort((a,b)=>b.inicio-a.inicio);
-    el.innerHTML = list.length ? list.map(l=>`<div class="log-item" data-edit="${l.id}" style="cursor:pointer;"><div class="ic sleepc">${ICONS.moon}</div><div class="body"><div class="title">${l.periodo==='noite'?tr('Noite'):tr('Sesta')} · ${fmtTimeOnly(l.inicio)} → ${fmtTimeOnly(l.fim)}</div><div class="meta">${durStr(l.duracaoMin)} · ${tr('qualidade')} ${l.qualidade}/10${l.interrupcoes?(' · '+l.interrupcoes+' '+tr('interrupções')):''}${l.posicao?(' · '+tr(l.posicao)):''}</div></div><button class="log-del" data-del="${l.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join('') : `<div class="empty">${tr('Sem registos.')}</div>`;
+    el.innerHTML = list.length ? list.map(l=>`<div class="log-item" data-edit="${l.id}" style="cursor:pointer;"><div class="ic sleepc">${ICONS.moon}</div><div class="body"><div class="title">${l.periodo==='noite'?tr('Noite'):tr('Sesta')} · ${fmtTimeOnly(l.inicio)} → ${fmtTimeOnly(l.fim)}</div><div class="meta">${durStr(l.duracaoMin)}${l.qualidade!=null?(' · '+tr('qualidade')+' '+l.qualidade+'/10'):''}${l.interrupcoes?(' · '+l.interrupcoes+' '+tr('interrupções')):''}${l.posicao?(' · '+tr(l.posicao)):''}</div></div><button class="log-del" data-del="${l.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join('') : `<div class="empty">${tr('Sem registos.')}</div>${exampleHint(tr('Sesta')+' · 13:00 → 14:30 · 1h 30min')}`;
     el.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click', ev=>{ ev.stopPropagation(); showConfirm(tr('Apagar este registo de sono?'), ()=>{ const i=S.sono.findIndex(l=>l.id===b.dataset.del); if(i>-1) S.sono.splice(i,1); save(); renderSleepLog(); }); }));
-    el.querySelectorAll('[data-edit]').forEach(row=>row.addEventListener('click', ()=>{ editId=row.dataset.edit; openForm='new'; renderSleepForm(); }));
+    el.querySelectorAll('[data-edit]').forEach(row=>row.addEventListener('click', ()=>showRecordDetails('sono', row.dataset.edit)));
   }
 
   /* ============ EVOLUÇÃO ============ */
@@ -2314,7 +2405,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <path d="${dataPath}" fill="none" stroke="var(--crit)" stroke-width="2.2"/>
       ${dots}${ticks}${endLabel}
     </svg>
-    <div class="legend"><span><i style="background:var(--crit)"></i>${tr('Emily/exemplo')}</span><span><i style="background:var(--brand)"></i>${tr('P50 OMS')}</span><span><i style="background:var(--info)"></i>${tr('P10 / P90 OMS')}</span></div>`;
+    <div class="legend"><span><i style="background:var(--crit)"></i>${S.crianca.nome||tr('Bebé')}</span><span><i style="background:var(--brand)"></i>${tr('P50 OMS')}</span><span><i style="background:var(--info)"></i>${tr('P10 / P90 OMS')}</span></div>`;
   }
   function ageMonthsAt(dob, dateStr){
     const d0=new Date(dob+"T00:00:00"), d1=new Date(dateStr+"T00:00:00");
@@ -2339,7 +2430,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         <div style="flex:1;"><label>${tr('PC (cm)')}</label><input type="text" inputmode="decimal" id="gHead"></div>
       </div>
       <button class="btn wide" id="gSave" type="button">${tr('Guardar medição')}</button>
-    </div>`;
+    </div>
+    ${measurementsListHtml()}`;
     document.getElementById('gSave').addEventListener('click', ()=>{
       const date=document.getElementById('gDate').value||todayISO();
       const toNum = v => parseFloat((v||'').replace(',','.'));
@@ -2348,6 +2440,45 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       if(height) S.evolucao.altura.push({date, valor:height});
       if(head) S.evolucao.pc.push({date, valor:head});
       save(); if(weight||height||head) playChime(); renderEvolucao();
+    });
+    document.querySelectorAll('[data-meas-metric]').forEach(b=>b.addEventListener('click', ()=>showMeasurementDetails(b.dataset.measMetric, +b.dataset.measIdx)));
+  }
+  const MEAS = { peso:{lbl:'Peso', unit:'kg'}, altura:{lbl:'Altura', unit:'cm'}, pc:{lbl:'Perímetro cefálico', unit:'cm'} };
+  function measurementsListHtml(){
+    const items=[];
+    Object.keys(MEAS).forEach(k=>(S.evolucao[k]||[]).forEach((r,i)=>items.push({k,i,r})));
+    items.sort((x,y)=>String(y.r.date).localeCompare(String(x.r.date)));
+    const fmtD = d => d ? new Date(d+'T12:00:00').toLocaleDateString(localeTag()) : '—';
+    return `<div class="card"><div class="section-label">${lx('Medições registadas','Mesures enregistrées','Logged measurements')}</div>
+      ${items.length ? items.map(it=>`<button type="button" class="day-rec" data-meas-metric="${it.k}" data-meas-idx="${it.i}"><span><b>${tr(MEAS[it.k].lbl)}</b> · ${String(it.r.valor).replace('.', lx(',',',','.'))} ${MEAS[it.k].unit} <span class="muted">· ${fmtD(it.r.date)}</span></span>${ICONS.chevright}</button>`).join('') : `<div class="empty">${tr('Sem registos.')}</div>`}
+    </div>`;
+  }
+  function showMeasurementDetails(metric, idx, editing){
+    const rec=(S.evolucao[metric]||[])[idx]; if(!rec){ closeOverlay(); return; }
+    const M=MEAS[metric];
+    showOverlay(`<div class="voice-panel" id="measPanel"><div class="voice-card" style="text-align:left;">
+      <h2 style="margin:0 0 10px;display:flex;align-items:center;gap:8px;">${ICONS.chart} ${tr(M.lbl)}</h2>
+      ${editing ? `<div class="form-row"><div style="flex:1;"><label>${tr('Data')}</label><input type="date" id="mDate" value="${rec.date||''}"></div>
+          <div style="flex:1;"><label>${tr(M.lbl)} (${M.unit})</label><input type="text" inputmode="decimal" id="mVal" value="${rec.valor}"></div></div>
+        <p class="muted" id="mErr" style="min-height:1em;margin:4px 0 0;"></p>
+        <button class="btn wide" id="mSave" type="button">${tr('Guardar alterações')}</button>`
+      : `<div class="rec-line"><span>${tr('Data')}</span><b>${rec.date ? new Date(rec.date+'T12:00:00').toLocaleDateString(localeTag()) : '—'}</b></div>
+        <div class="rec-line"><span>${tr(M.lbl)}</span><b>${rec.valor} ${M.unit}</b></div>
+        <div class="btn-row" style="margin-top:14px;"><button class="btn wide" id="mEdit" type="button">✏️ ${lx('Editar','Modifier','Edit')}</button><button class="btn crit wide" id="mDel" type="button">${tr('Apagar')}</button></div>`}
+      <button class="btn ghost wide" id="mClose" type="button" style="margin-top:8px;">${editing?tr('Cancelar'):tr('Fechar')}</button>
+    </div></div>`);
+    const panel=document.getElementById('measPanel');
+    panel.addEventListener('click', e=>{ if(e.target===panel) closeOverlay(); });
+    document.getElementById('mClose').addEventListener('click', ()=> editing ? showMeasurementDetails(metric, idx, false) : closeOverlay());
+    const eb=document.getElementById('mEdit'); if(eb) eb.addEventListener('click', ()=>showMeasurementDetails(metric, idx, true));
+    const db=document.getElementById('mDel'); if(db) db.addEventListener('click', ()=>showConfirm(lx('Apagar esta medição?','Supprimer cette mesure ?','Delete this measurement?'), ()=>{
+      const arr=S.evolucao[metric]; const i=arr.indexOf(rec); if(i>-1) arr.splice(i,1); save(); renderEvolucao();
+    }));
+    const sb=document.getElementById('mSave'); if(sb) sb.addEventListener('click', ()=>{
+      const v=parseFloat((document.getElementById('mVal').value||'').replace(',','.')), d=document.getElementById('mDate').value;
+      if(!(v>0) || !d){ document.getElementById('mErr').textContent = lx('Indica uma data e um valor válido.','Indique une date et une valeur valide.','Enter a date and a valid value.'); return; }
+      const arr=S.evolucao[metric]; const i=arr.indexOf(rec); if(i<0){ closeOverlay(); return; }
+      rec.valor=v; rec.date=d; save(); closeOverlay(); renderEvolucao();
     });
   }
 
@@ -2468,148 +2599,283 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   }
 
   /* ============ RESUMO ============ */
-  function periodStats(days, offsetDays){
-    offsetDays = offsetDays||0;
-    const t1=Date.now()-offsetDays*86400000, t0=t1-days*86400000;
-    const mamadas = S.mamadas.filter(l=>inRange(l.ts,t0,t1));
-    const fraldas = S.fraldas.filter(l=>inRange(l.ts,t0,t1));
-    const sono = S.sono.filter(l=>inRange(l.inicio,t0,t1));
-    const sonoMin = sono.reduce((s,l)=>s+(l.duracaoMin||0),0);
-    const xixi = fraldas.filter(f=>f.tipo==='xixi').length, coco=fraldas.filter(f=>f.tipo==='coco').length;
-    const biberoes = mamadas.filter(m=>m.tipo==='biberao');
-    const totalMl = biberoes.reduce((s,m)=>s+(m.mlBebido||m.mlOferecido||0),0);
-    return { mamadas: mamadas.length, biberoes: biberoes.length, totalMl, sonoMin, avgSonoH:(sonoMin/60/days).toFixed(1), xixi, coco, xixiAvg:(xixi/days).toFixed(1) };
+  // Períodos em dias de calendário (hoje incluído): 7 dias = hoje + 6 anteriores.
+  function periodRange(days, offsetDays){
+    const start=new Date(); start.setHours(0,0,0,0); start.setDate(start.getDate()-(days-1)-(offsetDays||0));
+    const end=new Date(start); end.setDate(end.getDate()+days);
+    return [start.getTime(), end.getTime()];
   }
-  function growthDelta(days){
+  function dayKey(ts){ const d=new Date(ts); return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate(); }
+  function fmtInt(n){ return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' '); }
+  function fmtDec(n,d){ const v=(+n).toFixed(d); return ((S.settings&&S.settings.lang)||'pt')==='en' ? v : v.replace('.',','); }
+  // Estatísticas objetivas de um período, só com registos reais. As médias por dia usam
+  // APENAS os dias que têm registos dessa categoria — um dia sem registos não conta como 0.
+  function periodSummary(days, offsetDays){
+    const [a,b]=periodRange(days, offsetDays);
+    return rangeSummary(a, b, days);
+  }
+  // Semana do resumo semanal = semana de calendário, segunda a domingo. weekOffset 0 = semana atual, 1 = anterior, …
+  // É o MESMO período usado pela reflexão e pela nota da semana (chave = data da segunda-feira).
+  function weekStartDate(d){ const x=new Date(d||Date.now()); x.setHours(0,0,0,0); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; }
+  function weekKeyOf(d){ const x=weekStartDate(d); return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); }
+  function viewedWeek(weekOffset){
+    const a=weekStartDate(); a.setDate(a.getDate()-7*(weekOffset||0));
+    const b=new Date(a); b.setDate(b.getDate()+7);
+    const pa=new Date(a); pa.setDate(pa.getDate()-7);
+    const today=new Date(); today.setHours(0,0,0,0);
+    // Semana em curso: só contam os dias já decorridos (até hoje) para o "X/N dias".
+    const span = today>=a && today<b ? Math.round((today-a)/86400000)+1 : 7;
+    return { a:a.getTime(), b:b.getTime(), pa:pa.getTime(), key:weekKeyOf(a), span, current:(weekOffset||0)===0 };
+  }
+  function rangeSummary(a, b, days){
+    const feeds=S.mamadas.filter(l=>inRange(l.ts,a,b));
+    const bott=feeds.filter(l=>l.tipo==='biberao');
+    const withMl=bott.filter(l=>bottleMl(l)!=null);
+    const ml=withMl.reduce((s,l)=>s+bottleMl(l),0);
+    const mlDays=new Set(withMl.map(l=>dayKey(l.ts))).size;
+    const breast=feeds.filter(l=>l.tipo==='peito-esq'||l.tipo==='peito-dir');
+    const withDur=breast.filter(l=>l.duracaoMin!=null && +l.duracaoMin>0);
+    const durTotal=withDur.reduce((s,l)=>s+(+l.duracaoMin),0);
+    const sono=S.sono.filter(l=>inRange(l.inicio,a,b));
+    const sonoMin=sono.reduce((s,l)=>s+(l.duracaoMin||0),0);
+    const sonoDays=new Set(sono.map(l=>dayKey(l.inicio))).size;
+    const fr=S.fraldas.filter(l=>inRange(l.ts,a,b));
+    const xixi=fr.filter(f=>f.tipo==='xixi').length, coco=fr.filter(f=>f.tipo==='coco').length;
+    const frDays=new Set(fr.map(l=>dayKey(l.ts))).size;
+    return { days, a, b,
+      bottle:{ n:bott.length, ml, noMl:bott.length-withMl.length, days:new Set(bott.map(l=>dayKey(l.ts))).size, mlDays, mlPerDay: mlDays ? ml/mlDays : null },
+      breast:{ n:breast.length, left:breast.filter(l=>l.tipo==='peito-esq').length, right:breast.filter(l=>l.tipo==='peito-dir').length,
+        durTotal, withDur:withDur.length, avgDur: withDur.length ? durTotal/withDur.length : null, days:new Set(breast.map(l=>dayKey(l.ts))).size },
+      sleep:{ n:sono.length, nights:sono.filter(l=>l.periodo==='noite').length, naps:sono.filter(l=>l.periodo!=='noite').length, min:sonoMin, days:sonoDays, perDay: sonoDays ? sonoMin/sonoDays : null },
+      diaper:{ n:fr.length, xixi, coco, days:frDays, xixiPerDay: frDays ? xixi/frDays : null, cocoPerDay: frDays ? coco/frDays : null },
+    };
+  }
+  function growthDelta(days, range){
     const cutoff = Date.now()-days*86400000;
-    const inWin = arr => arr.filter(r=>new Date(r.date).getTime()>=cutoff);
+    const inWin = arr => arr.filter(r=> range ? inRange(new Date(r.date+'T12:00:00').getTime(), range[0], range[1]) : new Date(r.date).getTime()>=cutoff).slice().sort((x,y)=>new Date(x.date)-new Date(y.date));
     const p = inWin(S.evolucao.peso), a = inWin(S.evolucao.altura);
     const dp = p.length>1 ? (p[p.length-1].valor-p[0].valor) : null;
     const da = a.length>1 ? (a[a.length-1].valor-a[0].valor) : null;
-    return {dp,da};
+    return {dp,da,np:p.length,na:a.length};
+  }
+  // Secções do resumo (usadas no ecrã e no PDF). Cada linha é HTML simples (<b>, <span class="muted">).
+  function summarySections(days, weekOffset){
+    let cur, prev, g, span=days;
+    if(days===7){
+      const w=viewedWeek(weekOffset);
+      cur=rangeSummary(w.a, w.b, 7); prev=rangeSummary(w.pa, w.a, 7); g=growthDelta(7,[w.a,w.b]); span=w.span;
+    } else { cur=periodSummary(days,0); prev=periodSummary(days,days); g=growthDelta(days); }
+    const dia=lx('dia','jour','day');
+    const daysLine = n => `<b>${n}/${span}</b> ${lx('dias com registos','jours avec enregistrements','days with records')}`+(span<days?` <span class="muted">(${lx('semana em curso','semaine en cours','week in progress')})</span>`:'');
+    const avgNote = n => `<span class="muted">(${lx('média dos','moyenne sur les','average over the')} ${n} ${lx(n===1?'dia com registos':'dias com registos',n===1?'jour avec enregistrements':'jours avec enregistrements',n===1?'day with records':'days with records')})</span>`;
+    const prevLbl = days===7 ? lx('Semana anterior','Semaine précédente','Previous week') : lx(`${days} dias anteriores`,`${days} jours précédents`,`Previous ${days} days`);
+    const minDays = days===7 ? 3 : 7; // "dados suficientes" para comparar: nº mínimo de dias com registos nos DOIS períodos
+    const canCmp = (c,p) => c>=minDays && p>=minDays;
+    const signed = (v,f) => (v>=0?'+':'−')+f(Math.abs(v));
+    const out=[];
+    const B=cur.bottle, PB=prev.bottle;
+    if(B.n){
+      const lines=[`<b>${B.n}</b> ${lx(B.n===1?'biberão registado':'biberões registados',B.n===1?'biberon enregistré':'biberons enregistrés',B.n===1?'bottle logged':'bottles logged')}`];
+      if(B.ml>0) lines.push(`<b>${fmtInt(B.ml)} ml</b> ${lx('registados','enregistrés','logged')}`+(B.noMl?` <span class="muted">(${B.noMl} ${lx('sem quantidade','sans quantité','without an amount')})</span>`:''));
+      else lines.push(`<span class="muted">${lx('Nenhum biberão com quantidade em ml.','Aucun biberon avec quantité en ml.','No bottle with an amount in ml.')}</span>`);
+      if(B.mlPerDay!=null) lines.push(`<b>~${fmtInt(B.mlPerDay)} ml/${dia}</b> ${avgNote(B.mlDays)}`);
+      lines.push(daysLine(B.days));
+      let cmp='';
+      if(canCmp(B.mlDays,PB.mlDays)) cmp=`${prevLbl}: ${PB.n} ${lx('biberões','biberons','bottles')} · ${fmtInt(PB.ml)} ml · ~${fmtInt(PB.mlPerDay)} ml/${dia} (${PB.days}/${days}) — ${lx('diferença','différence','difference')}: ${signed(B.mlPerDay-PB.mlPerDay,fmtInt)} ml/${dia}`;
+      out.push({ic:ICONS.bottle, title:lx('Alimentação · biberão','Alimentation · biberon','Feeding · bottle'), lines, cmp});
+    }
+    const M=cur.breast, PM=prev.breast;
+    if(M.n){
+      const lines=[`<b>${M.n}</b> ${lx(M.n===1?'sessão de amamentação':'sessões de amamentação',M.n===1?'tétée':'tétées',M.n===1?'breastfeeding session':'breastfeeding sessions')} <span class="muted">(${M.left} ${lx('esq.','gauche','left')} · ${M.right} ${lx('dir.','droite','right')})</span>`];
+      if(M.withDur){
+        lines.push(`<b>${durStr(M.durTotal)}</b> ${lx('de duração total registada','de durée totale enregistrée','total duration logged')}`+(M.withDur<M.n?` <span class="muted">(${M.n-M.withDur} ${lx('sem duração','sans durée','without a duration')})</span>`:''));
+        lines.push(`<b>~${Math.round(M.avgDur)} min</b> ${lx('por sessão, em média','par tétée en moyenne','per session on average')} <span class="muted">(${M.withDur} ${lx('sessões com duração','tétées avec durée','sessions with a duration')})</span>`);
+      }
+      lines.push(daysLine(M.days));
+      lines.push(`<span class="muted">${lx('A amamentação é contada em sessões e minutos — não é convertida em ml.','L\'allaitement est compté en tétées et minutes — pas converti en ml.','Breastfeeding is counted in sessions and minutes — never converted to ml.')}</span>`);
+      let cmp='';
+      if(canCmp(M.days,PM.days)) cmp=`${prevLbl}: ${PM.n} ${lx('sessões','tétées','sessions')}`+(PM.avgDur!=null?` · ~${Math.round(PM.avgDur)} min/${lx('sessão','tétée','session')}`:'')+` (${PM.days}/${days})`;
+      out.push({ic:ICONS.bottle, title:lx('Alimentação · amamentação','Alimentation · allaitement','Feeding · breastfeeding'), lines, cmp});
+    }
+    const Z=cur.sleep, PZ=prev.sleep;
+    if(Z.n){
+      const lines=[`<b>${Z.n}</b> ${lx('períodos de sono registados','périodes de sommeil enregistrées','sleep periods logged')} <span class="muted">(${Z.nights} ${lx('noites','nuits','nights')} · ${Z.naps} ${lx('sestas','siestes','naps')})</span>`,
+        `<b>${durStr(Z.min)}</b> ${lx('de sono registado','de sommeil enregistré','of sleep logged')}`,
+        `<b>~${durStr(Z.perDay)}/${dia}</b> ${avgNote(Z.days)}`,
+        daysLine(Z.days)];
+      let cmp='';
+      if(canCmp(Z.days,PZ.days)) cmp=`${prevLbl}: ~${durStr(PZ.perDay)}/${dia} (${PZ.days}/${days}) — ${lx('diferença','différence','difference')}: ${signed(Z.perDay-PZ.perDay,v=>durStr(v))}/${dia}`;
+      out.push({ic:ICONS.moon, title:lx('Sono','Sommeil','Sleep'), lines, cmp});
+    }
+    const F=cur.diaper, PF=prev.diaper;
+    if(F.n){
+      const lines=[`<b>${F.n}</b> ${lx('fraldas registadas','couches enregistrées','diapers logged')} <span class="muted">(${F.xixi} ${tr('xixi')} · ${F.coco} ${tr('cocó')})</span>`,
+        `<b>~${fmtDec(F.xixiPerDay,1)} ${tr('xixi')}/${dia}</b> · ~${fmtDec(F.cocoPerDay,1)} ${tr('cocó')}/${dia} ${avgNote(F.days)}`,
+        daysLine(F.days)];
+      let cmp='';
+      if(canCmp(F.days,PF.days)) cmp=`${prevLbl}: ~${fmtDec(PF.xixiPerDay,1)} ${tr('xixi')}/${dia} · ~${fmtDec(PF.cocoPerDay,1)} ${tr('cocó')}/${dia} (${PF.days}/${days})`;
+      out.push({ic:ICONS.drop, title:lx('Fraldas','Couches','Diapers'), lines, cmp});
+    }
+    if(g.dp!=null || g.da!=null){
+      const lines=[];
+      if(g.dp!=null) lines.push(`${tr('Peso')}: <b>${g.dp>=0?'+':'−'}${fmtDec(Math.abs(g.dp),2)} kg</b> <span class="muted">(${g.np} ${lx('medições no período','mesures sur la période','measurements in the period')})</span>`);
+      if(g.da!=null) lines.push(`${tr('Altura')}: <b>${g.da>=0?'+':'−'}${fmtDec(Math.abs(g.da),1)} cm</b> <span class="muted">(${g.na} ${lx('medições no período','mesures sur la période','measurements in the period')})</span>`);
+      out.push({ic:ICONS.chart, title:lx('Crescimento','Croissance','Growth'), lines, cmp:''});
+    }
+    return {cur, sections:out};
+  }
+  function periodLabel(sum){
+    const f = ts => new Date(ts).toLocaleDateString(localeTag(),{day:'numeric',month:'short'});
+    return f(sum.a)+' – '+f(sum.b-1);
+  }
+  function summaryHtml(days, weekOffset){
+    const {cur, sections} = summarySections(days, weekOffset);
+    if(!sections.length) return `<div class="empty">${lx('Sem registos neste período.','Aucun enregistrement sur cette période.','No records in this period.')}</div>${exampleHint(lx('32 biberões registados · 4 180 ml · ~697 ml/dia · 6/7 dias com registos','32 biberons · 4 180 ml · ~697 ml/jour · 6/7 jours','32 bottles · 4,180 ml · ~697 ml/day · 6/7 days with records'))}`;
+    return `<p class="muted" style="margin:4px 0 0;">${days===7?'':periodLabel(cur)+' · '}${lx('médias calculadas só sobre os dias com registos (dias sem registos não contam como zero)','moyennes calculées uniquement sur les jours avec enregistrements','averages use only days with records (days without records do not count as zero)')}</p>`+
+      sections.map(sec=>`<div class="sum-block"><div class="sum-title">${sec.ic}<span>${sec.title}</span></div>${sec.lines.map(l=>`<div class="sum-line">${l}</div>`).join('')}${sec.cmp?`<div class="sum-cmp">${sec.cmp}</div>`:''}</div>`).join('');
+  }
+  function summaryPlainText(days, weekOffset){
+    const {cur, sections} = summarySections(days, weekOffset);
+    const strip = h => h.replace(/<[^>]+>/g,'').replace(/ | /g,' ').replace(/−/g,'-');
+    if(!sections.length) return lx('Sem registos neste período.','Aucun enregistrement sur cette période.','No records in this period.');
+    return strip(periodLabel(cur))+'\n'+lx('Médias calculadas só sobre os dias com registos.','Moyennes calculées uniquement sur les jours avec enregistrements.','Averages use only days with records.')+'\n\n'+
+      sections.map(sec=>strip(sec.title).toUpperCase()+'\n'+sec.lines.map(l=>'  '+strip(l)).join('\n')+(sec.cmp?'\n  '+strip(sec.cmp):'')).join('\n\n');
   }
   // Resumo inteligente: frases calculadas localmente a partir dos próprios dados (sem IA/API paga).
   function smartInsights(){
-    const lang=(S.settings&&S.settings.lang)||'pt';
     const items=[];
-    const cur=periodStats(7,0), prev=periodStats(7,7);
-    const hasPrev = (prev.sonoMin>0)||(prev.mamadas>0)||(prev.xixi>0);
-    if(cur.sonoMin>0 || prev.sonoMin>0){
-      const curH=+cur.avgSonoH, prevH=+prev.avgSonoH;
-      let txt;
-      if(prevH>0){
-        const diffPct=Math.round(((curH-prevH)/prevH)*100), sign=diffPct>=0?'+':'';
-        txt = lang==='fr' ? `Sommeil moyen : ${curH}h/jour cette semaine (${sign}${diffPct}% vs semaine dernière).`
-          : lang==='en' ? `Average sleep: ${curH}h/day this week (${sign}${diffPct}% vs last week).`
-          : `Sono médio: ${curH}h/dia esta semana (${sign}${diffPct}% vs semana passada).`;
-      } else {
-        txt = lang==='fr' ? `Sommeil moyen : ${curH}h/jour cette semaine.`
-          : lang==='en' ? `Average sleep: ${curH}h/day this week.`
-          : `Sono médio: ${curH}h/dia esta semana.`;
+    const cur=periodSummary(7,0), prev=periodSummary(7,7);
+    const dia=lx('dia','jour','day');
+    if(cur.sleep.perDay!=null){
+      let txt = lx('Sono','Sommeil','Sleep')+`: ~${durStr(cur.sleep.perDay)}/${dia} ${lx('nos','sur les','over the')} ${cur.sleep.days} ${lx('dias com registos esta semana','jours avec enregistrements cette semaine','days with records this week')}`;
+      if(prev.sleep.perDay!=null && cur.sleep.days>=3 && prev.sleep.days>=3){
+        const diffPct=Math.round(((cur.sleep.perDay-prev.sleep.perDay)/prev.sleep.perDay)*100);
+        txt += ` (${diffPct>=0?'+':''}${diffPct}% ${lx('vs semana anterior','vs semaine précédente','vs previous week')})`;
       }
-      items.push({ic:ICONS.moon, txt});
+      items.push({ic:ICONS.moon, txt:txt+'.'});
     }
     const t1=Date.now(), t0=t1-3*86400000;
     const feeds3 = S.mamadas.filter(m=>inRange(m.ts,t0,t1)).slice().sort((a,b)=>a.ts-b.ts);
     if(feeds3.length>=2){
       const diffs=[]; for(let i=1;i<feeds3.length;i++) diffs.push((feeds3[i].ts-feeds3[i-1].ts)/3600000);
-      const avgInt=(diffs.reduce((s,v)=>s+v,0)/diffs.length).toFixed(1);
-      const txt = lang==='fr' ? `Intervalle moyen entre repas (3 derniers jours) : ${avgInt}h.`
-        : lang==='en' ? `Average interval between feeds (last 3 days): ${avgInt}h.`
-        : `Intervalo médio entre mamadas (últimos 3 dias): ${avgInt}h.`;
-      items.push({ic:ICONS.bottle, txt});
+      const avgInt=fmtDec(diffs.reduce((s,v)=>s+v,0)/diffs.length,1);
+      items.push({ic:ICONS.bottle, txt:lx(`Intervalo médio entre mamadas registadas (últimos 3 dias): ${avgInt}h.`,`Intervalle moyen entre repas enregistrés (3 derniers jours) : ${avgInt}h.`,`Average interval between logged feeds (last 3 days): ${avgInt}h.`)});
     }
-    if(hasPrev && prev.xixi>0){
-      const diffPct=Math.round(((cur.xixi-prev.xixi)/prev.xixi)*100), sign=diffPct>=0?'+':'';
-      const txt = lang==='fr' ? `Couches mouillées : ${cur.xixiAvg}/jour cette semaine (${sign}${diffPct}% vs semaine dernière).`
-        : lang==='en' ? `Wet diapers: ${cur.xixiAvg}/day this week (${sign}${diffPct}% vs last week).`
-        : `Fraldas de xixi: ${cur.xixiAvg}/dia esta semana (${sign}${diffPct}% vs semana passada).`;
-      items.push({ic:ICONS.drop, txt});
+    if(cur.diaper.xixiPerDay!=null){
+      let txt = `${lx('Fraldas de xixi','Couches mouillées','Wet diapers')}: ~${fmtDec(cur.diaper.xixiPerDay,1)}/${dia} ${lx('nos','sur les','over the')} ${cur.diaper.days} ${lx('dias com registos esta semana','jours avec enregistrements cette semaine','days with records this week')}`;
+      if(prev.diaper.xixiPerDay && cur.diaper.days>=3 && prev.diaper.days>=3){
+        const diffPct=Math.round(((cur.diaper.xixiPerDay-prev.diaper.xixiPerDay)/prev.diaper.xixiPerDay)*100);
+        txt += ` (${diffPct>=0?'+':''}${diffPct}% ${lx('vs semana anterior','vs semaine précédente','vs previous week')})`;
+      }
+      items.push({ic:ICONS.drop, txt:txt+'.'});
     }
-    const pesoArr = S.evolucao.peso;
+    const pesoArr = S.evolucao.peso.slice().sort((x,y)=>new Date(x.date)-new Date(y.date));
     if(pesoArr.length>=2){
       const last=pesoArr[pesoArr.length-1], prevM=pesoArr[pesoArr.length-2];
-      const deltaKg=last.valor-prevM.valor, sign=deltaKg>=0?'+':'';
+      const deltaKg=last.valor-prevM.valor, sign=deltaKg>=0?'+':'−';
       const days=Math.max(1, Math.round((new Date(last.date)-new Date(prevM.date))/86400000));
-      const txt = lang==='fr' ? `Poids : ${sign}${deltaKg.toFixed(2)}kg depuis la dernière pesée (il y a ${days}j).`
-        : lang==='en' ? `Weight: ${sign}${deltaKg.toFixed(2)}kg since last weigh-in (${days}d ago).`
-        : `Peso: ${sign}${deltaKg.toFixed(2)}kg desde a última pesagem (há ${days}d).`;
-      items.push({ic:ICONS.chart, txt});
+      items.push({ic:ICONS.chart, txt:lx(`Peso: ${sign}${fmtDec(Math.abs(deltaKg),2)}kg entre as duas últimas pesagens (${days} dias de intervalo).`,`Poids : ${sign}${fmtDec(Math.abs(deltaKg),2)}kg entre les deux dernières pesées (${days} jours d'écart).`,`Weight: ${sign}${fmtDec(Math.abs(deltaKg),2)}kg between the last two weigh-ins (${days} days apart).`)});
     }
     return items;
   }
-  function parecer(stats, growth, months){
-    const [lo] = sleepTargetH(months);
-    const lang=(S.settings&&S.settings.lang)||'pt';
-    const bits=[];
-    if(lang==='fr'){
-      bits.push(stats.mamadas ? `${stats.mamadas} repas enregistrés` : 'aucun repas enregistré');
-      bits.push(`sommeil moyen ${stats.avgSonoH}h/jour (objectif ${lo}h+)` + (stats.avgSonoH < lo ? ' — sous l\'objectif' : ' — dans l\'objectif'));
-      bits.push(`${stats.xixiAvg} couches mouillées/jour en moyenne` + (stats.xixiAvg<6 ? ' — attention à l\'hydratation' : ''));
-      if(growth.dp!=null) bits.push(`a pris ${growth.dp.toFixed(2)}kg sur la période`);
-      if(growth.da!=null) bits.push(`a grandi de ${growth.da.toFixed(1)}cm sur la période`);
-    } else if(lang==='en'){
-      bits.push(stats.mamadas ? `${stats.mamadas} feedings logged` : 'no feedings logged');
-      bits.push(`average sleep ${stats.avgSonoH}h/day (target ${lo}h+)` + (stats.avgSonoH < lo ? ' — below target' : ' — on target'));
-      bits.push(`${stats.xixiAvg} wet diapers/day on average` + (stats.xixiAvg<6 ? ' — watch hydration' : ''));
-      if(growth.dp!=null) bits.push(`gained ${growth.dp.toFixed(2)}kg over the period`);
-      if(growth.da!=null) bits.push(`grew ${growth.da.toFixed(1)}cm over the period`);
-    } else {
-      bits.push(stats.mamadas ? `${stats.mamadas} refeições registadas` : 'sem refeições registadas');
-      bits.push(`sono médio ${stats.avgSonoH}h/dia (meta ${lo}h+)` + (stats.avgSonoH < lo ? ' — abaixo da meta' : ' — dentro da meta'));
-      bits.push(`${stats.xixiAvg} xixi/dia em média` + (stats.xixiAvg<6 ? ' — atenção à hidratação' : ''));
-      if(growth.dp!=null) bits.push(`ganhou ${growth.dp.toFixed(2)}kg no período`);
-      if(growth.da!=null) bits.push(`cresceu ${growth.da.toFixed(1)}cm no período`);
-    }
-    return bits.join('; ') + '.';
+  /* ============ REFLEXÃO SEMANAL (opcional) ============
+     Guardada por criança e por semana de calendário (segunda a domingo). Só guarda o que o utilizador
+     escolhe/escreve: sem escolha = null, campo vazio = null. O placeholder da nota é só visual. */
+  const WEEK_MOODS = [
+    {id:'dificil', emoji:'😣', pt:'Difícil', fr:'Difficile', en:'Hard'},
+    {id:'desafiante', emoji:'😕', pt:'Desafiante', fr:'Éprouvante', en:'Challenging'},
+    {id:'normal', emoji:'🙂', pt:'Normal', fr:'Normale', en:'Normal'},
+    {id:'boa', emoji:'😊', pt:'Boa', fr:'Bonne', en:'Good'},
+    {id:'muito-boa', emoji:'🥰', pt:'Muito boa', fr:'Très bonne', en:'Very good'},
+  ];
+  let resumoWeekOffset = 0;   // semana que está a ser vista no resumo semanal (0 = atual)
+  function weekReflection(key){ const r=S.crianca.reflexoesSemanais||{}; return r[key||viewedWeek(resumoWeekOffset).key] || {humor:null, nota:null}; }
+  function setWeekReflection(patch, key){
+    const c=S.crianca; c.reflexoesSemanais=c.reflexoesSemanais||{};
+    key = key || viewedWeek(resumoWeekOffset).key;
+    const rec=Object.assign({humor:null, nota:null}, c.reflexoesSemanais[key]||{}, patch);
+    if(rec.humor==null && rec.nota==null) delete c.reflexoesSemanais[key];   // nada escolhido nem escrito → não fica nenhum registo
+    else { rec.atualizadoEm=Date.now(); c.reflexoesSemanais[key]=rec; }
+    save();
   }
-  function summaryBoxTxt(s){
+  function weeklyReflectionHtml(){
+    const r=weekReflection();
     const lang=(S.settings&&S.settings.lang)||'pt';
-    if(lang==='fr') return `Repas : ${s.mamadas} (${s.biberoes} biberons, ~${s.totalMl}ml)\nSommeil : ${durStr(s.sonoMin)} total · moyenne ${s.avgSonoH}h/jour\nPipi : ${s.xixi} (${s.xixiAvg}/jour) · Caca : ${s.coco}`;
-    if(lang==='en') return `Feedings: ${s.mamadas} (${s.biberoes} bottles, ~${s.totalMl}ml)\nSleep: ${durStr(s.sonoMin)} total · average ${s.avgSonoH}h/day\nWet: ${s.xixi} (${s.xixiAvg}/day) · Dirty: ${s.coco}`;
-    return `Refeições: ${s.mamadas} (${s.biberoes} biberões, ~${s.totalMl}ml)\nSono: ${durStr(s.sonoMin)} total · média ${s.avgSonoH}h/dia\nXixi: ${s.xixi} (${s.xixiAvg}/dia) · Cocó: ${s.coco}`;
+    return `<div class="sum-block week-reflection">
+      <div class="sum-title"><span>${lx('Como sentiste esta semana?','Comment as-tu vécu cette semaine ?','How did this week feel?')}</span></div>
+      <p class="muted" style="margin:0 0 8px;">${lx('Refere-se à semana mostrada acima','Concerne la semaine affichée ci-dessus','Refers to the week shown above')} · ${lx('opcional — toca de novo para desmarcar','facultatif — touche à nouveau pour désélectionner','optional — tap again to clear')}</p>
+      <div class="mood-row" role="radiogroup" aria-label="${lx('Como sentiste esta semana?','Comment as-tu vécu cette semaine ?','How did this week feel?')}">
+        ${WEEK_MOODS.map(m=>`<button type="button" class="mood-btn${r.humor===m.id?' on':''}" data-mood="${m.id}" role="radio" aria-checked="${r.humor===m.id}"><span class="mood-emoji" aria-hidden="true">${m.emoji}</span><span class="mood-lbl">${m[lang]||m.pt}</span></button>`).join('')}
+      </div>
+      <div class="sum-title" style="margin-top:12px;"><span>${lx('Nota da semana','Note de la semaine','Note of the week')}</span></div>
+      <textarea id="weekNote" placeholder="${lx('Alguma coisa que queres recordar desta semana?','Quelque chose que tu veux retenir de cette semaine ?','Anything you want to remember about this week?')}">${r.nota ? r.nota.replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''}</textarea>
+      <p class="muted" id="weekNoteStatus" style="margin:4px 0 0;min-height:1em;font-size:.72rem;"></p>
+    </div>`;
+  }
+  function wireWeeklyReflection(){
+    const key = viewedWeek(resumoWeekOffset).key;   // a semana mostrada quando o ecrã foi desenhado — tudo o que se escolhe/escreve aqui vai para ela
+    document.querySelectorAll('.mood-btn[data-mood]').forEach(b=>b.addEventListener('click', ()=>{
+      const cur=weekReflection(key).humor;
+      const next = cur===b.dataset.mood ? null : b.dataset.mood;   // tocar outra vez na mesma opção desmarca
+      setWeekReflection({humor:next}, key);
+      document.querySelectorAll('.mood-btn[data-mood]').forEach(x=>{ const on=x.dataset.mood===next; x.classList.toggle('on',on); x.setAttribute('aria-checked',on); });
+    }));
+    const ta=document.getElementById('weekNote'); if(!ta) return;
+    const st=document.getElementById('weekNoteStatus');
+    let tmr=null;
+    const commit=()=>{ const v=ta.value.trim(); setWeekReflection({nota: v ? v : null}, key); if(st){ st.textContent = v ? '✓ '+tr('Guardado!') : ''; } };
+    ta.addEventListener('input', ()=>{ clearTimeout(tmr); tmr=setTimeout(commit, 600); });
+    ta.addEventListener('blur', ()=>{ clearTimeout(tmr); commit(); });
+  }
+  function weekNavHtml(){
+    const w=viewedWeek(resumoWeekOffset);
+    const f=ts=>new Date(ts).toLocaleDateString(localeTag(),{day:'numeric',month:'short'});
+    const label = f(w.a)+' – '+f(w.b-86400000);
+    // não recuar para antes da semana em que a criança nasceu
+    const dob = S.crianca.dataNascimento ? weekStartDate(new Date(S.crianca.dataNascimento+'T12:00:00')).getTime() : null;
+    const canPrev = dob==null || w.a > dob;
+    return `<div class="week-nav">
+      <button class="icon-btn" id="weekPrev" type="button" aria-label="${lx('Semana anterior','Semaine précédente','Previous week')}" ${canPrev?'':'disabled'}>‹</button>
+      <div class="week-nav-lbl"><b>${label}</b><span class="muted">${w.current ? lx('esta semana (seg–dom, até hoje)','cette semaine (lun–dim, jusqu\'à aujourd\'hui)','this week (Mon–Sun, up to today)') : lx('semana de segunda a domingo','semaine du lundi au dimanche','week, Monday to Sunday')}</span></div>
+      <button class="icon-btn" id="weekNext" type="button" aria-label="${lx('Semana seguinte','Semaine suivante','Next week')}" ${w.current?'disabled':''}>›</button>
+    </div>`;
   }
   function renderResumo(){
-    const months = ageInfo(S.crianca.dataNascimento).months;
-    const w = periodStats(7), m = periodStats(30);
-    const gw = growthDelta(7), gm = growthDelta(30);
-    const lang=(S.settings&&S.settings.lang)||'pt';
-    const parecerLbl = lang==='fr'?'Avis':lang==='en'?'Assessment':'Parecer';
     const insights = smartInsights();
     document.getElementById('main').innerHTML = `
     <div class="card"><h2>${tr('Resumo inteligente')}</h2><p class="muted">${tr('Calculado automaticamente a partir dos teus registos — sem IA.')}</p>
       ${insights.length ? insights.map(i=>`<div class="alert info" style="margin-bottom:6px;">${i.ic} ${i.txt}</div>`).join('') : `<div class="empty">${tr('Regista mais dados para veres tendências aqui.')}</div>`}
     </div>
-    <div class="card"><h2>${tr('Resumo semanal')}</h2><p class="muted">${tr('últimos 7 dias')}</p>
-      <div class="summary-box">${summaryBoxTxt(w)}
-
-${parecerLbl}: ${parecer(w,gw,months)}</div>
-      <button class="btn wide" id="pdfWeekly" type="button" style="margin-top:8px;">${tr('Exportar PDF semanal')}</button>
+    <div class="card"><h2>${tr('Resumo semanal')}</h2>
+      ${weekNavHtml()}
+      ${summaryHtml(7, resumoWeekOffset)}
+      ${weeklyReflectionHtml()}
+      <button class="btn wide" id="pdfWeekly" type="button" style="margin-top:10px;">${tr('Exportar PDF semanal')}</button>
     </div>
-    <div class="card"><h2>${tr('Resumo mensal')}</h2><p class="muted">${tr('últimos 30 dias')}</p>
-      <div class="summary-box">${summaryBoxTxt(m)}
-
-${parecerLbl}: ${parecer(m,gm,months)}</div>
-      <button class="btn wide" id="pdfMonthly" type="button" style="margin-top:8px;">${tr('Exportar PDF mensal')}</button>
+    <div class="card"><h2>${tr('Resumo mensal')}</h2><p class="muted">${lx('últimos 30 dias (hoje incluído)','30 derniers jours (aujourd\'hui inclus)','last 30 days (including today)')}</p>
+      ${summaryHtml(30)}
+      <button class="btn wide" id="pdfMonthly" type="button" style="margin-top:10px;">${tr('Exportar PDF mensal')}</button>
     </div>`;
-    document.getElementById('pdfWeekly').addEventListener('click', ()=>exportSummaryPdf('Semanal', w, gw, months));
-    document.getElementById('pdfMonthly').addEventListener('click', ()=>exportSummaryPdf('Mensal', m, gm, months));
+    wireWeeklyReflection();
+    const wp=document.getElementById('weekPrev'), wn=document.getElementById('weekNext');
+    const flushNote=()=>{ const ta=document.getElementById('weekNote'); if(ta) ta.dispatchEvent(new Event('blur')); };   // grava a nota na semana certa antes de mudar
+    if(wp) wp.addEventListener('click', ()=>{ if(wp.disabled) return; flushNote(); resumoWeekOffset++; renderResumo(); });
+    if(wn) wn.addEventListener('click', ()=>{ if(wn.disabled) return; flushNote(); resumoWeekOffset=Math.max(0,resumoWeekOffset-1); renderResumo(); });
+    document.getElementById('pdfWeekly').addEventListener('click', ()=>exportSummaryPdf('Semanal', 7, resumoWeekOffset));
+    document.getElementById('pdfMonthly').addEventListener('click', ()=>exportSummaryPdf('Mensal', 30));
   }
-  async function exportSummaryPdf(label, stats, growth, months){
+  async function exportSummaryPdf(label, days, weekOffset){
     try{
       if(!window.jspdf){ showAlert(tr('PDF indisponível offline.')); return; }
       const { jsPDF } = window.jspdf;
       const lang=(S.settings&&S.settings.lang)||'pt';
+      const months = ageInfo(S.crianca.dataNascimento).months;
       const doc = new jsPDF();
       doc.setFontSize(16); doc.text('Emily Tracker — '+tr('Resumo')+' '+tr(label), 14, 18);
       doc.setFontSize(10); doc.text(new Date().toLocaleDateString(lang==='en'?'en-GB':lang==='fr'?'fr-FR':'pt-PT'), 14, 25);
       const childLbl = lang==='fr'?'Enfant':lang==='en'?'Child':'Criança';
       const monthsLbl = lang==='fr'?'mois':lang==='en'?'months':'meses';
-      const parecerLbl = lang==='fr'?'Avis':lang==='en'?'Assessment':'Parecer';
-      const lines = doc.splitTextToSize(
-        `${childLbl}: ${S.crianca.nome} (${months} ${monthsLbl})\n\n`+
-        summaryBoxTxt(stats)+`\n\n`+
-        `${parecerLbl}: ${parecer(stats,growth,months)}`, 180);
+      const lines = doc.splitTextToSize(`${childLbl}: ${S.crianca.nome} (${months} ${monthsLbl})\n\n`+(days===7 ? (()=>{ const w=viewedWeek(weekOffset); const f=ts=>new Date(ts).toLocaleDateString(localeTag(),{day:'numeric',month:'short'}); return f(w.a)+' – '+f(w.b-86400000)+'\n'; })() : '')+summaryPlainText(days, weekOffset), 180);
       doc.text(lines, 14, 36);
       const blob = doc.output('blob');
       const result = await triggerDownload(`emily-tracker-resumo-${label.toLowerCase()}.pdf`, blob);
@@ -2627,7 +2893,7 @@ ${parecerLbl}: ${parecer(m,gm,months)}</div>
       <div class="photo-box" style="width:80px;height:80px;border-radius:50%;margin:0 auto 8px;">${c.foto?`<img src="${c.foto}">`:ICONS.baby}</div>
       <h2>${c.nome}</h2><p class="muted">${ageInfo(c.dataNascimento).label} · ${tr('nascida')} ${new Date(c.dataNascimento+"T00:00:00").toLocaleDateString(localeTag())}</p>
     </div>
-    <div class="critical-block"><div class="bt">${c.tipoSanguineo}</div><div class="rh">${tr('Fator Rh:')} ${c.fatorRh} · ${tr('Doador universal se O')}</div></div>
+    <div class="critical-block"><div class="bt">${c.tipoSanguineo||'—'}</div><div class="rh">${tr('Fator Rh:')} ${c.fatorRh||'—'} · ${tr('Doador universal se O')}</div></div>
 
     ${c.alergiasMed.map(a=>{
       const lbl = lang==='fr'?'Allergie':lang==='en'?'Allergy':'Alergia'; const altLbl = lang==='fr'?'alternative':lang==='en'?'alternative':'alternativa';
@@ -2638,12 +2904,12 @@ ${parecerLbl}: ${parecer(m,gm,months)}</div>
     ${(c.deficiencias||[]).map(a=>`<div class="alert info">${ICONS.note} ${a.nome}${a.nota?(' — '+a.nota):''}</div>`).join('')}
 
     <div class="card"><div class="section-label">${tr('Medicações ativas')}</div>
-      ${c.medicacoes.map(m=>`<div class="sos-line"><span>${m.nome}</span><b>${m.dose}</b></div>`).join('')}
+      ${c.medicacoes.map(m=>`<div class="sos-line"><span>${m.nome}</span><b>${m.dose}</b></div>`).join('') || `<div class="empty">—</div>`}
     </div>
 
-    <a class="call-btn" href="tel:${c.pediatra.telefone}"><div class="ic">${ICONS.phone}</div><div><div class="t1">${c.pediatra.nome}</div><div class="t2">${tr('Pediatra')} · ${c.pediatra.telefone}</div></div></a>
-    <a class="call-btn" href="tel:${c.mae.telefone}"><div class="ic">${ICONS.phone}</div><div><div class="t1">${c.mae.nome}</div><div class="t2">${tr('Mãe')} · ${c.mae.telefone}</div></div></a>
-    <a class="call-btn" href="tel:${c.pai.telefone}"><div class="ic">${ICONS.phone}</div><div><div class="t1">${c.pai.nome}</div><div class="t2">${tr('Pai')} · ${c.pai.telefone}</div></div></a>
+    ${c.pediatra.telefone ? `<a class="call-btn" href="tel:${c.pediatra.telefone}"><div class="ic">${ICONS.phone}</div><div><div class="t1">${c.pediatra.nome||tr('Pediatra')}</div><div class="t2">${tr('Pediatra')} · ${c.pediatra.telefone}</div></div></a>` : ''}
+    ${c.mae.telefone ? `<a class="call-btn" href="tel:${c.mae.telefone}"><div class="ic">${ICONS.phone}</div><div><div class="t1">${c.mae.nome||tr('Mãe')}</div><div class="t2">${tr('Mãe')} · ${c.mae.telefone}</div></div></a>` : ''}
+    ${c.pai.telefone ? `<a class="call-btn" href="tel:${c.pai.telefone}"><div class="ic">${ICONS.phone}</div><div><div class="t1">${c.pai.nome||tr('Pai')}</div><div class="t2">${tr('Pai')} · ${c.pai.telefone}</div></div></a>` : ''}
     ${c.contactoEmergencia&&c.contactoEmergencia.telefone ? `<a class="call-btn" href="tel:${c.contactoEmergencia.telefone}"><div class="ic">${ICONS.phone}</div><div><div class="t1">${c.contactoEmergencia.nome}</div><div class="t2">${c.contactoEmergencia.relacao||tr('Contacto de emergência')} · ${c.contactoEmergencia.telefone}</div></div></a>` : ''}
     ${c.hospitalReferencia&&c.hospitalReferencia.telefone ? `<a class="call-btn" href="tel:${c.hospitalReferencia.telefone}"><div class="ic">${ICONS.phone}</div><div><div class="t1">${c.hospitalReferencia.nome}</div><div class="t2">${tr('Hospital de referência')} · ${c.hospitalReferencia.morada||''}</div></div></a>` : ''}
     <a class="call-btn" href="tel:112" style="border-color:var(--crit);"><div class="ic" style="background:var(--crit-soft);color:var(--crit);">${ICONS.phone}</div><div><div class="t1" style="color:var(--crit);">${tr('Emergência — 112')}</div><div class="t2">${tr('Bélgica / Luxemburgo')}</div></div></a>
@@ -2651,7 +2917,7 @@ ${parecerLbl}: ${parecer(m,gm,months)}</div>
     <div class="card"><div class="section-label">${tr('Dados atuais')}</div>
       <div class="sos-line"><span>${tr('Peso')}</span><b>${S.evolucao.peso.length?S.evolucao.peso[S.evolucao.peso.length-1].valor+'kg':'—'}</b></div>
       <div class="sos-line"><span>${tr('Altura')}</span><b>${S.evolucao.altura.length?S.evolucao.altura[S.evolucao.altura.length-1].valor+'cm':'—'}</b></div>
-      <div class="sos-line"><span>${tr('Alimentação')}</span><b>${tr(c.alimentacao.tipo)} · ${c.alimentacao.formula}</b></div>
+      <div class="sos-line"><span>${tr('Alimentação')}</span><b>${tr(c.alimentacao.tipo)}${c.alimentacao.formula?(' · '+c.alimentacao.formula):''}</b></div>
       <div class="sos-line"><span>${tr('Nº documento')}</span><b>${c.documentoId||'—'}</b></div>
       <div class="sos-line"><span>${tr('Sistema de saúde')}</span><b>${c.sistemaSaude||'—'}</b></div>
       <div class="sos-line"><span>${tr('Morada')}</span><b>${c.moradaAtual||'—'}</b></div>
@@ -2777,6 +3043,7 @@ ${parecerLbl}: ${parecer(m,gm,months)}</div>
     renderTabbar(); renderHeader(); renderChildSwitch(); wireGlobalControls(); renderReminders(); renderSyncBadge(); renderStorageBanner();
     const mainEl=document.getElementById('main');
     if(mainEl){ mainEl.classList.remove('fade-in'); void mainEl.offsetWidth; mainEl.classList.add('fade-in'); }
+    if(activeTab!=='resumo') resumoWeekOffset=0;
     if(activeTab==='inicio') renderInicio();
     else if(activeTab==='perfil') renderPerfil();
     else if(activeTab==='mamadas') renderMamadas();
@@ -2788,61 +3055,143 @@ ${parecerLbl}: ${parecer(m,gm,months)}</div>
     else if(activeTab==='consultas') renderConsultas();
     else if(activeTab==='resumo') renderResumo();
     else if(activeTab==='sos') renderSos();
-    applyDemoExClear();
     wireDayBars();
   }
-  function wireDayBars(){
-    document.querySelectorAll('#main .bar-day[data-date]').forEach(g=>{
-      g.addEventListener('click', ()=>showDaySummary(g.dataset.date));
-    });
-  }
+  // Toque/clique numa barra dos gráficos semanais. Antes o listener só era ligado pelo render() global e
+  // perdia-se quando o ecrã se redesenhava sozinho (ex.: depois de guardar um registo). Agora há UM listener
+  // delegado em #main, que funciona sempre, por toque (mobile) ou clique (desktop) — sem depender de hover.
+  function wireDayBars(){ /* mantido por compatibilidade: a ligação é feita uma vez, em baixo */ }
+  document.getElementById('main').addEventListener('click', e=>{
+    const g = e.target && e.target.closest ? e.target.closest('.bar-day[data-date]') : null;
+    if(g) showDaySummary(g.dataset.date);
+  });
   function showDaySummary(dateISO){
-    const c = S.crianca;
     const a = new Date(dateISO+"T00:00:00").getTime(), b = a+86400000;
     const lang=(S.settings&&S.settings.lang)||'pt';
     const dateLbl = new Date(dateISO+"T00:00:00").toLocaleDateString(lang==='en'?'en-GB':lang==='fr'?'fr-FR':'pt-PT', {weekday:'long', day:'numeric', month:'long'});
-    const feeds = S.mamadas.filter(l=>inRange(l.ts,a,b));
-    const peito = feeds.filter(l=>l.tipo!=='biberao').length;
-    const biberoes = feeds.filter(l=>l.tipo==='biberao');
-    const mlTotal = biberoes.reduce((s,l)=>s+(l.mlBebido||0),0);
-    const diaperToday = S.fraldas.filter(l=>inRange(l.ts,a,b));
-    const xixi = diaperToday.filter(d=>d.tipo==='xixi').length, coco = diaperToday.filter(d=>d.tipo==='coco').length;
-    const sonoDia = S.sono.filter(l=>inRange(l.inicio,a,b));
-    const minsSono = sonoDia.reduce((s,l)=>s+(l.duracaoMin||0),0);
-    const rows = [
-      `${ICONS.bottle} ${tr('Mamadas')}: ${feeds.length}` + (peito?` (${peito} ${tr('peito')})`:'') + (biberoes.length?` — ${mlTotal}ml ${tr('em biberões')}`:''),
-      `${ICONS.drop} ${tr('Fraldas')}: ${xixi} ${tr('xixi')} · ${coco} ${tr('cocó')}`,
-      `${ICONS.moon} ${tr('Sono')}: ${sonoDia.length ? durStr(minsSono) : '—'}`,
-    ];
-    showOverlay(`<div class="voice-panel"><div class="voice-card">
-      <h2 style="margin:0 0 8px;text-transform:capitalize;">${dateLbl}</h2>
-      ${rows.map(r=>`<div class="alert info" style="margin-bottom:6px;">${r}</div>`).join('')}
-      <button class="btn wide" id="mOk" type="button">${tr('Fechar')}</button>
+    const byTime=(k)=>(x,y)=>x[k]-y[k];
+    const feeds = S.mamadas.filter(l=>inRange(l.ts,a,b)).sort(byTime('ts'));
+    const bott = feeds.filter(l=>l.tipo==='biberao'), breast = feeds.filter(l=>l.tipo!=='biberao');
+    const diapers = S.fraldas.filter(l=>inRange(l.ts,a,b)).sort(byTime('ts'));
+    const sleeps = S.sono.filter(l=>inRange(l.inicio,a,b)).sort(byTime('inicio'));
+    const none = `<div class="empty" style="padding:2px 3px 6px;">${lx('Sem registos neste dia.','Aucun enregistrement ce jour-là.','No records on this day.')}</div>`;
+    const row = (kind,id,txt) => `<button type="button" class="day-rec" data-rec-kind="${kind}" data-rec-id="${id}"><span>${txt}</span>${ICONS.chevright}</button>`;
+    const mlTotal = bott.reduce((s,l)=>s+(bottleMl(l)||0),0);
+    const bottRows = bott.map(l=>{ const ml=bottleMl(l);
+      const extra = (l.mlBebido!=null && l.mlOferecido!=null && +l.mlOferecido!==+l.mlBebido) ? ` <span class="muted">(${tr('Oferecido').toLowerCase()} ${l.mlOferecido} ml)</span>` : '';
+      return row('mamada', l.id, `<b>${hhmm(l.ts)}</b> — ${ml!=null ? `<b>${ml} ml</b>`+extra : `<span class="muted">${lx('sem quantidade','sans quantité','no amount')}</span>`}`); }).join('');
+    const breastRows = breast.map(l=>row('mamada', l.id, `<b>${hhmm(l.ts)}</b> — ${feedLabel(l)}`)).join('');
+    const diaperRows = diapers.map(l=>row('fralda', l.id, `<b>${hhmm(l.ts)}</b> — ${diaperLabel(l)}`)).join('');
+    const sleepRows = sleeps.map(l=>row('sono', l.id, `<b>${hhmm(l.inicio)} → ${hhmm(l.fim)}</b> — ${l.periodo==='noite'?tr('Noite'):tr('Sesta')} · ${durStr(l.duracaoMin)}`)).join('');
+    showOverlay(`<div class="voice-panel" id="dayPanel"><div class="voice-card" style="text-align:left;max-height:85vh;overflow-y:auto;">
+      <h2 style="margin:0 0 4px;">${dateLbl.charAt(0).toUpperCase()+dateLbl.slice(1)}</h2>
+      <p class="muted" style="margin:0 0 10px;">${lx('Toca num registo para ver detalhes ou editar.','Touche un enregistrement pour voir les détails ou modifier.','Tap a record to see details or edit.')}</p>
+      <div class="day-sec"><div class="sum-title">${ICONS.bottle}<span>${tr('Biberão')}</span></div>${bottRows||none}
+        ${bott.length ? `<div class="sum-cmp">${lx('Total registado','Total enregistré','Total logged')}: <b>${mlTotal} ml</b> · ${bott.length} ${lx(bott.length===1?'biberão':'biberões',bott.length===1?'biberon':'biberons',bott.length===1?'bottle':'bottles')}</div>` : ''}</div>
+      ${breast.length ? `<div class="day-sec"><div class="sum-title">${ICONS.bottle}<span>${lx('Amamentação','Allaitement','Breastfeeding')}</span></div>${breastRows}</div>` : ''}
+      <div class="day-sec"><div class="sum-title">${ICONS.drop}<span>${tr('Fraldas')}</span></div>${diaperRows||none}</div>
+      <div class="day-sec"><div class="sum-title">${ICONS.moon}<span>${tr('Sono')}</span></div>${sleepRows||none}</div>
+      <button class="btn wide" id="mOk" type="button" style="margin-top:6px;">${tr('Fechar')}</button>
     </div></div>`);
     document.getElementById('mOk').addEventListener('click', closeOverlay);
+    const panel=document.getElementById('dayPanel');
+    panel.addEventListener('click', e=>{ if(e.target===panel) closeOverlay(); });
+    panel.querySelectorAll('[data-rec-id]').forEach(btn=>btn.addEventListener('click', ()=>showRecordDetails(btn.dataset.recKind, btn.dataset.recId, ()=>showDaySummary(dateISO))));
   }
-  // Campos com dados de exemplo (perfil demo) ficam marcados "demo-ex" e esvaziam-se
-  // sozinhos ao primeiro toque, para não ser preciso apagar tudo à mão para escrever.
-  function applyDemoExClear(){
-    const c = S.crianca;
-    if(!c || !c.seed) return;
-    c.seedTouched = c.seedTouched || {};
-    document.querySelectorAll('#main input[type=text][id], #main textarea[id], #pDob, #alimInicioSolidos, #penData').forEach(el=>{
-      if(c.seedTouched[el.id]) return;
-      if(!el.value) return;
-      el.classList.add('demo-ex');
+
+  /* ============ ver detalhes → ✏️ editar / apagar (reutiliza os formulários de edição existentes) ============ */
+  function localISO(ts){ const d=new Date(ts); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function hhmm(ts){ const d=new Date(ts); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+  // Data + hora escolhidas no formulário → timestamp. Sem data, mantém o comportamento antigo (só hora).
+  // Registo NOVO com data de hoje e hora ainda no futuro = ontem (como antes). Numa edição usa exatamente o que foi escolhido.
+  function dateTimeToTs(dateStr, timeStr, isNew){
+    if(!dateStr) return timeStrToTs(timeStr);
+    const [y,m,d]=dateStr.split('-').map(Number), [hh,mm]=(timeStr||'00:00').split(':').map(Number);
+    let t=new Date(y,m-1,d,hh||0,mm||0,0,0).getTime();
+    if(isNew && dateStr===localISO(Date.now()) && t>Date.now()) t-=86400000;
+    return t;
+  }
+  const REC_KINDS = {
+    mamada:{ arr:()=>S.mamadas, tab:'mamadas', tsKey:'ts', ic:'bottle', del:'Apagar este registo de mamada?' },
+    fralda:{ arr:()=>S.fraldas, tab:'fraldas', tsKey:'ts', ic:'drop',   del:'Apagar este registo de fralda?' },
+    sono:  { arr:()=>S.sono,    tab:'sono',    tsKey:'inicio', ic:'moon', del:'Apagar este registo de sono?' },
+  };
+  function recordDetailRows(kind, l){
+    const dash='—', R=[];
+    if(kind==='mamada'){
+      if(l.tipo==='biberao'){
+        R.push([tr('Tipo'), tr('Biberão')]);
+        R.push([tr('Oferecido (ml)'), l.mlOferecido!=null ? l.mlOferecido+' ml' : dash]);
+        R.push([tr('Bebido (ml)'), l.mlBebido!=null ? l.mlBebido+' ml' : dash]);
+        if(l.marcaFormula) R.push([tr('Marca fórmula'), l.marcaFormula]);
+      } else {
+        R.push([tr('Tipo'), l.tipo==='peito-esq'?tr('Peito esquerdo'):tr('Peito direito')]);
+        R.push([tr('Duração (min)'), l.duracaoMin!=null && l.duracaoMin>0 ? durStr(l.duracaoMin) : dash]);
+      }
+      R.push([lx('Sucção','Succion','Sucking'), l.qualidade==='fraca'?tr('sucção fraca'):tr('sucção ativa')]);
+    } else if(kind==='fralda'){
+      R.push([tr('Tipo'), tr(l.tipo==='xixi'?'Xixi':'Cocó')]);
+      R.push([tr('Quantidade'), l.quantidade ? tr(l.quantidade) : dash]);
+      if(l.tipo==='coco'){ R.push([tr('Cor'), l.cor?tr(l.cor):dash]); R.push([tr('Consistência'), l.consistencia?tr(l.consistencia):dash]); }
+    } else {
+      R.push([tr('Período'), l.periodo==='noite'?tr('Noite'):tr('Sesta')]);
+      R.push([tr('Adormeceu'), fmtWhen(l.inicio)]);
+      R.push([tr('Acordou'), fmtWhen(l.fim)]);
+      R.push([lx('Duração','Durée','Duration'), durStr(l.duracaoMin)]);
+      R.push([tr('Qualidade (1–10)'), l.qualidade!=null ? l.qualidade+'/10' : dash]);
+      if(l.interrupcoes) R.push([tr('Interrupções'), l.interrupcoes]);
+      if(l.posicao) R.push([tr('Posição'), tr(l.posicao.charAt(0).toUpperCase()+l.posicao.slice(1))]);
+    }
+    if(l.obs) R.push([lx('Observações','Observations','Notes'), l.obs]);
+    return R;
+  }
+  function showRecordDetails(kind, id, back){
+    const K=REC_KINDS[kind]; const l=K.arr().find(x=>x.id===id);
+    if(!l){ closeOverlay(); return; }
+    const title = kind==='mamada' ? (l.tipo==='biberao'?tr('Biberão'):lx('Amamentação','Allaitement','Breastfeeding')) : kind==='fralda' ? tr('Fralda') : tr('Sono');
+    const esc = v => String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    showOverlay(`<div class="voice-panel" id="recPanel"><div class="voice-card" style="text-align:left;">
+      <h2 style="margin:0 0 2px;display:flex;align-items:center;gap:8px;">${ICONS[K.ic]} ${title}</h2>
+      <p class="muted" style="margin:0 0 10px;">${(d=>d.charAt(0).toUpperCase()+d.slice(1))(new Date(l[K.tsKey]).toLocaleDateString(localeTag(),{weekday:'long',day:'numeric',month:'long'}))} · ${hhmm(l[K.tsKey])}</p>
+      ${recordDetailRows(kind,l).map(([k,v])=>`<div class="rec-line"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}
+      <div class="btn-row" style="margin-top:14px;">
+        <button class="btn wide" id="recEdit" type="button">✏️ ${lx('Editar','Modifier','Edit')}</button>
+        <button class="btn crit wide" id="recDel" type="button">${tr('Apagar')}</button>
+      </div>
+      <button class="btn ghost wide" id="recClose" type="button" style="margin-top:8px;">${back ? lx('Voltar ao dia','Retour au jour','Back to day') : tr('Fechar')}</button>
+    </div></div>`);
+    const panel=document.getElementById('recPanel');
+    panel.addEventListener('click', e=>{ if(e.target===panel) closeOverlay(); });
+    document.getElementById('recClose').addEventListener('click', ()=>{ if(back) back(); else closeOverlay(); });
+    document.getElementById('recEdit').addEventListener('click', ()=>{
+      closeOverlay(); activeTab=K.tab; openForm='new'; editId=id; render();
+      const h=document.getElementById('formHolder'); if(h && h.scrollIntoView) h.scrollIntoView({block:'center'});
+    });
+    document.getElementById('recDel').addEventListener('click', ()=>{
+      showConfirm(tr(K.del), ()=>{ const arr=K.arr(); const i=arr.findIndex(x=>x.id===id); if(i>-1) arr.splice(i,1); if(editId===id){ editId=null; openForm=null; } save(); render(); });
     });
   }
+
+  // Exemplos nos campos vazios = só placeholder (texto cinzento "Exemplo: …"). Nunca é um valor:
+  // não é guardado, não entra em cálculos e não é preciso apagá-lo para escrever.
+  const EXAMPLE_PLACEHOLDERS = {
+    pNome:'Maria', pLocal:'Luxemburgo', pNac:'Portuguesa', pDocId:'123456789', pSaude:'CNS Luxemburgo', pMorada:'Rue de la Gare 1, 1234 Luxembourg',
+    pNascPeso:'3.4', pNascAlt:'50', pNascPc:'35', pBlood:'O+', pRh:'Positivo',
+    pediNome:'Dra. Silva', pediTel:'+352 000 000 000', pediEmail:'nome@clinica.lu', pediLocal:'Clínica…', pediMorada:'Rua…',
+    alimFormula:'NAN Evolia', alimQtd:'150', fMarca:'NAN Evolia', csEsp:'Pediatra', gWeight:'6.2', gHeight:'60', gHead:'40',
+  };
+  function applyExamplePlaceholders(){
+    const pre = lx('Exemplo: ','Exemple : ','Example: ');
+    Object.keys(EXAMPLE_PLACEHOLDERS).forEach(id=>{
+      const el = document.getElementById(id);
+      if(el && !el.getAttribute('placeholder')) el.setAttribute('placeholder', pre+EXAMPLE_PLACEHOLDERS[id]);
+    });
+  }
+  // Os ecrãs redesenham-se sozinhos (ex.: depois de guardar), por isso os placeholders são repostos sempre que #main muda.
+  (function(){ const m=document.getElementById('main'); if(m && window.MutationObserver) new MutationObserver(applyExamplePlaceholders).observe(m,{childList:true,subtree:true}); })();
   document.addEventListener('focusin', (e)=>{
     const el = e.target;
     if(!el || !el.classList) return;
-    if(el.classList.contains('demo-ex')){
-      el.value=''; el.classList.remove('demo-ex');
-      el.dispatchEvent(new Event('input', {bubbles:true}));
-      const c = S.crianca;
-      if(c){ c.seedTouched = c.seedTouched || {}; c.seedTouched[el.id]=true; }
-      return;
-    }
     if(el.classList.contains('remembered-fill')){
       el.value=''; el.classList.remove('remembered-fill');
       el.dispatchEvent(new Event('input', {bubbles:true}));
@@ -2851,7 +3200,7 @@ ${parecerLbl}: ${parecer(m,gm,months)}</div>
   function wireFooterSettings(){
     document.getElementById('themeSeg').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ S.settings.theme=b.dataset.v; save(); applyTheme(); render(); renderSettingsOverlay(); }));
     document.querySelectorAll('[data-accent]').forEach(sw=>sw.addEventListener('click', ()=>{ S.settings.accentIndex=+sw.dataset.accent; save(); applyTheme(); render(); renderSettingsOverlay(); }));
-    document.getElementById('langSeg').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ S.settings.lang=b.dataset.v; applySeedLanguage(b.dataset.v); save(); render(); renderSettingsOverlay(); }));
+    document.getElementById('langSeg').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ S.settings.lang=b.dataset.v; save(); render(); renderSettingsOverlay(); }));
     document.getElementById('soundToggle').addEventListener('change', e=>{ S.settings.sound = e.target.checked; save(); });
     document.getElementById('testSound').addEventListener('click', ()=>playChime(true));
     const bgBtn=document.getElementById('bgPhotoBtn'), bgInput=document.getElementById('bgPhotoInput'), bgRemove=document.getElementById('bgPhotoRemove');
@@ -2882,12 +3231,12 @@ ${parecerLbl}: ${parecer(m,gm,months)}</div>
     document.getElementById('importInput').addEventListener('change', e=>{
       const f=e.target.files[0]; if(!f) return;
       const r=new FileReader();
-      r.onload=()=>{ try{ S=loadState(JSON.parse(r.result)); setActiveChild(S.activeChildId); save(); applyTheme(); render(); }catch(err){ showAlert(tr('Ficheiro inválido.')); } };
+      r.onload=()=>{ try{ S=loadState(JSON.parse(r.result)); if(demoCleanupLog.length){ S.settings.demoCleanupNotice=Array.from(new Set(demoCleanupLog)); demoCleanupLog.length=0; } setActiveChild(S.activeChildId); save(); applyTheme(); render(); }catch(err){ showAlert(tr('Ficheiro inválido.')); } };
       r.readAsText(f);
     });
     document.getElementById('resetBtn').addEventListener('click', ()=>{
       showConfirm(tr('Isto apaga TODOS os dados guardados neste dispositivo. Continuar?'), ()=>{
-        localStorage.removeItem(KEY); S=defaultState(); S.criancas[0].seed=false; setActiveChild(S.activeChildId); save(); applyTheme(); render();
+        localStorage.removeItem(KEY); S=defaultState(); setActiveChild(S.activeChildId); save(); applyTheme(); render();
       });
     });
     const rc=document.getElementById('removeChildBtn');

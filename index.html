@@ -2291,9 +2291,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       if(!(data.ts<=Date.now()+FUTURE_TOL_MS)) errs.push(['fHora', msgFuturo()]);
       if(tipo==='biberao'){
         data.marcaFormula=document.getElementById('fMarca').value.trim(); data.mlOferecido=readNum('fOfer'); data.mlBebido=readNum('fBeb');
+        // 0 ml é permitido (ex.: recusou o biberão); não entra nas médias de ml (bottleMl só conta valores > 0).
         const mlErr = v => (Number.isNaN(v)) ? lx('Número inválido.','Nombre invalide.','Invalid number.')
-          : (v!=null && v<=0) ? lx('Indica um valor maior que 0 ml, ou deixa vazio.','Indique une valeur supérieure à 0 ml, ou laisse vide.','Enter a value above 0 ml, or leave empty.')
-          : (v!=null && v>LIMITS.mlMax) ? lx(`Valor demasiado alto para um biberão (máx. ${LIMITS.mlMax} ml).`,`Valeur trop élevée pour un biberon (max. ${LIMITS.mlMax} ml).`,`Too high for one bottle (max ${LIMITS.mlMax} ml).`) : null;
+          : (v!=null && v<0) ? lx('O valor não pode ser negativo.','La valeur ne peut pas être négative.','Value cannot be negative.') : null;
         const eo=mlErr(data.mlOferecido), eb=mlErr(data.mlBebido);
         if(eo) errs.push(['fOfer', eo]);
         if(eb) errs.push(['fBeb', eb]);
@@ -2302,11 +2302,15 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       } else {
         data.duracaoMin=readNum('fDur');
         if(Number.isNaN(data.duracaoMin)) errs.push(['fDur', lx('Número inválido.','Nombre invalide.','Invalid number.')]);
-        else if(data.duracaoMin!=null && (data.duracaoMin<=0 || data.duracaoMin>LIMITS.peitoMaxMin)) errs.push(['fDur', lx(`Indica uma duração entre 1 e ${LIMITS.peitoMaxMin} min, ou deixa vazio.`,`Indique une durée entre 1 et ${LIMITS.peitoMaxMin} min, ou laisse vide.`,`Enter a duration between 1 and ${LIMITS.peitoMaxMin} min, or leave empty.`)]);
+        else if(data.duracaoMin!=null && data.duracaoMin<=0) errs.push(['fDur', lx('A duração tem de ser maior que 0 min, ou deixa vazio.','La durée doit être supérieure à 0 min, ou laisse vide.','Duration must be above 0 min, or leave empty.')]);
       }
       if(!showFieldErrors(errs)) return;
-      if(editing) Object.assign(editing, data); else S.mamadas.unshift({id:uid(), ...data});
-      save(); playChime(); openForm=null; editId=null; renderMamadas();
+      const warns=[];
+      if(tipo==='biberao') [data.mlOferecido, data.mlBebido].forEach(v=>{ if(v!=null && v>LIMITS.mlMax) warns.push(lx(`Este valor é invulgar. Tens a certeza que queres guardar ${numTxt(v)} ml?`,`Cette valeur est inhabituelle. Veux-tu vraiment enregistrer ${numTxt(v)} ml ?`,`This value is unusual. Are you sure you want to save ${numTxt(v)} ml?`)); });
+      else if(data.duracaoMin!=null && data.duracaoMin>LIMITS.peitoMaxMin) warns.push(lx(`Esta duração é invulgar. Tens a certeza que queres guardar ${numTxt(data.duracaoMin)} minutos?`,`Cette durée est inhabituelle. Veux-tu vraiment enregistrer ${numTxt(data.duracaoMin)} minutes ?`,`This duration is unusual. Are you sure you want to save ${numTxt(data.duracaoMin)} minutes?`));
+      const commit=()=>{ if(editing) Object.assign(editing, data); else S.mamadas.unshift({id:uid(), ...data});
+        save(); playChime(); openForm=null; editId=null; renderMamadas(); };
+      if(warns.length) confirmUnusual(warns, commit); else commit();
     });
     const cancelBtn=document.getElementById('fCancelEdit');
     if(cancelBtn) cancelBtn.addEventListener('click', ()=>{ editId=null; openForm=null; renderMamadas(); });
@@ -2422,7 +2426,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 
     const lang=(S.settings&&S.settings.lang)||'pt';
     const metaLbl = lang==='fr' ? `objectif (${months}m)` : lang==='en' ? `target (${months}m)` : `meta (${months}m)`;
-    const qualMedLbl = lang==='fr' ? `Qualité moyenne : ${avgQual}/10` : lang==='en' ? `Average quality: ${avgQual}/10` : `Qualidade média: ${avgQual}/10`;
+    const qualTxt = avgQual==='—' ? '—' : avgQual+'/10';
+    const qualMedLbl = lang==='fr' ? `Qualité moyenne : ${qualTxt}` : lang==='en' ? `Average quality: ${qualTxt}` : `Qualidade média: ${qualTxt}`;
     const terminarLbl = lang==='fr' ? `Terminer le sommeil (${durStr((Date.now()-S.running.sleepStart)/60000)})` : lang==='en' ? `End sleep (${durStr((Date.now()-S.running.sleepStart)/60000)})` : `Terminar sono (${durStr((Date.now()-S.running.sleepStart)/60000)})`;
     const horasDiaLbl = lang==='fr' ? `heures par jour · objectif ${lo}–${hi}h` : lang==='en' ? `hours per day · target ${lo}–${hi}h` : `horas por dia · meta ${lo}–${hi}h`;
     const napsToday = S.sono.filter(l=>inRange(l.inicio,t0,t1) && l.periodo==='sesta').length;   // só sestas; noites e "sem período" não são sonecas
@@ -2494,15 +2499,16 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       if(fim.getTime()===inicio) errs.push(['sFim', lx('A hora de acordar é igual à de adormecer. Corrige uma das horas.','L\'heure de réveil est égale à celle d\'endormissement.','Wake time equals sleep time. Fix one of them.')]);
       if(fim.getTime()<inicio) fim.setDate(fim.getDate()+1);   // atravessa a meia-noite (ex. 22:00 → 06:00): permitido
       const durMin=(fim.getTime()-inicio)/60000;
-      if(!errs.length && durMin>LIMITS.sonoMaxH*60) errs.push(['sFim', lx(`Duração de ${durStr(durMin)} parece impossível (máx. ${LIMITS.sonoMaxH}h por registo). Verifica as horas.`,`Durée de ${durStr(durMin)} impossible (max. ${LIMITS.sonoMaxH}h). Vérifie les heures.`,`Duration of ${durStr(durMin)} looks impossible (max ${LIMITS.sonoMaxH}h). Check the times.`)]);
       if(!errs.length && fim.getTime()>Date.now()+FUTURE_TOL_MS) errs.push(['sFim', lx('A hora de acordar não pode ser no futuro.','L\'heure de réveil ne peut pas être dans le futur.','Wake time cannot be in the future.')]);
       const qual=readNum('sQual'), inter=readNum('sInter');
       if(qual!=null && (Number.isNaN(qual) || !Number.isInteger(qual) || qual<LIMITS.qualMin || qual>LIMITS.qualMax)) errs.push(['sQual', lx('A qualidade tem de ser um número inteiro de 1 a 10.','La qualité doit être un nombre entier de 1 à 10.','Quality must be a whole number from 1 to 10.')]);
-      if(inter!=null && (Number.isNaN(inter) || !Number.isInteger(inter) || inter<0 || inter>LIMITS.interMax)) errs.push(['sInter', lx(`Interrupções: número inteiro de 0 a ${LIMITS.interMax}.`,`Interruptions : nombre entier de 0 à ${LIMITS.interMax}.`,`Interruptions: whole number from 0 to ${LIMITS.interMax}.`)]);
+      if(inter!=null && (Number.isNaN(inter) || !Number.isInteger(inter) || inter<0)) errs.push(['sInter', lx('Interrupções: número inteiro, 0 ou mais.','Interruptions : nombre entier, 0 ou plus.','Interruptions: whole number, 0 or more.')]);
       if(!showFieldErrors(errs)) return;
       const data={ periodo, posicao, inicio, fim:fim.getTime(), duracaoMin:durMin, qualidade:qual, interrupcoes:inter, obs:document.getElementById('sObs').value.trim() };
-      if(editing) Object.assign(editing, data); else S.sono.unshift({id:uid(), ...data});
-      save(); playChime(); openForm=null; editId=null; renderSono();
+      const commit=()=>{ if(editing) Object.assign(editing, data); else S.sono.unshift({id:uid(), ...data});
+        save(); playChime(); openForm=null; editId=null; renderSono(); };
+      if(durMin>LIMITS.sonoMaxH*60) confirmUnusual([lx(`Esta duração de sono é invulgar. Tens a certeza que queres guardar ${durStr(durMin)}?`,`Cette durée de sommeil est inhabituelle. Veux-tu vraiment enregistrer ${durStr(durMin)} ?`,`This sleep duration is unusual. Are you sure you want to save ${durStr(durMin)}?`)], commit);
+      else commit();
     });
     const cancelBtn=document.getElementById('sCancelEdit');
     if(cancelBtn) cancelBtn.addEventListener('click', ()=>{ editId=null; openForm=null; renderSono(); });
@@ -2580,21 +2586,32 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       if(date>todayISO()) errs.push(['gDate', msgFuturo()]);
       if(!errs.length && weight==null && height==null && head==null) errs.push(['gWeight', lx('Preenche pelo menos um valor.','Remplis au moins une valeur.','Fill in at least one value.')]);
       if(!showFieldErrors(errs)) return;
-      if(weight) S.evolucao.peso.push({date, valor:weight});
-      if(height) S.evolucao.altura.push({date, valor:height});
-      if(head) S.evolucao.pc.push({date, valor:head});
-      save(); if(weight||height||head) playChime(); renderEvolucao();
+      const commit=()=>{
+        if(weight) S.evolucao.peso.push({date, valor:weight});
+        if(height) S.evolucao.altura.push({date, valor:height});
+        if(head) S.evolucao.pc.push({date, valor:head});
+        save(); if(weight||height||head) playChime(); renderEvolucao(); };
+      const warns=[measureUnusual('peso',weight), measureUnusual('altura',height), measureUnusual('pc',head)].filter(Boolean);
+      if(warns.length) confirmUnusual(warns, commit); else commit();
     });
     document.querySelectorAll('[data-meas-metric]').forEach(b=>b.addEventListener('click', ()=>showMeasurementDetails(b.dataset.measMetric, +b.dataset.measIdx)));
   }
   const MEAS = { peso:{lbl:'Peso', unit:'kg'}, altura:{lbl:'Altura', unit:'cm'}, pc:{lbl:'Perímetro cefálico', unit:'cm'} };
-  // null (vazio) = sem erro. Devolve a mensagem de erro ou null.
+  // null (vazio) = sem erro. Bloqueia só texto inválido e valores <= 0.
   function measureError(metric, v){
     if(v==null) return null;
-    const [lo,hi]=LIMITS[metric], u=MEAS[metric].unit, f=x=>fmtDec(x, x<1?1:0);
     if(Number.isNaN(v)) return lx('Número inválido. Usa, por exemplo, 6,5 ou 6.5.','Nombre invalide. Utilise par ex. 6,5 ou 6.5.','Invalid number. Use e.g. 6.5.');
-    if(v<lo || v>hi) return lx(`Valor impossível para ${tr(MEAS[metric].lbl).toLowerCase()} (${f(lo)}–${f(hi)} ${u}). Verifica a vírgula: 6,5 é seis vírgula cinco.`,`Valeur impossible (${f(lo)}–${f(hi)} ${u}). Vérifie la virgule : 6,5.`,`Impossible value (${f(lo)}–${f(hi)} ${u}). Check the decimal point: 6.5.`);
+    if(v<=0) return lx('O valor tem de ser maior que 0.','La valeur doit être supérieure à 0.','Value must be above 0.');
     return null;
+  }
+  // Fora do intervalo habitual → devolve a pergunta de confirmação (o valor pode ser guardado se confirmado).
+  function measureUnusual(metric, v){
+    if(v==null || Number.isNaN(v) || v<=0) return null;
+    const [lo,hi]=LIMITS[metric]; if(v>=lo && v<=hi) return null;
+    const u=MEAS[metric].unit, x=numTxt(v);
+    if(metric==='peso') return lx(`Este peso é invulgar. Tens a certeza que queres guardar ${x} kg?`,`Ce poids est inhabituel. Veux-tu vraiment enregistrer ${x} kg ?`,`This weight is unusual. Are you sure you want to save ${x} kg?`);
+    if(metric==='altura') return lx(`Esta altura é invulgar. Tens a certeza que queres guardar ${x} cm?`,`Cette taille est inhabituelle. Veux-tu vraiment enregistrer ${x} cm ?`,`This height is unusual. Are you sure you want to save ${x} cm?`);
+    return lx(`Este perímetro cefálico é invulgar. Tens a certeza que queres guardar ${x} cm?`,`Ce périmètre crânien est inhabituel. Veux-tu vraiment enregistrer ${x} cm ?`,`This head circumference is unusual. Are you sure you want to save ${x} cm?`);
   }
   function measurementsListHtml(){
     const items=[];
@@ -2605,13 +2622,13 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       ${items.length ? items.map(it=>`<button type="button" class="day-rec" data-meas-metric="${it.k}" data-meas-idx="${it.i}"><span><b>${tr(MEAS[it.k].lbl)}</b> · ${String(it.r.valor).replace('.', lx(',',',','.'))} ${MEAS[it.k].unit} <span class="muted">· ${fmtD(it.r.date)}</span></span>${ICONS.chevright}</button>`).join('') : `<div class="empty">${tr('Sem registos.')}</div>`}
     </div>`;
   }
-  function showMeasurementDetails(metric, idx, editing){
+  function showMeasurementDetails(metric, idx, editing, typed){
     const rec=(S.evolucao[metric]||[])[idx]; if(!rec){ closeOverlay(); return; }
     const M=MEAS[metric];
     showOverlay(`<div class="voice-panel" id="measPanel"><div class="voice-card" style="text-align:left;">
       <h2 style="margin:0 0 10px;display:flex;align-items:center;gap:8px;">${ICONS.chart} ${tr(M.lbl)}</h2>
-      ${editing ? `<div class="form-row"><div style="flex:1;"><label>${tr('Data')}</label><input type="date" id="mDate" value="${rec.date||''}"></div>
-          <div style="flex:1;"><label>${tr(M.lbl)} (${M.unit})</label><input type="text" inputmode="decimal" id="mVal" value="${rec.valor}"></div></div>
+      ${editing ? `<div class="form-row"><div style="flex:1;"><label>${tr('Data')}</label><input type="date" id="mDate" value="${typed?typed.date:(rec.date||'')}"></div>
+          <div style="flex:1;"><label>${tr(M.lbl)} (${M.unit})</label><input type="text" inputmode="decimal" id="mVal" value="${typed?typed.raw:rec.valor}"></div></div>
         <button class="btn wide" id="mSave" type="button">${tr('Guardar alterações')}</button>`
       : `<div class="rec-line"><span>${tr('Data')}</span><b>${rec.date ? new Date(rec.date+'T12:00:00').toLocaleDateString(localeTag()) : '—'}</b></div>
         <div class="rec-line"><span>${tr(M.lbl)}</span><b>${rec.valor} ${M.unit}</b></div>
@@ -2631,8 +2648,12 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       if(!d) errs.push(['mDate', lx('Indica a data.','Indique la date.','Enter the date.')]); else if(d>todayISO()) errs.push(['mDate', msgFuturo()]);
       if(v==null) errs.push(['mVal', lx('Indica o valor.','Indique la valeur.','Enter the value.')]); else { const e=measureError(metric,v); if(e) errs.push(['mVal', e]); }
       if(!showFieldErrors(errs)) return;
-      const arr=S.evolucao[metric]; const i=arr.indexOf(rec); if(i<0){ closeOverlay(); return; }
-      rec.valor=v; rec.date=d; save(); closeOverlay(); renderEvolucao();
+      const commit=()=>{ const arr=S.evolucao[metric]; const i=arr.indexOf(rec); if(i<0){ closeOverlay(); return; }
+        rec.valor=v; rec.date=d; save(); closeOverlay(); renderEvolucao(); };
+      const raw=document.getElementById('mVal').value;
+      const wq=measureUnusual(metric, v);
+      if(wq) confirmUnusual([wq], commit, ()=>showMeasurementDetails(metric, idx, true, {date:d, raw}));   // Cancelar volta à edição com o que foi escrito
+      else commit();
     });
   }
 
@@ -3335,7 +3356,10 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 
   /* ============ validação de formulários (Fase 2) ============
      Limites de plausibilidade (não clínicos) para apanhar erros de escrita: não existiam limites na app. */
-  const LIMITS = { mlMax:500, peitoMaxMin:180, sonoMaxH:16, qualMin:1, qualMax:10, interMax:50,
+  // mlMax, peitoMaxMin, sonoMaxH e os intervalos de peso/altura/pc só PEDEM CONFIRMAÇÃO (valor invulgar) — não bloqueiam.
+  // Bloqueia-se apenas o logicamente impossível: negativos/texto inválido, 0 onde não faz sentido, datas futuras,
+  // início = fim, bebido > oferecido, qualidade fora da escala 1–10 (inteiros).
+  const LIMITS = { mlMax:500, peitoMaxMin:180, sonoMaxH:16, qualMin:1, qualMax:10,
     peso:[0.3,50], altura:[20,150], pc:[20,70] };
   function clearFieldErrors(scope){ (scope||document).querySelectorAll('.field-err').forEach(e=>e.remove()); (scope||document).querySelectorAll('.input-err').forEach(e=>e.classList.remove('input-err')); }
   // errs = [[idDoCampo, mensagem], …] → mostra cada mensagem logo a seguir ao campo e foca o primeiro. Devolve true se não houver erros.
@@ -3359,6 +3383,19 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     return /^[-+]?\d*[.,]?\d+\s*[a-zA-Z]*$/.test(raw.replace(/\s/g,'')) ? v : NaN;
   }
   const FUTURE_TOL_MS = 60000;   // 1 min de tolerância para relógios ligeiramente diferentes
+  // Confirmação para valores possíveis mas invulgares: Cancelar não grava; Guardar grava exatamente o valor introduzido.
+  function confirmUnusual(lines, onSave, onCancel){
+    showOverlay(`<div class="voice-panel" id="unusualPanel"><div class="voice-card">
+      ${lines.map(l=>`<p style="margin:0 0 8px;">${l}</p>`).join('')}
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn ghost wide" id="unCancel" type="button">${tr('Cancelar')}</button>
+        <button class="btn wide" id="unSave" type="button">${tr('Guardar')}</button>
+      </div>
+    </div></div>`);
+    document.getElementById('unCancel').addEventListener('click', ()=>{ closeOverlay(); if(onCancel) onCancel(); });
+    document.getElementById('unSave').addEventListener('click', ()=>{ closeOverlay(); onSave(); });
+  }
+  const numTxt = v => String(v).replace('.', lx(',',',','.'));
   const msgFuturo = () => lx('A data/hora não pode ser no futuro.','La date/heure ne peut pas être dans le futur.','Date/time cannot be in the future.');
 
   /* ============ ver detalhes → ✏️ editar / apagar (reutiliza os formulários de edição existentes) ============ */

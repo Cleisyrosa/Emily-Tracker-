@@ -807,6 +807,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     if(c.alimentacao.dataInicioSolidos==null) c.alimentacao.dataInicioSolidos='';
     if(c.pediatra.morada==null) c.pediatra.morada='';
     c.medicacoes = (c.medicacoes||[]).map(m=>({horario:'',notificacoes:true,tipo:'receitado',...m}));
+    c.medicacoes.forEach(m=>{ if(!m.id) m.id=uid(); });   // cada medicamento tem um id estável
     c.mamadas=c.mamadas||[]; c.fraldas=c.fraldas||[]; c.sono=c.sono||[];
     c.evolucao = c.evolucao || {peso:[],altura:[],pc:[]};
     c.desenvolvimento = c.desenvolvimento || {done:{}};
@@ -814,6 +815,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     if(!c.vacinacao.doses) c.vacinacao.doses={};
     VAX.forEach(v=>v.doses.forEach((label,i)=>{ const k=v.id+'-'+i; if(!c.vacinacao.doses[k]) c.vacinacao.doses[k]={done:null,pais:'',reacao:'',proximaData:''}; }));
     c.doses=c.doses||[];
+    // Doses antigas guardavam só o nome: liga-as ao medicamento pelo id quando existe EXATAMENTE um medicamento com esse nome.
+    // Não apaga nada; o nome gravado na dose mantém-se (é o que foi dado nesse momento).
+    c.doses.forEach(d=>{ if(d && !d.medId && d.nome){ const m=c.medicacoes.filter(x=>x.nome===d.nome); if(m.length===1) d.medId=m[0].id; } });
     // Reflexão semanal: { 'AAAA-MM-DD' (segunda-feira da semana): {humor:id|null, nota:texto|null, atualizadoEm} }
     if(!c.reflexoesSemanais || typeof c.reflexoesSemanais!=='object') c.reflexoesSemanais={};
     c.running=c.running||{sleepStart:null};
@@ -1554,7 +1558,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   }
 
   function medDueSoon(m){
-    const last = S.doses.filter(d=>d.nome===m.nome).sort((a,b)=>b.ts-a.ts)[0];
+    const last = dosesOf(m).sort((a,b)=>b.ts-a.ts)[0];
     if(!m.notificacoes) return null;
     const lang=(S.settings&&S.settings.lang)||'pt';
     if(last){
@@ -1844,7 +1848,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         <div class="section-label">${tr('Receitados')}</div>
         ${c.medicacoes.filter(m=>m.tipo!=='tradicional').map(m=>`<div class="med-row"><span class="body"><b>${m.nome}</b> — ${m.dose} · ${medIntervalTxt(m.intervaloHoras,m.maxVezesDia)}${m.horario?(' · '+tr('horário')+' '+m.horario):''} ${m.notificacoes?'🔔':''}<br><span class="muted">${lx('Hoje','Aujourd\'hui','Today')}: <b>${dosesToday(m).length}${m.maxVezesDia?('/'+m.maxVezesDia):''}</b> ${lx('dose(s)','dose(s)','dose(s)')}</span></span>
           <button class="dose-btn" data-giveDose="${m.id}" type="button">${tr('Dose')}</button>
-          <button class="dose-btn" data-medMax="${m.id}" type="button" title="${lx('Máximo de doses por dia','Maximum de doses par jour','Maximum doses per day')}">${lx('Máx.','Max.','Max')}</button>
+          <button class="dose-btn" data-medEdit="${m.id}" type="button">${lx('Editar','Modifier','Edit')}</button>
           <button class="log-del" data-rmMed="${m.id}" type="button">${ICONS.trash}</button></div>`).join('') || `<span class="muted">${tr('Sem medicação regular.')}</span>`}
         <div class="add-inline" style="flex-wrap:wrap;">
           <input type="text" id="newMedNome" placeholder="${tr('Nome')}" style="flex:1;">
@@ -1992,7 +1996,16 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     bind('pNome',c,'nome',renderHeader); bind('pDob',c,'dataNascimento',renderHeader); bind('pSexo',c,'sexo');
     bind('pLocal',c,'localNascimento'); bind('pNac',c,'nacionalidade');
     bind('pDocId',c,'documentoId'); bind('pSaude',c,'sistemaSaude'); bind('pMorada',c,'moradaAtual');
-    bind('pNascPeso',c.nascimento,'peso'); bind('pNascAlt',c.nascimento,'altura'); bind('pNascPc',c.nascimento,'pc');
+    // Campos numéricos do perfil: vazio ou número > 0 (vírgula/ponto). Valor inválido mostra erro e NÃO é gravado.
+    const bindNum=(id,obj,field)=>{
+      const el=document.getElementById(id); if(!el) return;
+      const commit=()=>{ const p=el.parentElement; p.querySelectorAll('.field-err').forEach(e=>e.remove()); el.classList.remove('input-err');
+        const v=readNum(id);
+        if(v!=null && (Number.isNaN(v) || v<=0)){ showFieldErrors([[id, lx('Número maior que 0 (ex.: 3,4), ou deixa vazio.','Nombre supérieur à 0 (ex. 3,4), ou laisse vide.','Number above 0 (e.g. 3.4), or leave empty.')]]); return; }
+        obj[field]=el.value.trim(); save(); };
+      el.addEventListener('change', commit); el.addEventListener('blur', commit);
+    };
+    bindNum('pNascPeso',c.nascimento,'peso'); bindNum('pNascAlt',c.nascimento,'altura'); bindNum('pNascPc',c.nascimento,'pc');
     bind('pBlood',c,'tipoSanguineo',()=>{ document.getElementById('bloodBig').textContent=c.tipoSanguineo; renderHeader(); });
     bind('pRh',c,'fatorRh',()=>{ document.querySelector('.rh').textContent='Fator Rh: '+c.fatorRh; });
     bind('pediNome',c.pediatra,'nome'); bind('pediTel',c.pediatra,'telefone'); bind('pediEmail',c.pediatra,'email'); bind('pediLocal',c.pediatra,'local'); bind('pediMorada',c.pediatra,'morada');
@@ -2000,7 +2013,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     bind('ceNome',c.contactoEmergencia,'nome'); bind('ceRel',c.contactoEmergencia,'relacao'); bind('ceTel',c.contactoEmergencia,'telefone');
     bind('maeNome',c.mae,'nome'); bind('maeTel',c.mae,'telefone'); bind('maeNac',c.mae,'nacionalidade'); bind('maeNat',c.mae,'naturalidade'); bind('maeBlood',c.mae,'tipoSanguineo'); bind('maeAntec',c.mae,'antecedentes');
     bind('paiNome',c.pai,'nome'); bind('paiTel',c.pai,'telefone'); bind('paiNac',c.pai,'nacionalidade'); bind('paiNat',c.pai,'naturalidade'); bind('paiBlood',c.pai,'tipoSanguineo'); bind('paiAntec',c.pai,'antecedentes');
-    bind('alimFormula',c.alimentacao,'formula'); bind('alimQtd',c.alimentacao,'quantidadeRefeicao'); bind('alimInicioSolidos',c.alimentacao,'dataInicioSolidos'); bind('pNotas',c,'notas');
+    bind('alimFormula',c.alimentacao,'formula'); bindNum('alimQtd',c.alimentacao,'quantidadeRefeicao'); bind('alimInicioSolidos',c.alimentacao,'dataInicioSolidos'); bind('pNotas',c,'notas');
     bind('penData',c.penico,'dataInicio'); bind('penNotas',c.penico,'notas');
     document.getElementById('alimTipo').addEventListener('change', e=>{ c.alimentacao.tipo=e.target.value; save(); });
 
@@ -2088,11 +2101,12 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     });
     document.querySelectorAll('[data-rmIntol]').forEach(b=>b.addEventListener('click', ()=>{ c.intolerancias=c.intolerancias.filter(a=>a.id!==b.dataset.rmintol); save(); renderPerfil(); }));
     document.getElementById('addMed').addEventListener('click', ()=>{
-      const nome=document.getElementById('newMedNome').value.trim(); if(!nome) return;
       clearFieldErrors(document.getElementById('accMed'));
+      const nome=document.getElementById('newMedNome').value.trim();
+      const errs=medFormErrors(nome, readNum('newMedInt'), readNum('newMedMax'), 'newMedNome', 'newMedInt', 'newMedMax');
+      if(!showFieldErrors(errs)) return;
       const mx=readNum('newMedMax');
-      if(mx!=null && (Number.isNaN(mx) || !Number.isInteger(mx) || mx<1 || mx>24)){ showFieldErrors([['newMedMax', lx('Máximo: número inteiro de 1 a 24, ou deixa vazio.','Maximum : nombre entier de 1 à 24, ou laisse vide.','Maximum: whole number 1–24, or leave empty.')]]); return; }
-      c.medicacoes.push({id:uid(), nome, dose:document.getElementById('newMedDose').value.trim(), intervaloHoras:+document.getElementById('newMedInt').value||8, maxVezesDia:mx,
+      c.medicacoes.push({id:uid(), nome, dose:document.getElementById('newMedDose').value.trim(), intervaloHoras:readNum('newMedInt'), maxVezesDia:mx,
         horario:document.getElementById('newMedHorario').value, notificacoes:document.getElementById('newMedNotif').checked, tipo:'receitado'});
       save(); rerenderMeds();
     });
@@ -2101,7 +2115,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       const med = c.medicacoes.find(m=>m.id===b.dataset.givedose);
       giveDose(med);
     }));
-    document.querySelectorAll('[data-medMax]').forEach(b=>b.addEventListener('click', ()=>showMedMaxEditor(b.dataset.medmax)));
+    document.querySelectorAll('[data-medEdit]').forEach(b=>b.addEventListener('click', ()=>showMedEditor(b.dataset.mededit)));
     document.querySelectorAll('[data-doseEdit]').forEach(b=>b.addEventListener('click', ()=>showDoseEditor(b.dataset.doseedit)));
     document.querySelectorAll('[data-doseDel]').forEach(b=>b.addEventListener('click', ()=>{
       showConfirm(lx('Apagar esta dose? Deixa de contar para o intervalo e para o máximo diário.','Supprimer cette dose ?','Delete this dose?'), ()=>{
@@ -2112,13 +2126,15 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   // Redesenha o Perfil mantendo a secção de medicações aberta (as ações de medicação acontecem lá).
   function rerenderMeds(){ renderPerfil(); const d=document.getElementById('accMed'); if(d){ d.open=true; } }
   // Doses de HOJE (dia local) deste medicamento — por id quando existe, senão pelo nome (doses antigas).
-  function dosesToday(med){ const [t0,t1]=todayRange(); return (S.doses||[]).filter(d=>inRange(d.ts,t0,t1) && (d.medId ? d.medId===med.id : d.nome===med.nome)); }
+  // ÚNICA fonte de verdade para "doses deste medicamento": pelo id; o nome só é usado em doses antigas sem id.
+  function dosesOf(med){ return (S.doses||[]).filter(d=>d.medId ? d.medId===med.id : d.nome===med.nome); }
+  function dosesToday(med){ const [t0,t1]=todayRange(); return dosesOf(med).filter(d=>inRange(d.ts,t0,t1)); }
   function doseHistoryHtml(){
     const cutoff=Date.now()-7*86400000;
     const list=(S.doses||[]).filter(d=>d.ts>=cutoff).slice().sort((a,b)=>b.ts-a.ts);
     const f=ts=>new Date(ts).toLocaleDateString(localeTag(),{weekday:'short',day:'numeric',month:'short'})+' · '+hhmm(ts);
     return `<div class="section-label" style="margin-top:10px;">${lx('Doses registadas (últimos 7 dias)','Doses enregistrées (7 derniers jours)','Logged doses (last 7 days)')}</div>
-      ${list.length ? list.map(d=>`<div class="med-row"><span class="body"><b>${d.nome}</b>${d.dose?(' — '+d.dose):''}<br><span class="muted">${f(d.ts)}${d.acimaDoMax?' · '+lx('acima do máximo','au-dessus du maximum','above maximum'):''}</span></span>
+      ${list.length ? list.map(d=>`<div class="med-row"><span class="body"><b>${d.nome}</b>${d.dose?(' — '+d.dose):''}<br><span class="muted">${f(d.ts)}${d.acimaDoMax?' · '+lx('acima do máximo','au-dessus du maximum','above maximum'):''}${d.antesDoIntervalo?' · '+lx('antes do intervalo','avant l\'intervalle','before interval'):''}</span></span>
         <button class="dose-btn" data-doseEdit="${d.id}" type="button" aria-label="${lx('Corrigir hora','Corriger l\'heure','Fix time')}">✏️</button>
         <button class="log-del" data-doseDel="${d.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join('') : `<span class="muted">${lx('Nenhuma dose registada.','Aucune dose enregistrée.','No doses logged.')}</span>`}`;
   }
@@ -2140,65 +2156,132 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       d.ts=ts; save(); closeOverlay(); rerenderMeds();
     });
   }
-  function showMedMaxEditor(id){
+  // Validação comum ao criar e editar um medicamento: nome obrigatório, intervalo mínimo > 0 h, máximo diário 1–24 ou vazio.
+  function medFormErrors(nome, intH, mx, idNome, idInt, idMax){
+    const errs=[];
+    if(!nome) errs.push([idNome, lx('Indica o nome do medicamento.','Indique le nom du médicament.','Enter the medicine name.')]);
+    if(intH==null) errs.push([idInt, lx('Indica o intervalo mínimo entre doses (horas).','Indique l\'intervalle minimum entre doses (heures).','Enter the minimum interval between doses (hours).')]);
+    else if(Number.isNaN(intH) || intH<=0) errs.push([idInt, lx('O intervalo tem de ser um número maior que 0.','L\'intervalle doit être supérieur à 0.','Interval must be a number above 0.')]);
+    if(mx!=null && (Number.isNaN(mx) || !Number.isInteger(mx) || mx<1 || mx>24)) errs.push([idMax, lx('Máximo: número inteiro de 1 a 24, ou deixa vazio.','Maximum : nombre entier de 1 à 24, ou laisse vide.','Maximum: whole number 1–24, or leave empty.')]);
+    return errs;
+  }
+  function showMedEditor(id){
     const m=S.crianca.medicacoes.find(x=>x.id===id); if(!m) return;
-    showOverlay(`<div class="voice-panel" id="maxPanel"><div class="voice-card" style="text-align:left;">
-      <h2 style="margin:0 0 6px;">${ICONS.pill} ${m.nome}</h2>
-      <p class="muted" style="margin:0 0 10px;">${lx('Máximo de doses por dia, conforme indicado pelo/a médico/a. Deixa vazio para não definir máximo.','Maximum de doses par jour, selon le médecin. Laisse vide pour aucun maximum.','Maximum doses per day, as prescribed. Leave empty for no maximum.')}</p>
-      <div class="form-row"><div style="flex:1;"><label>${lx('Máx. doses/dia','Max. doses/jour','Max doses/day')}</label><input type="number" id="maxVal" min="1" max="24" value="${m.maxVezesDia||''}"></div></div>
-      <button class="btn wide" id="maxSave" type="button" style="margin-top:10px;">${tr('Guardar alterações')}</button>
-      <button class="btn ghost wide" id="maxCancel" type="button" style="margin-top:8px;">${tr('Cancelar')}</button>
+    const esc=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    showOverlay(`<div class="voice-panel" id="medEditPanel"><div class="voice-card" role="dialog" aria-modal="true" aria-labelledby="medEditTitle" style="text-align:left;max-height:85vh;overflow-y:auto;">
+      <h2 id="medEditTitle" style="margin:0 0 6px;">${lx('Editar medicamento','Modifier le médicament','Edit medicine')}</h2>
+      <p class="muted" style="margin:0 0 10px;">${lx('As doses já registadas continuam ligadas a este medicamento e mantêm o nome com que foram dadas.','Les doses déjà enregistrées restent liées à ce médicament.','Doses already logged stay linked to this medicine.')}</p>
+      <div class="form-row"><div style="flex:1;"><label for="meNome">${tr('Nome')}</label><input type="text" id="meNome" value="${esc(m.nome)}"></div></div>
+      <div class="form-row"><div style="flex:1;"><label for="meDose">${tr('Dose')}</label><input type="text" id="meDose" value="${esc(m.dose)}"></div></div>
+      <div class="form-row"><div style="flex:1;"><label for="meInt">${tr('Intervalo (h)')}</label><input type="number" id="meInt" value="${esc(m.intervaloHoras)}"></div>
+        <div style="flex:1;"><label for="meMax">${lx('Máx. doses/dia','Max. doses/jour','Max doses/day')}</label><input type="number" id="meMax" min="1" max="24" value="${esc(m.maxVezesDia||'')}"></div></div>
+      <div class="form-row"><div style="flex:1;"><label for="meHor">${tr('horário')}</label><input type="time" id="meHor" value="${esc(m.horario)}"></div></div>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:.83rem;margin-top:6px;"><input type="checkbox" id="meNotif" ${m.notificacoes?'checked':''} style="width:auto;"> ${tr('Notificar')}</label>
+      <button class="btn wide" id="meSave" type="button" style="margin-top:12px;">${tr('Guardar alterações')}</button>
+      <button class="btn ghost wide" id="meCancel" type="button" style="margin-top:8px;">${tr('Cancelar')}</button>
     </div></div>`);
-    const panel=document.getElementById('maxPanel');
+    const panel=document.getElementById('medEditPanel');
     panel.addEventListener('click', e=>{ if(e.target===panel) closeOverlay(); });
-    document.getElementById('maxCancel').addEventListener('click', closeOverlay);
-    document.getElementById('maxSave').addEventListener('click', ()=>{
+    document.getElementById('meCancel').addEventListener('click', closeOverlay);
+    document.getElementById('meSave').addEventListener('click', ()=>{
       clearFieldErrors(panel);
-      const v=readNum('maxVal');
-      if(v!=null && (Number.isNaN(v) || !Number.isInteger(v) || v<1 || v>24)){ showFieldErrors([['maxVal', lx('Número inteiro de 1 a 24, ou vazio.','Nombre entier de 1 à 24, ou vide.','Whole number 1–24, or empty.')]]); return; }
-      m.maxVezesDia=v; save(); closeOverlay(); rerenderMeds();
+      const nome=document.getElementById('meNome').value.trim(), intH=readNum('meInt'), mx=readNum('meMax');
+      if(!showFieldErrors(medFormErrors(nome, intH, mx, 'meNome','meInt','meMax'))) return;
+      // antes de mudar o nome, garante que doses antigas (só com nome) deste medicamento ficam ligadas pelo id
+      if(nome!==m.nome){ const same=S.crianca.medicacoes.filter(x=>x.nome===m.nome); if(same.length===1) (S.doses||[]).forEach(d=>{ if(!d.medId && d.nome===m.nome) d.medId=m.id; }); }
+      Object.assign(m, { nome, dose:document.getElementById('meDose').value.trim(), intervaloHoras:intH, maxVezesDia:mx, horario:document.getElementById('meHor').value, notificacoes:document.getElementById('meNotif').checked });
+      save(); closeOverlay(); rerenderMeds();
     });
   }
 
-  // opts.overInterval: a utilizadora confirmou registar antes do intervalo mínimo (como antes).
-  // opts.overMax: a utilizadora confirmou EXPLICITAMENTE ultrapassar o máximo diário — vale só para esta dose.
-  function giveDose(med, opts){
-    opts = (opts===true) ? {overInterval:true} : (opts||{});
-    const warnEl = document.getElementById('doseWarning');
-    const lang=(S.settings&&S.settings.lang)||'pt';
-    const nToday = dosesToday(med).length, max = med.maxVezesDia;
-    if(max && nToday>=max && !opts.overMax){
-      const txt = lx(`Limite diário atingido: ${nToday}/${max} doses de ${med.nome} hoje. Nova dose bloqueada.`,`Limite journalière atteinte : ${nToday}/${max} doses de ${med.nome} aujourd'hui. Nouvelle dose bloquée.`,`Daily limit reached: ${nToday}/${max} doses of ${med.nome} today. New dose blocked.`);
-      if(warnEl){ warnEl.innerHTML = `<div class="alert crit" style="flex-wrap:wrap;">${ICONS.pill} <span style="flex:1;min-width:180px;">${txt}</span> <button class="btn ghost" data-overMax="${med.id}" type="button" style="margin-left:auto;">${lx('Ultrapassar o limite…','Dépasser la limite…','Exceed the limit…')}</button></div>`;
-        warnEl.querySelector('[data-overMax]').addEventListener('click', ()=>showConfirm(
-          lx(`⚠️ Vais registar a ${nToday+1}.ª dose de ${med.nome} hoje, ACIMA do máximo de ${max} configurado. Só continues se o/a médico/a o indicou.`,`⚠️ Tu vas enregistrer la dose n°${nToday+1} de ${med.nome} aujourd'hui, AU-DESSUS du maximum de ${max}. Continue seulement si le médecin l'a indiqué.`,`⚠️ You are logging dose #${nToday+1} of ${med.nome} today, ABOVE the configured maximum of ${max}. Only continue if a doctor said so.`),
-          ()=>giveDose(med, Object.assign({}, opts, {overMax:true}))));
-      }
+  /* ============ Medicação: registo seguro de doses (U9 · Fase A) ============
+     Ordem: alergia → máximo diário → intervalo mínimo. Cada limite tem de ser confirmado explicitamente;
+     "Voltar" não regista nada. É o ÚNICO caminho para registar uma dose (Perfil e Início usam-no). */
+  function normName(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
+  const NAME_STOP = new Set(['de','da','do','das','dos','com','sem','mg','ml','gota','gotas','xarope','comprimido','comprimidos','solucao','oral','para','exemplo','dose','dia','ui']);
+  function nameWords(s){ return normName(s).split(' ').filter(w=>w.length>=3 && !NAME_STOP.has(w) && !/^\d+$/.test(w)); }
+  // Devolve as alergias registadas que PODEM corresponder a este medicamento (nome ou texto da dose).
+  // Sem "inteligência" médica: igualdade normalizada, palavra igual, ou palavra com o mesmo início (≥5 letras).
+  // Na dúvida mostra-se o aviso — nunca se assume que é seguro.
+  function allergyMatches(med){
+    const mWords=nameWords((med.nome||'')+' '+(med.dose||'')), mFull=normName(med.nome);
+    return (S.crianca.alergiasMed||[]).filter(a=>{
+      const aFull=normName(a.nome); if(!aFull) return false;
+      if(aFull===mFull) return true;
+      const aWords=nameWords(a.nome);
+      return aWords.some(aw=>mWords.some(mw=> aw===mw || (Math.min(aw.length,mw.length)>=5 && (aw.startsWith(mw)||mw.startsWith(aw)))));
+    });
+  }
+  function doseSheet({tone, title, lines, primary, onPrimary, back}){
+    showOverlay(`<div class="voice-panel" id="doseSheet"><div class="voice-card" role="alertdialog" aria-modal="true" aria-labelledby="doseSheetTitle" style="text-align:left;">
+      <div class="alert ${tone}" style="margin-bottom:10px;">${ICONS.pill}<b id="doseSheetTitle">${title}</b></div>
+      ${lines.map(l=>`<p style="margin:0 0 8px;">${l}</p>`).join('')}
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn ghost wide" id="dsBack" type="button">${back||lx('Voltar','Retour','Back')}</button>
+        <button class="btn sensitive wide" id="dsGo" type="button">${primary}</button>
+      </div>
+    </div></div>`);
+    document.getElementById('dsBack').addEventListener('click', closeOverlay);
+    document.getElementById('dsGo').addEventListener('click', ()=>{ closeOverlay(); onPrimary(); });
+  }
+  function registerDose(med, onDone, flags){
+    flags = flags || {};
+    const again = f => registerDose(med, onDone, Object.assign({}, flags, f));
+    // 1) alergia
+    const al = allergyMatches(med);
+    if(al.length && !flags.allergyOk){
+      doseSheet({ tone:'crit', title:lx('Possível alergia registada','Allergie possible enregistrée','Possible recorded allergy'),
+        lines:[ ...al.map(a=>`<b>${a.nome}</b>${a.reacao?(' — '+a.reacao):''}`),
+          lx(`${med.nome} pode corresponder a uma alergia registada no Perfil. Confirma apenas se um profissional de saúde indicou este medicamento.`,`${med.nome} peut correspondre à une allergie enregistrée. Confirme seulement si un professionnel de santé l'a indiqué.`,`${med.nome} may match an allergy recorded in the Profile. Only confirm if a health professional prescribed it.`) ],
+        primary:lx('Continuar','Continuer','Continue'), onPrimary:()=>again({allergyOk:true}) });
       return;
     }
-    const last = S.doses.filter(d=>d.medId ? d.medId===med.id : d.nome===med.nome).sort((a,b)=>b.ts-a.ts)[0];
+    // 2) máximo diário
+    const nToday=dosesToday(med).length, max=med.maxVezesDia;
+    if(max && nToday>=max && !flags.overMax){
+      doseSheet({ tone:'warn', title:lx('Máximo diário atingido','Maximum journalier atteint','Daily maximum reached'),
+        lines:[ lx(`Já foram registadas ${nToday} de ${max} doses de ${med.nome} hoje.`,`${nToday} doses sur ${max} de ${med.nome} déjà enregistrées aujourd'hui.`,`${nToday} of ${max} doses of ${med.nome} already logged today.`) ],
+        primary:lx('Continuar','Continuer','Continue'),
+        onPrimary:()=>doseSheet({ tone:'warn', title:lx('Tem a certeza?','Êtes-vous sûr ?','Are you sure?'),
+          lines:[ lx(`Esta seria a ${nToday+1}.ª dose de hoje, acima do máximo de ${max} configurado. Confirme apenas se foi indicada por um profissional de saúde.`,`Ce serait la dose n°${nToday+1} aujourd'hui, au-dessus du maximum de ${max}. Confirmez seulement si un professionnel de santé l'a indiqué.`,`This would be dose #${nToday+1} today, above the configured maximum of ${max}. Only confirm if a health professional advised it.`) ],
+          primary:lx('Confirmar registo','Confirmer','Confirm entry'), onPrimary:()=>again({overMax:true}) }) });
+      return;
+    }
+    // 3) intervalo mínimo
+    const last=dosesOf(med).sort((a,b)=>b.ts-a.ts)[0];
     const hoursSince = last ? (Date.now()-last.ts)/3600000 : Infinity;
-    if(!opts.overInterval && hoursSince < med.intervaloHoras){
-      const warnTxt = lang==='fr' ? `Dernière dose de ${med.nome} il y a ${hoursSince.toFixed(1)}h — minimum ${med.intervaloHoras}h.`
-        : lang==='en' ? `Last dose of ${med.nome} was ${hoursSince.toFixed(1)}h ago — minimum ${med.intervaloHoras}h.`
-        : `Última dose de ${med.nome} há ${hoursSince.toFixed(1)}h — mínimo ${med.intervaloHoras}h.`;
-      const forceLbl = lang==='fr' ? 'Enregistrer quand même' : lang==='en' ? 'Log anyway' : 'Registar mesmo assim';
-      if(warnEl) warnEl.innerHTML = `<div class="alert crit">${ICONS.pill} ${warnTxt} <button class="btn crit" style="margin-left:8px;" data-forceDose="${med.id}" type="button">${forceLbl}</button></div>`;
-      const fb = warnEl ? warnEl.querySelector('[data-forceDose]') : null;
-      if(fb) fb.addEventListener('click', ()=>giveDose(med, Object.assign({}, opts, {overInterval:true})));
+    if(med.intervaloHoras>0 && hoursSince < med.intervaloHoras && !flags.overInterval){
+      const whenTxt = last ? (new Date(last.ts).toLocaleDateString(localeTag(),{weekday:'short',day:'numeric',month:'short'})+' · '+hhmm(last.ts)) : '—';
+      doseSheet({ tone:'warn', title:lx('Antes do intervalo mínimo','Avant l\'intervalle minimum','Before the minimum interval'),
+        lines:[ lx('Esta dose está a ser registada antes do intervalo mínimo.','Cette dose est enregistrée avant l\'intervalle minimum.','This dose is being logged before the minimum interval.'),
+          `<span class="muted">${lx('Última dose','Dernière dose','Last dose')}:</span> <b>${whenTxt}</b>`,
+          `<span class="muted">${lx('Tempo decorrido','Temps écoulé','Time elapsed')}:</span> <b>${durStr(hoursSince*60)}</b> · <span class="muted">${lx('Intervalo mínimo','Intervalle minimum','Minimum interval')}:</span> <b>${med.intervaloHoras}h</b>` ],
+        primary:lx('Continuar','Continuer','Continue'),
+        onPrimary:()=>doseSheet({ tone:'warn', title:lx('Tem a certeza?','Êtes-vous sûr ?','Are you sure?'),
+          lines:[ lx('O intervalo mínimo ainda não terminou. Confirme apenas se esta administração foi indicada por um profissional de saúde.','L\'intervalle minimum n\'est pas terminé. Confirmez seulement si cette administration a été indiquée par un professionnel de santé.','The minimum interval has not passed. Only confirm if a health professional advised this dose.') ],
+          primary:lx('Confirmar registo','Confirmer','Confirm entry'), onPrimary:()=>again({overInterval:true}) }) });
       return;
     }
+    // 4) registar
     const dose = {id:uid(), ts:Date.now(), nome:med.nome, dose:med.dose, medId:med.id};
-    if(opts.overMax) dose.acimaDoMax = true;
+    if(flags.overMax) dose.acimaDoMax = true;
+    if(flags.overInterval) dose.antesDoIntervalo = true;
+    if(flags.allergyOk) dose.alergiaConfirmada = true;
     S.doses.unshift(dose);
-    save(); playChime(); rerenderMeds();
-    const doneTxt = lang==='fr' ? `Dose de ${med.nome} enregistrée.` : lang==='en' ? `Dose of ${med.nome} logged.` : `Dose de ${med.nome} registada.`;
-    const w2 = document.getElementById('doseWarning');
-    if(w2){
-      w2.innerHTML = `<div class="alert good" style="flex-wrap:wrap;">${ICONS.pill} <span style="flex:1;">${doneTxt}</span> <button class="btn ghost" id="undoDose" type="button">${lx('Desfazer','Annuler','Undo')}</button></div>`;
-      document.getElementById('undoDose').addEventListener('click', ()=>{ const i=S.doses.findIndex(x=>x.id===dose.id); if(i>-1) S.doses.splice(i,1); save(); rerenderMeds();
-        const w3=document.getElementById('doseWarning'); if(w3) w3.innerHTML=`<div class="alert info">${ICONS.pill} ${lx('Dose anulada.','Dose annulée.','Dose undone.')}</div>`; });
-    }
+    save(); playChime();
+    if(onDone) onDone(dose);
+  }
+  function undoDose(id){ const i=S.doses.findIndex(x=>x.id===id); if(i>-1){ S.doses.splice(i,1); save(); return true; } return false; }
+
+  // Perfil › Dose: usa o fluxo seguro e mostra o resultado com "Desfazer".
+  function giveDose(med){
+    registerDose(med, dose=>{
+      rerenderMeds();
+      const w2=document.getElementById('doseWarning'); if(!w2) return;
+      w2.innerHTML = `<div class="alert good" role="status" style="flex-wrap:wrap;">${ICONS.pill} <span style="flex:1;">${lx(`Dose de ${med.nome} registada.`,`Dose de ${med.nome} enregistrée.`,`Dose of ${med.nome} logged.`)}</span> <button class="btn ghost" id="undoDose" type="button">${lx('Desfazer','Annuler','Undo')}</button></div>`;
+      document.getElementById('undoDose').addEventListener('click', ()=>{ undoDose(dose.id); rerenderMeds();
+        const w3=document.getElementById('doseWarning'); if(w3) w3.innerHTML=`<div class="alert info" role="status">${ICONS.pill} ${lx('Dose anulada.','Dose annulée.','Dose undone.')}</div>`; });
+    });
   }
 
   function renderGallery(){

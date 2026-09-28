@@ -20,13 +20,18 @@
   --growth:#2c7280; --growth-soft:#d6eef1; --who-line:#77685d; --who-band:rgba(119,104,93,.09); --feed-text:#953f5e; --on-feed:#ffffff;
   --bg:#fffaf3; --surface:#ffffff; --surface-2:#f5f0e8; --border:#f0e6d6;
   --ink:#5a4a42; --ink-muted:#76685e; --ink-faint:#817061;
-  --accent:#f9dce8; --accent-ink:#7a3350; --brand:#c2708f; --brand-ink:#241d19; --brand-text:#af4b71; --on-crit:#ffffff;
+  /* ACENTO (identidade, escolhido pelo utilizador) — derivados em JS por applyTheme() para o acento e o tema:
+     --accent/--accent-soft fundo suave de seleção · --accent-ink texto/ícone sobre ele · --brand botão principal ·
+     --brand-ink texto sobre --brand · --brand-text acento como texto/ícone/borda sobre as superfícies · --header-* header */
+  --accent:#f9dce8; --accent-soft:#f9dce8; --accent-ink:#a34569; --brand:#c2708f; --brand-ink:#241d19; --brand-text:#af4b71; --on-crit:#ffffff;
   --good:#2f6b4f; --good-soft:#dcefd4;
   --warn:#81630f; --warn-soft:#fce4a4;
   --crit:#93332b; --crit-soft:#f5c4c4;
   --info:#2f5a86; --info-soft:#d9e8f7;
   --feed:#b8567a; --feed-soft:#f6c9dc; --diaper:#a06a3a; --diaper-soft:#f0e2c9; --sleepc:#6b5aa8; --sleepc-soft:#e2dcf0;
   --shadow:0 1px 2px rgba(90,74,66,.08), 0 10px 26px -14px rgba(90,74,66,.25);
+  /* SEMÂNTICA (significado fixo, nunca depende do acento) — nomes de domínio sobre os valores existentes */
+  --sleep:var(--sleepc); --sleep-soft:var(--sleepc-soft); --med:var(--warn); --med-soft:var(--warn-soft); --sos:var(--crit); --sos-soft:var(--crit-soft);
   --bg-scrim:rgba(250,247,242,.40); --topbar-scrim-a:rgba(248,215,230,.55); --topbar-scrim-b:rgba(255,255,255,.35);
   --header-bg:#f6c9dc; --header-ink:#7a3350; --header-ink-soft:#a35e78;
   --header-chip-bg:rgba(255,255,255,.75); --header-chip-ink:#7a3350;
@@ -115,7 +120,7 @@ main.fade-in{ animation:fadeIn .22s ease; }
 
 .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:9px; }
 .stat{ background:var(--surface); border:2px solid var(--surface-2); border-radius:var(--r-4); padding:12px 13px; display:flex; flex-direction:column; gap:3px; box-shadow:var(--shadow); }
-.stat .ic{ width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--accent); color:var(--brand-text); margin-bottom:2px;}
+.stat .ic{ width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--accent-soft); color:var(--accent-ink); margin-bottom:2px;}
 .stat .ic.sleepc{ background:var(--sleepc-soft); color:var(--sleepc); }
 .stat .ic.feed{ background:var(--feed-soft); color:var(--feed); }
 .stat .ic.diaper{ background:var(--diaper-soft); color:var(--diaper); }
@@ -145,7 +150,7 @@ main.fade-in{ animation:fadeIn .22s ease; }
 .form-row label{ font-size:var(--fs-xs); font-weight:700; color:var(--ink-muted); display:block; margin-bottom:4px; }
 .seg{ display:flex; gap:6px; flex-wrap:wrap; }
 .seg button{ flex:1; min-width:64px; padding:8px 6px; border:1px solid var(--border); background:var(--surface); border-radius:var(--r-1); font-size:var(--fs-xs); font-weight:700; color:var(--ink-muted); cursor:pointer;  min-height:44px;}
-.seg button.on{ background:var(--brand); border-color:var(--brand); color:var(--brand-ink); }
+.seg button.on{ background:var(--accent-soft); border-color:var(--brand-text); color:var(--accent-ink); }
 input[type=checkbox]{ width:20px; height:20px; accent-color:var(--brand-text); }
 input[type=number],input[type=text],input[type=date],input[type=time],select,textarea{ width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:var(--r-1); background:var(--surface); color:var(--ink); font-size:var(--fs-sm); }
 textarea{ min-height:56px; resize:vertical; }
@@ -154,11 +159,11 @@ input.remembered-fill,textarea.remembered-fill{ /* dado real guardado, não é e
 .btn.ghost{ background:transparent; border:1px solid var(--border); color:var(--ink-muted); }
 .btn.crit, .btn.danger{ background:var(--crit); color:var(--on-crit); }
 .btn.secondary{ background:var(--surface-2); color:var(--ink); border:1.5px solid var(--border); }
-.btn.sensitive{ background:var(--warn-soft); color:var(--warn); border:1.5px solid var(--warn); }
+.btn.sensitive{ background:var(--med-soft); color:var(--med); border:1.5px solid var(--med); }
 .btn:active:not(:disabled), .dose-btn:active:not(:disabled), .qa-tile:active{ transform:translateY(1px) scale(.99); filter:brightness(.96); }
 .btn svg, .dose-btn svg{ width:16px; height:16px; flex:none; }
 .dose-btn{ display:inline-flex; align-items:center; gap:6px; }
-.dose-btn.give{ background:var(--warn-soft); color:var(--warn); border:1.5px solid var(--warn); }
+.dose-btn.give{ background:var(--med-soft); color:var(--med); border:1.5px solid var(--med); }
 .icon-btn svg{ width:18px; height:18px; }
 .log-del svg{ width:18px; height:18px; }
 .g-del{ display:flex; align-items:center; justify-content:center; padding:0; } .g-del svg{ width:14px; height:14px; }
@@ -207,7 +212,7 @@ details.acc[open] summary .car{ transform:rotate(180deg); }
 .med-row:first-child{ border-top:none; }
 .med-row .body{ flex:1; font-size:var(--fs-sm); }
 .med-row.med-actions{ flex-wrap:wrap; row-gap:var(--space-2); } .med-row.med-actions .body{ flex:1 1 100%; } .med-row.med-actions .log-del{ margin-left:auto; }
-.dose-btn{ background:var(--accent); color:var(--ink); border:none; border-radius:var(--r-1); padding:8px 12px; min-height:40px; font-size:var(--fs-xs); font-weight:700; cursor:pointer; flex:none; }
+.dose-btn{ background:var(--accent-soft); color:var(--accent-ink); border:none; border-radius:var(--r-1); padding:8px 12px; min-height:40px; font-size:var(--fs-xs); font-weight:700; cursor:pointer; flex:none; }
 
 .critical-block{ background:var(--crit-soft); border:2px solid var(--crit); border-radius:var(--r-4); padding:14px; margin-bottom:12px; text-align:center; }
 .critical-block .bt{ font-family:'Baloo 2'; font-size:var(--fs-3xl); font-weight:700; color:var(--crit); line-height:1; }
@@ -245,7 +250,7 @@ details.acc[open] summary .car{ transform:rotate(180deg); }
 .growth-seg{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-bottom:12px; }
 @media (min-width:540px){ .growth-seg{ grid-template-columns:repeat(4,minmax(0,1fr)); } }
 .growth-seg button{ padding:8px 6px; min-height:44px; border:1px solid var(--border); background:var(--surface); border-radius:var(--r-1); font-size:var(--fs-xs); font-weight:700; color:var(--ink-muted); cursor:pointer; font-family:inherit; line-height:1.25; }
-.growth-seg button.on{ background:var(--brand); border-color:var(--brand); color:var(--brand-ink); }
+.growth-seg button.on{ background:var(--accent-soft); border-color:var(--brand-text); color:var(--accent-ink); }
 .growth-last{ margin:0 0 6px; font-size:var(--fs-sm); }
 .growth-pct{ display:inline-block; padding:1px 7px; border-radius:var(--r-1); background:var(--growth-soft); color:var(--ink); font-weight:700; font-size:var(--fs-xs); }
 .growth-svg{ display:block; overflow:visible; }
@@ -267,7 +272,7 @@ details.acc[open] summary .car{ transform:rotate(180deg); }
 
 .theme-seg{ display:flex; gap:8px; }
 .theme-seg button{ flex:1; padding:10px; border-radius:var(--r-2); border:1px solid var(--border); background:var(--surface); color:var(--ink-muted); font-weight:700; font-size:var(--fs-sm); cursor:pointer; }
-.theme-seg button.on{ background:var(--brand); color:var(--brand-ink); border-color:var(--brand); }
+.theme-seg button.on{ background:var(--accent-soft); color:var(--accent-ink); border-color:var(--brand-text); }
 
 .gallery{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
 .gallery .g-item{ position:relative; aspect-ratio:1; border-radius:var(--r-2); overflow:hidden; background:var(--surface-2); }
@@ -301,35 +306,35 @@ input.input-err, select.input-err, textarea.input-err{ border-color:var(--crit);
 .mood-btn{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 2px; border:2px solid var(--surface-2); background:var(--surface); border-radius:var(--r-3); cursor:pointer; color:var(--ink-muted); min-height:64px; }
 .mood-btn .mood-emoji{ font-size:var(--fs-xl); line-height:1; }
 .mood-btn .mood-lbl{ font-size:var(--fs-xs); font-weight:700; text-align:center; line-height:1.15; }
-.mood-btn.on{ border-color:var(--brand); background:var(--accent); color:var(--accent-ink); }
+.mood-btn.on{ border-color:var(--brand-text); background:var(--accent-soft); color:var(--accent-ink); }
 .sum-cmp{ margin-top:6px; padding-top:6px; border-top:1px dashed var(--border); font-size:var(--fs-xs); color:var(--ink-muted); }
 .summary-box{ margin-top:10px; background:var(--bg); border:1px solid var(--border); border-radius:var(--r-2); padding:13px 14px; font-size:var(--fs-sm); white-space:pre-wrap; line-height:1.6; }
 
 nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); margin:0 10px calc(10px + env(safe-area-inset-bottom)); border-radius:var(--r-5); box-shadow:0 10px 26px -14px rgba(90,74,66,.35), 0 1px 2px rgba(90,74,66,.08); padding:6px 4px; overflow-x:auto; gap:2px; }
 .tab-btn{ flex:1 0 56px; display:flex; flex-direction:column; align-items:center; gap:2px; background:none; border:none; color:var(--ink-faint); cursor:pointer; padding:6px 4px; border-radius:var(--r-3);  min-height:48px;}
-.tab-btn.active{ color:var(--feed-text); background:var(--feed-soft); }
+.tab-btn.active{ color:var(--accent-ink); background:var(--accent-soft); }
 .tab-btn .lbl{ font-size:var(--fs-xs); font-weight:700; white-space:nowrap; }
 
 .swatch-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:9px; }
 .swatch{ aspect-ratio:1; border-radius:var(--r-2); border:2px solid transparent; cursor:pointer; position:relative; display:flex; align-items:center; justify-content:center; }
 .swatch.on{ border-color:var(--ink); }
 .swatch.on::after{ content:"✓"; color:var(--ink); font-weight:900; }
-.icon-btn{ position:relative; width:40px; height:40px; border-radius:var(--r-2); border:none; background:var(--surface-2); color:var(--brand); display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; }
+.icon-btn{ position:relative; width:40px; height:40px; border-radius:var(--r-2); border:none; background:var(--surface-2); color:var(--brand-text); display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; }
 .topbar .icon-btn{ background:var(--header-chip-bg); color:var(--header-chip-ink); }
 .icon-btn.on{ background:var(--crit); border-color:var(--crit); color:#fff; animation:pulse 1.2s infinite; }
 @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.55;} }
-.sos-fab{ width:40px; height:40px; border-radius:50%; background:var(--crit); color:var(--on-crit); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; box-shadow:var(--shadow); }
+.sos-fab{ width:40px; height:40px; border-radius:50%; background:var(--sos); color:var(--on-crit); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; box-shadow:var(--shadow); }
 .voice-panel{ position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:flex-end; justify-content:center; z-index:50; }
 @media (min-width:540px){ .voice-panel{ align-items:center; } }
 .voice-card{ background:var(--surface); border-radius:var(--r-4) 18px 0 0; padding:20px; max-width:460px; width:100%; text-align:center; }
 .voice-card.settings-card{ text-align:left; max-height:85vh; overflow-y:auto; }
 .mais-list{ display:flex; flex-direction:column; gap:6px; }
 .mais-item{ display:flex; align-items:center; gap:12px; width:100%; padding:12px 14px; border:2px solid var(--surface-2); background:var(--surface-2); border-radius:var(--r-3); color:var(--ink); font-weight:700; font-size:var(--fs-md); cursor:pointer; text-align:left; }
-.mais-item .ic{ color:var(--feed); flex:none; display:flex; }
+.mais-item .ic{ color:var(--brand-text); flex:none; display:flex; }
 .mais-item .lbl{ flex:1; }
 .mais-item svg:last-child{ color:var(--ink-faint); flex:none; }
-.mais-item.active{ border-color:var(--feed); background:var(--feed-soft); }
-.mais-item.active .ic{ color:var(--feed); }
+.mais-item.active{ border-color:var(--brand-text); background:var(--accent-soft); }
+.mais-item.active .ic{ color:var(--accent-ink); }
 .phone.has-bg{ background-size:cover; background-position:center; background-attachment:fixed; }
 .phone.has-bg > main{ background:var(--bg-scrim); }
 .phone.has-bg > main > .card, .phone.has-bg > main > .alert, .phone.has-bg > main > .demo-banner{ box-shadow:0 2px 10px -4px rgba(0,0,0,.18), var(--shadow); }
@@ -350,8 +355,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 
 .child-switch{ display:flex; gap:6px; padding:10px 14px 0; overflow-x:auto; }
 .child-chip{ flex:none; padding:8px 14px; min-height:40px; border-radius:999px; border:2px solid var(--surface-2); background:var(--surface); color:var(--ink-muted); font-size:var(--fs-xs); font-weight:700; cursor:pointer; white-space:nowrap; }
-.child-chip.on{ background:var(--feed); border-color:var(--feed); color:var(--on-feed); }
-.child-chip.add{ border-style:dashed; color:var(--feed-text); border-color:var(--feed); background:transparent; }
+.child-chip.on{ background:var(--accent-soft); border-color:var(--brand-text); color:var(--accent-ink); }
+.child-chip.add{ border-style:dashed; color:var(--brand-text); border-color:var(--brand-text); background:transparent; }
 </style>
 </head>
 <body>
@@ -426,12 +431,12 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   // Cada cor tem um "accent" claro (fundo/topbar) e um "brand" mais profundo e legível (botões/ícones),
   // sempre da mesma família de tom — corrigido o desfasamento que a Rosa tinha antes (fundo rosa, botão dourado).
   const ACCENTS = [
-    {n:"Rosa", accent:"#f9dce8", brand:"#c2708f"},
-    {n:"Pêssego", accent:"#f8ddc9", brand:"#c98a5a"},
-    {n:"Baunilha", accent:"#f7ecc4", brand:"#b8923a"},
+    {n:"Rosa", accent:"#f9dce8", brand:"#b0679c"},
+    {n:"Pêssego", accent:"#f8ddc9", brand:"#c77c6c"},
+    {n:"Baunilha", accent:"#f7ecc4", brand:"#bba35a"},
     {n:"Salva", accent:"#dbe7d5", brand:"#6f9c5e"},
-    {n:"Menta", accent:"#d2ecdf", brand:"#439c82"},
-    {n:"Céu", accent:"#d6e6f5", brand:"#4a7fa8"},
+    {n:"Menta", accent:"#d2ecdf", brand:"#5cb39a"},
+    {n:"Céu", accent:"#d6e6f5", brand:"#5a8fc0"},
     {n:"Lavanda", accent:"#e3dcf2", brand:"#7c5cbf"},
     {n:"Areia", accent:"#ece5d8", brand:"#8a7660"},
   ];
@@ -1176,7 +1181,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     return '#'+out.map(c=>Math.round(c*255).toString(16).padStart(2,'0')).join('');
   }
   function adjustUntil(h, ok, dir){ for(let i=0;i<=80;i++){ const c=shiftLight(h, dir*i*0.005); if(ok(c)) return c; } return h; }
-  function brandTokens(brand, dark){
+  function brandTokens(brand, dark, accent){
     const inks=['#ffffff', DARK_INK], best=c=>inks.reduce((a,b)=>contrast(c,b)>contrast(c,a)?b:a);
     let fill=brand;
     if(contrast(fill,best(fill))<4.5){
@@ -1185,19 +1190,32 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     }
     const surfaces = dark ? ['#3d3935','#46413c','#2a2622'] : ['#ffffff','#fffaf3','#f5f0e8'];
     const text = adjustUntil(brand, c=>surfaces.every(sf=>contrast(c,sf)>=4.5), dark?+1:-1);
-    return { fill, ink:best(fill), text };
+    const dir = dark ? +1 : -1;
+    // Fundo suave (seleções, chips, navegação ativa): no claro é o pastel do acento; no escuro é o acento
+    // misturado com a superfície escura — nunca o pastel claro (era a causa do texto claro sobre pastel, ~1,1:1).
+    const soft = dark ? mixHex('#3d3935', brand, 0.30) : accent;
+    const softInk = adjustUntil(brand, c=>contrast(c,soft)>=4.5 && (!dark || contrast(c,'#3d3935')>=4.5), dir);
+    // Header: um pouco mais cheio que o pastel (claro) ou acento sobre o fundo escuro; texto ≥ 7:1, secundário ≥ 4,5:1.
+    const header = dark ? mixHex('#2a2622', brand, 0.26) : mixHex(accent, brand, 0.18);
+    const headerInk = adjustUntil(brand, c=>contrast(c,header)>=7, dir);
+    const headerInkSoft = adjustUntil(brand, c=>contrast(c,header)>=4.5, dir);
+    return { fill, ink:best(fill), text, soft, softInk, header, headerInk, headerInkSoft };
   }
+  function mixHex(a, b, t){ const A=hexRgb(a), B=hexRgb(b); return '#'+A.map((x,i)=>Math.round((x*(1-t)+B[i]*t)*255).toString(16).padStart(2,'0')).join(''); }
+  function hexAlpha(h, a){ const [r,g,b]=hexRgb(h).map(x=>Math.round(x*255)); return `rgba(${r},${g},${b},${a})`; }
   function isDarkTheme(){ const t=S.settings.theme; return t==='dark' || (t==='system' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches); }
   function applyTheme(){
     if(S.settings.theme==='system') document.documentElement.removeAttribute('data-theme');
     else document.documentElement.setAttribute('data-theme', S.settings.theme);
     const a = ACCENTS[S.settings.accentIndex||0] || ACCENTS[0];
-    const tk = brandTokens(a.brand, isDarkTheme());
+    const dark = isDarkTheme();
+    const tk = brandTokens(a.brand, dark, a.accent);
     const st = document.documentElement.style;
-    st.setProperty('--accent', a.accent);
-    st.setProperty('--brand', tk.fill);
-    st.setProperty('--brand-ink', tk.ink);
-    st.setProperty('--brand-text', tk.text);
+    const set = { '--accent':tk.soft, '--accent-soft':tk.soft, '--accent-ink':tk.softInk,
+      '--brand':tk.fill, '--brand-ink':tk.ink, '--brand-text':tk.text,
+      '--header-bg':tk.header, '--header-ink':tk.headerInk, '--header-ink-soft':tk.headerInkSoft, '--header-chip-ink':tk.headerInk,
+      '--topbar-scrim-a':hexAlpha(tk.header, dark?0.5:0.6) };
+    Object.keys(set).forEach(k=>st.setProperty(k, set[k]));
     lastDarkApplied = isDarkTheme();
     applyBackgroundPhoto();
   }
@@ -1774,7 +1792,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       const a=Math.max(s.inicio,t0), b=Math.min(s.fim,t0+86400000);
       return `<rect x="${xPos(a).toFixed(1)}" y="18" width="${Math.max(2,(xPos(b)-xPos(a))).toFixed(1)}" height="20" rx="4" fill="var(--sleepc)" opacity=".35"/>`;
     }).join('');
-    const colors = {feed:'var(--feed)', diaper:'var(--diaper)', med:'var(--crit)'};   // cores de categoria: não dependem do acento
+    const colors = {feed:'var(--feed)', diaper:'var(--diaper)', med:'var(--med)'};   // cores de categoria: não dependem do acento
     const dots = evs.map(e=>`<circle cx="${xPos(e.x).toFixed(1)}" cy="28" r="4" fill="${colors[e.type]}"/>`).join('');
     const ticks = [0,6,12,18,24].map(hh=>`<text class="axis-label" style="font-size:22px" x="${(10+hh/24*(w-20)).toFixed(1)}" y="60" text-anchor="${hh===0?'start':hh===24?'end':'middle'}">${hh}h</text>`).join('');
     const nF=evs.filter(e=>e.type==='feed').length, nD=evs.filter(e=>e.type==='diaper').length, nM=evs.filter(e=>e.type==='med').length;
@@ -1783,7 +1801,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <line x1="10" y1="28" x2="${w-10}" y2="28" stroke="var(--border)"/>
       ${bands}${dots}${ticks}
     </svg>
-    <div class="legend" aria-hidden="true"><span><i style="background:var(--feed)"></i>${tr('refeição')}</span><span><i style="background:var(--diaper)"></i>${tr('fralda')}</span><span><i style="background:var(--crit)"></i>${tr('medicação')}</span><span><i style="background:var(--sleepc);opacity:.45"></i>${tr('sono')}</span></div>`;
+    <div class="legend" aria-hidden="true"><span><i style="background:var(--feed)"></i>${tr('refeição')}</span><span><i style="background:var(--diaper)"></i>${tr('fralda')}</span><span><i style="background:var(--med)"></i>${tr('medicação')}</span><span><i style="background:var(--sleepc);opacity:.45"></i>${tr('sono')}</span></div>`;
   }
 
   function renderInicio(){
@@ -2468,7 +2486,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <button class="btn wide" id="newMamada" type="button">${tr('+ Registar mamada')}</button>
       <div id="formHolder"></div>
     </div>
-    <div class="card"><h2>${tr('Semana')}</h2><p class="muted">${tr('nº de refeições por dia')}</p><div class="chart-wrap">${barChart(bars)}</div></div>
+    <div class="card"><h2>${tr('Semana')}</h2><p class="muted">${tr('nº de refeições por dia')}</p><div class="chart-wrap">${barChart(bars,{color:'var(--feed)'})}</div></div>
     <div class="card"><div class="section-label">${tr('Registos de hoje')}</div><div id="logList"></div></div>`;
     document.getElementById('main').innerHTML = html;
     document.getElementById('newMamada').addEventListener('click', ()=>{ openForm = (openForm==='new'&&!editId)?null:'new'; editId=null; renderFeedForm(); });
@@ -2581,8 +2599,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <button class="btn wide" id="newFralda" type="button">${tr('+ Registar fralda')}</button>
       <div id="formHolder"></div>
     </div>
-    <div class="card"><h2>${tr('Xixi · semana')}</h2><p class="muted">${tr('meta 6–8/dia')}</p><div class="chart-wrap">${barChart(xixiBars,{targetLine:6})}</div></div>
-    <div class="card"><h2>${tr('Cocó · semana')}</h2><div class="chart-wrap">${barChart(cocoBars)}</div></div>
+    <div class="card"><h2>${tr('Xixi · semana')}</h2><p class="muted">${tr('meta 6–8/dia')}</p><div class="chart-wrap">${barChart(xixiBars,{targetLine:6, color:'var(--diaper)'})}</div></div>
+    <div class="card"><h2>${tr('Cocó · semana')}</h2><div class="chart-wrap">${barChart(cocoBars,{color:'var(--diaper)'})}</div></div>
     <div class="card"><div class="section-label">${tr('Registos de hoje')}</div><div id="logList"></div></div>`;
     document.getElementById('main').innerHTML = html;
     document.getElementById('newFralda').addEventListener('click', ()=>{ openForm = (openForm==='new'&&!editId)?null:'new'; editId=null; renderDiaperForm(); });
@@ -2668,7 +2686,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <button class="btn ghost wide" id="newSono" type="button" style="margin-top:8px;">${tr('+ Registo manual')}</button>
       <div id="formHolder"></div>
     </div>
-    <div class="card"><h2>${tr('Semana')}</h2><p class="muted">${horasDiaLbl}</p><div class="chart-wrap">${barChart(bars,{targetLine:lo})}</div></div>
+    <div class="card"><h2>${tr('Semana')}</h2><p class="muted">${horasDiaLbl}</p><div class="chart-wrap">${barChart(bars,{targetLine:lo, color:'var(--sleep)'})}</div></div>
     <div class="card"><div class="section-label">${tr('Registos')}</div><div id="logList"></div></div>`;
     document.getElementById('main').innerHTML = html;
     document.getElementById('sleepToggle').addEventListener('click', ()=>{ isSleeping ? stopSleep() : (S.running.sleepStart=Date.now(), save(), playChime(), render()); });
@@ -3552,7 +3570,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const bars_=bars.map((b,i)=>{ const bx=pad+i*(bw+gap), by=h-pad-bh(b.v);
       const open = b.date ? `<g class="bar-day" data-date="${b.date}" role="button" tabindex="0" aria-label="${new Date(b.date+'T12:00:00').toLocaleDateString(localeTag(),{weekday:'long',day:'numeric',month:'long'})}: ${b.v}" style="cursor:pointer;">` : '<g>';
       return `${open}<rect x="${bx.toFixed(1)}" y="0" width="${bw.toFixed(1)}" height="${h}" fill="transparent"/>
-        <rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh(b.v).toFixed(1)}" rx="3" fill="var(--brand)"/>
+        <rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh(b.v).toFixed(1)}" rx="3" fill="${(opts&&opts.color)||'var(--ink-muted)'}"/>
         <text class="axis-label" x="${(bx+bw/2).toFixed(1)}" y="${h-8}" text-anchor="middle">${b.label}</text>
         <text x="${(bx+bw/2).toFixed(1)}" y="${(by-5).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">${fmtNum(b.v,1)}</text></g>`;
     }).join('');

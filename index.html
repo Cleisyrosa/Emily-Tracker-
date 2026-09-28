@@ -246,7 +246,7 @@ details.acc[open] summary .car{ transform:rotate(180deg); }
 .vax-group .vname{ font-weight:700; font-size:var(--fs-md); margin-bottom:6px; }
 .vax-dose{ display:flex; align-items:center; gap:8px; padding:4px 0; font-size:var(--fs-xs); }
 .vax-dose .lbl{ flex:1; color:var(--ink-muted); }
-.vax-badge{ font-size:var(--fs-xs); font-weight:700; padding:6px 12px; min-height:36px; border-radius:999px; border:none; cursor:pointer; font-family:inherit; font-variant-numeric:tabular-nums; }
+.vax-badge{ font-size:var(--fs-xs); font-weight:700; padding:6px 12px; min-height:44px; border-radius:999px; border:none; cursor:pointer; font-family:inherit; font-variant-numeric:tabular-nums; }
 .vax-badge.done{ background:var(--good-soft); color:var(--good); }
 /* F8: "prevista/por registar" é neutra (registo/planeamento), não um alerta — --warn fica só para atenção real. */
 .vax-badge.pending{ background:var(--info-soft); color:var(--info); }
@@ -3350,7 +3350,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         const due = v.due ? v.due[i] : null;
         let vState='pending', vLbl=lx('Prevista','Prévue','Due');
         if(rec.done){ vState='done'; vLbl=new Date(rec.done+'T12:00:00').toLocaleDateString(localeTag()); }
-        else if(rec.proximaData && rec.proximaData>=todayISO()){ vState='scheduled'; vLbl=lx('Agendada ','Prévue ','Scheduled ')+fmtShort(rec.proximaData); }
+        else if(rec.proximaData && rec.proximaData>=todayISO()){ vState='scheduled'; vLbl=lx('Agendada ','Planifiée ','Scheduled ')+fmtShort(rec.proximaData); }
         // sem idade (sem DOB) não há como calcular se é cedo/na hora: estado neutro, texto próprio (não "Prevista").
         else if(months==null || due==null){ vState='future'; vLbl=lx('Idade por indicar','Âge à indiquer','Age not set'); }
         else if(due>months){ vState='future'; vLbl= due===0 ? lx('À nascença','À la naissance','At birth') : lx(`Aos ${due} meses`,`À ${due} mois`,`At ${due} months`); if(nextDue==null||due<nextDue) nextDue=due; }
@@ -3526,9 +3526,18 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const breast=feeds.filter(l=>l.tipo==='peito-esq'||l.tipo==='peito-dir');
     const withDur=breast.filter(l=>l.duracaoMin!=null && +l.duracaoMin>0);
     const durTotal=withDur.reduce((s,l)=>s+(+l.duracaoMin),0);
-    const sono=S.sono.filter(l=>inRange(l.inicio,a,b));
-    const sonoMin=sono.reduce((s,l)=>s+(l.duracaoMin||0),0);
-    const sonoDays=new Set(sono.map(l=>dayKey(l.inicio))).size;
+    // F9: sono é um intervalo (pode atravessar a meia-noite ou a fronteira do período), por isso não se filtra
+    // nem se soma pelo `inicio` como mamadas/fraldas (eventos instantâneos, sem alteração). Reutiliza overlapMinutes
+    // (F6): para cada dia do período, conta só os minutos desse dia; agrega depois — mesma lógica do separador Sono.
+    const sono=S.sono.filter(l=>l.inicio<b && l.fim>a);   // sessões com alguma parte dentro do período
+    let sonoMin=0; const sonoDaySet=new Set();
+    for(let d=a; d<b; d+=86400000){
+      const dayEnd=d+86400000;
+      let dayMin=0;
+      sono.forEach(l=>{ dayMin+=overlapMinutes(l.inicio,l.fim,d,dayEnd); });
+      if(dayMin>0){ sonoMin+=dayMin; sonoDaySet.add(dayKey(d)); }
+    }
+    const sonoDays=sonoDaySet.size;
     const fr=S.fraldas.filter(l=>inRange(l.ts,a,b));
     const xixi=fr.filter(f=>f.tipo==='xixi').length, coco=fr.filter(f=>f.tipo==='coco').length;
     const frDays=new Set(fr.map(l=>dayKey(l.ts))).size;

@@ -49,7 +49,7 @@
     --crit:#e89b92; --crit-soft:#3a201d;
     --info:#8fbde0; --info-soft:#1f2f3f;
     --growth:#7fc8d4; --growth-soft:#1f3a3f; --who-line:#bcb0a5; --who-band:rgba(188,176,165,.10); --feed-text:#e8a0be; --on-feed:#241d19; --feed:#e8a0be; --feed-soft:#4a2f3a; --diaper:#d9a468; --diaper-soft:#3f3222; --sleepc:#b3a3e0; --sleepc-soft:#332c47;
-    --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -14px rgba(0,0,0,.55); --sos-fill:#c2443a;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -14px rgba(0,0,0,.55); --sos-fill:#c2443a; --tl-sleep-op:.55;
     --bg-scrim:rgba(42,38,34,.40); --topbar-scrim-a:rgba(248,215,230,.32); --topbar-scrim-b:rgba(61,57,53,.35);
     --header-bg:#4a2f3a; --header-ink:#f8d7e6; --header-ink-soft:#e8a0be;
     --header-chip-bg:rgba(0,0,0,.28); --header-chip-ink:#f8d7e6;
@@ -64,7 +64,7 @@
   --crit:#e89b92; --crit-soft:#3a201d;
   --info:#8fbde0; --info-soft:#1f2f3f;
   --growth:#7fc8d4; --growth-soft:#1f3a3f; --who-line:#bcb0a5; --who-band:rgba(188,176,165,.10); --feed-text:#e8a0be; --on-feed:#241d19; --feed:#e8a0be; --feed-soft:#4a2f3a; --diaper:#d9a468; --diaper-soft:#3f3222; --sleepc:#b3a3e0; --sleepc-soft:#332c47;
-  --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -14px rgba(0,0,0,.55); --sos-fill:#c2443a;
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -14px rgba(0,0,0,.55); --sos-fill:#c2443a; --tl-sleep-op:.55;
   --bg-scrim:rgba(42,38,34,.40); --topbar-scrim-a:rgba(248,215,230,.32); --topbar-scrim-b:rgba(61,57,53,.35);
   --header-bg:#4a2f3a; --header-ink:#f8d7e6; --header-ink-soft:#e8a0be;
   --header-chip-bg:rgba(0,0,0,.28); --header-chip-ink:#f8d7e6;
@@ -141,8 +141,10 @@ main.fade-in{ animation:fadeIn .22s ease; }
 .stat .val{ font-family:'Baloo 2'; font-size:var(--fs-lg); }
 .stat .sub{ font-size:var(--fs-xs); color:var(--ink-muted); }
 
-.qa-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
-.qa-grid.g3{ grid-template-columns:repeat(3,1fr); }
+.qa-grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }   /* larguras iguais, uma label longa não alarga a coluna */
+.qa-grid.g3{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+.qa-grid .qa-tile{ padding-left:0; padding-right:0; }
+.qa-tile .lbl{ hyphens:auto; -webkit-hyphens:auto; overflow-wrap:break-word; max-width:100%; }   /* a 375 px "Médicament" (FR) não cabe: hifeniza pelo idioma em vez de cortar a palavra */
 .qa-tile{ border:2px solid var(--surface-2); background:var(--surface-2); border-radius:var(--r-4); padding:10px 4px; display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; color:var(--ink); text-align:center; min-height:64px; justify-content:center;  font:inherit; width:100%;}
 .qa-tile:hover{ border-color:var(--brand); }
 .qa-tile .ic{ width:34px; height:34px; border-radius:50%; background:var(--surface); color:var(--brand-text); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px -2px rgba(90,74,66,.2); }
@@ -283,6 +285,17 @@ details.acc[open] summary .car{ transform:rotate(180deg); }
 .growth-disclaimer{ font-size:var(--fs-xs); margin:12px 0 0; padding:8px 10px; border-radius:var(--r-2); background:var(--surface-2); color:var(--ink); }
 .growth-card .day-rec .growth-pct{ flex:none; }
 .legend i{ width:12px; height:2.5px; display:inline-block; border-radius:2px; }
+.legend i.lg-dot{ width:9px; height:9px; border-radius:50%; } .legend i.lg-diamond{ width:8px; height:8px; border-radius:1px; transform:rotate(45deg); margin:0 1px; }
+/* F5 — Home: estado do dia (cartões com a mesma altura; atenção no próprio cartão, sem novas cores) */
+.home-status{ margin-bottom:var(--space-3); }   /* cada linha tem cartões da mesma altura; forçar todas as linhas iguais empurrava as ações para fora do 1.º ecrã */
+.stat-foot{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; margin-top:auto; padding-top:2px; }
+.stat.stat-warn{ border-color:color-mix(in srgb, var(--warn) 55%, var(--surface-2)); }
+.stat.stat-action{ border-color:var(--warn); }
+.stat-flag{ display:inline-flex; align-items:center; gap:5px; padding:1px 8px; border-radius:999px; font-size:var(--fs-xs); font-weight:700; background:var(--warn-soft); color:var(--ink); }
+.stat-flag::before{ content:""; width:7px; height:7px; border-radius:50%; background:var(--warn); flex:none; }
+.stat .sub.stat-today{ color:var(--ink); font-weight:600; }
+.home-sec{ margin-top:var(--space-2); }
+.tl-sleep{ opacity:var(--tl-sleep-op,.35); }
 
 .sos-card{ background:var(--crit-soft); border:2px solid var(--crit); border-radius:var(--r-3); padding:16px; margin-bottom:12px; }
 .sos-card h2{ color:var(--crit); font-size:var(--fs-lg); }
@@ -1815,8 +1828,17 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     }
     return null;
   }
+  // Lembretes (backup, dose disponível, consulta e vacina agendadas). Globais: nas outras telas ficam no topo;
+  // no Início passam para uma secção secundária no fim, depois do estado do dia, das ações e da linha do tempo.
   function renderReminders(){
     const el = document.getElementById('reminderBanners'); if(!el) return;
+    const msgs = reminderMsgs(), items = msgs.map(m=>`<div class="alert info">${m}</div>`).join('');   // lembretes = informação
+    const onHome = activeTab==='inicio';
+    el.innerHTML = (!onHome && msgs.length) ? `<div style="padding:var(--space-3) 14px 0;">${items}</div>` : '';
+    const home = document.getElementById('homeReminders');
+    if(home) home.innerHTML = (onHome && msgs.length) ? `<div class="section-label home-sec">${lx('Lembretes','Rappels','Reminders')}</div>${items}` : '';
+  }
+  function reminderMsgs(){
     const c=S.crianca; const msgs=[];
     const lang=(S.settings&&S.settings.lang)||'pt';
     const lastBk = S.settings && S.settings.lastBackupAt;
@@ -1854,7 +1876,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         }
       }
     });
-    el.innerHTML = msgs.length ? `<div style="padding:0 14px;">${msgs.map(m=>`<div class="alert info">${m}</div>`).join('')}</div>` : '';   // lembretes = informação
+    return msgs;
   }
 
   /* ============ textos de ajuda "Exemplo" (só visuais — nunca guardados nem contados) ============ */
@@ -1901,35 +1923,48 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function getWetDiaperStatus(xixiCount){ return (xixiCount>0 && xixiCount<6) ? 'warn' : null; }
   function getFeedGapStatus(lastFeed){ return (lastFeed && (Date.now()-lastFeed.ts) > 4*3600000) ? 'warn' : null; }
   function lastOf(arr){ return arr.slice().sort((a,b)=>b.ts-a.ts)[0]; }
+  // Último período de sono = o que terminou mais tarde. Os registos de sono têm inicio/fim (não ts), por isso
+  // lastOf() não serve: devolvia o primeiro da lista, que pode não ser o mais recente (registos manuais/importados).
+  function lastSleepOf(arr){
+    let best=null, bestT=-Infinity;
+    (arr||[]).forEach(s=>{ if(!s) return; const t = s.fim!=null ? +s.fim : +s.inicio; if(!isNaN(t) && t>bestT){ best=s; bestT=t; } });
+    return best;
+  }
   function timelineSvg(){
     const [t0] = todayRange();
-    const w=600,h=70; const evs=[];
+    // F5: pontos maiores e com contorno (ficam legíveis por cima da faixa de sono, que é só contexto de fundo);
+    // medicação em losango para se distinguir das fraldas sem nova cor; horas ≥ 12 px.
+    const w=600,h=96, cy=39; const evs=[];
     S.mamadas.filter(l=>inRange(l.ts,t0,t0+86400000)).forEach(l=>evs.push({x:l.ts,type:'feed'}));
     S.fraldas.filter(l=>inRange(l.ts,t0,t0+86400000)).forEach(l=>evs.push({x:l.ts,type:'diaper'}));
     S.doses.filter(l=>inRange(l.ts,t0,t0+86400000)).forEach(l=>evs.push({x:l.ts,type:'med'}));
     const sleeps = S.sono.filter(l=>l.inicio<t0+86400000 && l.fim>t0);
-    const xPos = ts => 10 + ((ts-t0)/86400000)*(w-20);
+    const xPos = ts => 12 + ((ts-t0)/86400000)*(w-24);
     const bands = sleeps.map(s=>{
       const a=Math.max(s.inicio,t0), b=Math.min(s.fim,t0+86400000);
-      return `<rect x="${xPos(a).toFixed(1)}" y="18" width="${Math.max(2,(xPos(b)-xPos(a))).toFixed(1)}" height="20" rx="4" fill="var(--sleepc)" opacity=".35"/>`;
+      return `<rect class="tl-sleep" x="${xPos(a).toFixed(1)}" y="24" width="${Math.max(3,(xPos(b)-xPos(a))).toFixed(1)}" height="30" rx="6" fill="var(--sleepc)"/>`;
     }).join('');
     const colors = {feed:'var(--feed)', diaper:'var(--diaper)', med:'var(--med)'};   // cores de categoria: não dependem do acento
-    const dots = evs.map(e=>`<circle cx="${xPos(e.x).toFixed(1)}" cy="28" r="4" fill="${colors[e.type]}"/>`).join('');
-    const ticks = [0,6,12,18,24].map(hh=>`<text class="axis-label" style="font-size:22px" x="${(10+hh/24*(w-20)).toFixed(1)}" y="60" text-anchor="${hh===0?'start':hh===24?'end':'middle'}">${hh}h</text>`).join('');
+    const mark = e => { const x=xPos(e.x).toFixed(1);
+      return e.type==='med'
+        ? `<rect x="${(x-7.5).toFixed(1)}" y="${cy-7.5}" width="15" height="15" rx="2" transform="rotate(45 ${x} ${cy})" fill="${colors.med}" stroke="var(--surface)" stroke-width="2.5"/>`
+        : `<circle cx="${x}" cy="${cy}" r="8.5" fill="${colors[e.type]}" stroke="var(--surface)" stroke-width="2.5"/>`; };
+    const dots = evs.filter(e=>e.type!=='med').map(mark).join('') + evs.filter(e=>e.type==='med').map(mark).join('');
+    const ticks = [0,6,12,18,24].map(hh=>`<text class="axis-label" style="font-size:24px" x="${(12+hh/24*(w-24)).toFixed(1)}" y="88" text-anchor="${hh===0?'start':hh===24?'end':'middle'}">${hh}h</text>`).join('');
     const nF=evs.filter(e=>e.type==='feed').length, nD=evs.filter(e=>e.type==='diaper').length, nM=evs.filter(e=>e.type==='med').length;
     const desc = lx('Linha do tempo de hoje: ',"Chronologie d'aujourd'hui : ","Today's timeline: ")+[pl(nF,'refeição','refeições','repas','repas','feed','feeds'), pl(nD,'fralda','fraldas','couche','couches','diaper','diapers'), pl(nM,'dose','doses','dose','doses','dose','doses'), pl(sleeps.length,'período de sono','períodos de sono','période de sommeil','périodes de sommeil','sleep period','sleep periods')].join(', ')+'.';
-    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="70" role="img" aria-label="${desc}">
-      <line x1="10" y1="28" x2="${w-10}" y2="28" stroke="var(--border)"/>
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="${desc}" style="display:block;">
+      <line x1="12" y1="${cy}" x2="${w-12}" y2="${cy}" stroke="var(--border)" stroke-width="2"/>
       ${bands}${dots}${ticks}
     </svg>
-    <div class="legend" aria-hidden="true"><span><i style="background:var(--feed)"></i>${tr('refeição')}</span><span><i style="background:var(--diaper)"></i>${tr('fralda')}</span><span><i style="background:var(--med)"></i>${tr('medicação')}</span><span><i style="background:var(--sleepc);opacity:.45"></i>${tr('sono')}</span></div>`;
+    <div class="legend" aria-hidden="true"><span><i class="lg-dot" style="background:var(--feed)"></i>${tr('refeição')}</span><span><i class="lg-dot" style="background:var(--diaper)"></i>${tr('fralda')}</span><span><i class="lg-diamond" style="background:var(--med)"></i>${tr('medicação')}</span><span><i style="background:var(--sleepc)"></i>${tr('sono')}</span></div>`;
   }
 
   function renderInicio(){
     const [t0,t1]=todayRange();
     const feed=lastOf(S.mamadas), diaper=lastOf(S.fraldas);
     const isSleeping=!!S.running.sleepStart;
-    const lastSleep=lastOf(S.sono);
+    const lastSleep=lastSleepOf(S.sono);
     const feedsToday=S.mamadas.filter(l=>inRange(l.ts,t0,t1)).length;
     const diapersToday=S.fraldas.filter(l=>inRange(l.ts,t0,t1));
     const xixiToday=diapersToday.filter(d=>d.tipo==='xixi').length, cocoToday=diapersToday.filter(d=>d.tipo==='coco').length;
@@ -1946,42 +1981,33 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       </div>`;
     }
 
+    // Estado do dia primeiro; a atenção aparece no próprio cartão (reforço discreto + selo curto), sem repetir
+    // numa caixa separada o que o cartão já diz. A orientação das fraldas (sinais de desidratação) fica logo a seguir às ações.
     const wetStatus = getWetDiaperStatus(xixiToday);
-    if(wetStatus){
-      const lang=(S.settings&&S.settings.lang)||'pt';
-      let msg;
-      msg = wetDiaperMsg(xixiToday);
-      html += `<div class="alert ${wetStatus}">${ICONS.drop} ${msg}</div>`;
-    }
     const feedGap = getFeedGapStatus(feed);
-    if(feedGap) html += `<div class="alert ${feedGap}">${ICONS.bottle} ${tr('Já passaram mais de 4h desde a última refeição registada.')}</div>`;
-
-    html += `<div class="grid2">
-      <div class="stat"><div class="ic feed">${ICONS.bottle}</div><div class="lbl">${tr('Última refeição')}</div><div class="val">${feed?agoStr(feed.ts):'—'}</div><div class="sub">${feed?feedLabel(feed):tr('sem registos')}</div></div>
-      <div class="stat"><div class="ic diaper">${ICONS.drop}</div><div class="lbl">${tr('Última fralda')}</div><div class="val">${diaper?agoStr(diaper.ts):'—'}</div><div class="sub">${diaper?diaperLabel(diaper):tr('sem registos')}</div></div>
+    const flag = (st, txt) => st ? `<span class="stat-flag">${txt}</span>` : '';
+    const cls = st => 'stat' + (st==='warn' ? ' stat-warn' : st==='action' ? ' stat-action' : '');
+    html += `<div class="grid2 home-status">
+      <div class="${cls(feedGap)}"><div class="ic feed">${ICONS.bottle}</div><div class="lbl">${tr('Última refeição')}</div><div class="val">${feed?agoStr(feed.ts):'—'}</div><div class="sub">${feed?feedLabel(feed):tr('sem registos')}</div>${(S.mamadas.length||feedGap)?`<div class="stat-foot">${S.mamadas.length?`<span class="sub stat-today">${lx(`${feedsToday} hoje`,`${feedsToday} aujourd'hui`,`${feedsToday} today`)}</span>`:''}${flag(feedGap, lx('A observar','À surveiller','Keep an eye'))}</div>`:''}</div>
+      <div class="${cls(wetStatus)}"><div class="ic diaper">${ICONS.drop}</div><div class="lbl">${tr('Última fralda')}</div><div class="val">${diaper?agoStr(diaper.ts):'—'}</div><div class="sub">${diaper?diaperLabel(diaper):tr('sem registos')}</div>${(S.fraldas.length||wetStatus)?`<div class="stat-foot">${S.fraldas.length?`<span class="sub stat-today">${lx(`${xixiToday} xixi · ${cocoToday} cocó hoje`,`${xixiToday} pipi · ${cocoToday} caca aujourd'hui`,`${xixiToday} wet · ${cocoToday} dirty today`)}</span>`:''}${flag(wetStatus, lx('A observar','À surveiller','Keep an eye'))}</div>`:''}</div>
       <div class="stat"><div class="ic sleepc">${ICONS.moon}</div><div class="lbl">${isSleeping?tr('A dormir há'):tr('Sono hoje')}</div><div class="val">${isSleeping? durStr((Date.now()-S.running.sleepStart)/60000) : durStr(sleepMinsToday)}</div><div class="sub">${isSleeping?tr('em curso'):(lastSleep?(tr('último:')+' '+agoStr(lastSleep.fim)):tr('sem registos'))}</div></div>
       <div class="stat stat-link" role="button" tabindex="0" data-go="evolucao"><div class="ic growth">${ICONS.chart}</div><div class="lbl">${tr('Peso atual')}</div><div class="val">${peso?fmtNum(peso,3)+' kg':'—'}</div><div class="sub">${tr('ver em Evolução')}</div></div>
     </div>
 
-    <div class="card"><div class="section-label">${tr('Hoje')}</div>
-      <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
-        <div class="stat" style="align-items:center;text-align:center;"><div class="val">${feedsToday}</div><div class="sub">${feedsToday===1?lx('refeição','repas','feeding'):tr('refeições')}</div></div>
-        <div class="stat" style="align-items:center;text-align:center;"><div class="val">${xixiToday}x/${cocoToday}x</div><div class="sub">${tr('xixi / cocó')}</div></div>
-        <div class="stat" style="align-items:center;text-align:center;"><div class="val">${fmtNum(sleepMinsToday/60,1,true)} h</div><div class="sub">${tr('sono')}</div></div>
-      </div>
-    </div>
-
-    <div class="card"><div class="section-label">${tr('Linha do tempo · hoje')}</div><div class="timeline-wrap">${timelineSvg()}</div></div>
-
     <div class="card"><div class="section-label">${tr('Ações rápidas')}</div>
       <div class="qa-grid">
-        <button type="button" class="qa-tile" data-quick="mamadas"><div class="ic feed">${ICONS.bottle}</div><span class="lbl">${tr('Mamada')}</span></button>
-        <button type="button" class="qa-tile" data-quick="fraldas"><div class="ic diaper">${ICONS.drop}</div><span class="lbl">${tr('Fralda')}</span></button>
-        <button type="button" class="qa-tile${isSleeping?' running':''}" data-quick="sono"><div class="ic sleepc">${ICONS.moon}</div><span class="lbl">${isSleeping?tr('Terminar'):tr('Sono')}</span></button>
-        <button type="button" class="qa-tile" data-quick="med"><div class="ic med">${ICONS.pill}</div><span class="lbl">${tr('Medicação')}</span></button>
+        <button type="button" class="qa-tile" data-quick="mamadas"><div class="ic feed">${ICONS.bottle}</div><span class="lbl" lang="${(S.settings&&S.settings.lang)||'pt'}">${tr('Mamada')}</span></button>
+        <button type="button" class="qa-tile" data-quick="fraldas"><div class="ic diaper">${ICONS.drop}</div><span class="lbl" lang="${(S.settings&&S.settings.lang)||'pt'}">${tr('Fralda')}</span></button>
+        <button type="button" class="qa-tile${isSleeping?' running':''}" data-quick="sono"><div class="ic sleepc">${ICONS.moon}</div><span class="lbl" lang="${(S.settings&&S.settings.lang)||'pt'}">${isSleeping?tr('Terminar'):tr('Sono')}</span></button>
+        <button type="button" class="qa-tile" data-quick="med"><div class="ic med">${ICONS.pill}</div><span class="lbl" lang="${(S.settings&&S.settings.lang)||'pt'}">${tr('Medicação')}</span></button>
       </div>
-    </div>`;
+    </div>
+    ${wetStatus ? `<div class="alert ${wetStatus}">${ICONS.drop} ${wetDiaperMsg(xixiToday)}</div>` : ''}
+
+    <div class="card"><div class="section-label">${tr('Linha do tempo · hoje')}</div><div class="timeline-wrap">${timelineSvg()}</div></div>
+    <div id="homeReminders"></div>`;
     document.getElementById('main').innerHTML = html;
+    renderReminders();   // preenche a secção de lembretes do Início
     const dn=document.getElementById('dismissDemoNotice');
     if(dn) dn.addEventListener('click', ()=>{ delete S.settings.demoCleanupNotice; save(); render(); });
     document.querySelectorAll('#main [data-go]').forEach(el=>el.addEventListener('click', ()=>{ activeTab=el.dataset.go; openForm=null; editId=null; render(); }));

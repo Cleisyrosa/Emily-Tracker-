@@ -248,9 +248,10 @@ details.acc[open] summary .car{ transform:rotate(180deg); }
 .vax-dose .lbl{ flex:1; color:var(--ink-muted); }
 .vax-badge{ font-size:var(--fs-xs); font-weight:700; padding:6px 12px; min-height:36px; border-radius:999px; border:none; cursor:pointer; font-family:inherit; font-variant-numeric:tabular-nums; }
 .vax-badge.done{ background:var(--good-soft); color:var(--good); }
-.vax-badge.pending{ background:var(--warn-soft); color:var(--warn); }
+/* F8: "prevista/por registar" é neutra (registo/planeamento), não um alerta — --warn fica só para atenção real. */
+.vax-badge.pending{ background:var(--info-soft); color:var(--info); }
 .vax-badge.soon{ background:var(--crit-soft); color:var(--crit); }
-/* dose futura (ainda não é altura): neutra · agendada: informação · prevista para a idade e por registar: atenção (.pending) */
+/* dose futura (ainda não é altura): neutra · agendada: informação · prevista para a idade e por registar: informação (.pending) */
 .vax-badge.future{ background:var(--surface-2); color:var(--ink-muted); } .vax-badge.scheduled{ background:var(--info-soft); color:var(--info); }
 
 .milestone-band{ border-top:1px solid var(--border); padding:10px 0; }
@@ -3298,7 +3299,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         totalItems++; if(done) totalDone++; else allDone=false;
         if(!future){ relItems++; if(done) relDone++; }
         const state = done ? 'done' : future ? 'future' : 'expected';
-        const right = done ? done : future ? lx(`${start}+ meses`,`${start}+ mois`,`${start}+ months`) : tr('esperado');
+        // F8: a data real (F7) é formatada como no resto da app, nunca a string ISO crua; done continua guardado em ISO.
+        const right = done ? new Date(done+'T12:00:00').toLocaleDateString(localeTag()) : future ? lx(`${start}+ meses`,`${start}+ mois`,`${start}+ months`) : tr('esperado');
         return `<div class="mi-row ${state}"><span class="dot"></span><span>${tr(item)}</span><span class="d">${right}</span>${done?`<button class="log-del" data-card-mi="${key}" type="button" style="margin-left:4px;" title="${tr('Ver cartão')}" aria-label="${tr('Ver cartão')}">${ICONS.card}</button>`:''}<button class="log-del" data-toggle-mi="${key}" type="button" style="margin-left:4px;" aria-label="${done?lx('Desmarcar marco','Décocher l\'étape','Unmark milestone'):lx('Marcar como alcançado','Marquer comme atteint','Mark as reached')}" title="${done?lx('Desmarcar marco','Décocher l\'étape','Unmark milestone'):lx('Marcar como alcançado','Marquer comme atteint','Mark as reached')}">${done?ICONS.undo:ICONS.check}</button></div>`;
       }).join('');
       return `<div class="milestone-band"><h3>${tr(band.band)}</h3>${rows}</div>`;
@@ -3346,10 +3348,11 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         // Estado visual: administrada · agendada (data futura) · futura (ainda não é altura) · prevista para a idade e por registar.
         // Não afirmamos "atrasada": os calendários variam e a dose pode só não ter sido registada.
         const due = v.due ? v.due[i] : null;
-        let vState='pending', vLbl=tr('pendente');
+        let vState='pending', vLbl=lx('Prevista','Prévue','Due');
         if(rec.done){ vState='done'; vLbl=new Date(rec.done+'T12:00:00').toLocaleDateString(localeTag()); }
         else if(rec.proximaData && rec.proximaData>=todayISO()){ vState='scheduled'; vLbl=lx('Agendada ','Prévue ','Scheduled ')+fmtShort(rec.proximaData); }
-        else if(months==null || due==null){ vState='future'; }
+        // sem idade (sem DOB) não há como calcular se é cedo/na hora: estado neutro, texto próprio (não "Prevista").
+        else if(months==null || due==null){ vState='future'; vLbl=lx('Idade por indicar','Âge à indiquer','Age not set'); }
         else if(due>months){ vState='future'; vLbl= due===0 ? lx('À nascença','À la naissance','At birth') : lx(`Aos ${due} meses`,`À ${due} mois`,`At ${due} months`); if(nextDue==null||due<nextDue) nextDue=due; }
         else { vState='pending'; vLbl=lx('Prevista','Prévue','Due'); dueCount++; }
         const extra = rec.done
@@ -3375,7 +3378,14 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       const [vid, di] = [key.slice(0,key.lastIndexOf('-')), +key.slice(key.lastIndexOf('-')+1)];
       const v = VAX.find(x=>x.id===vid); const nome = v ? tr(v.nome)+' — '+tr(v.doses[di]) : key;
       if(!rec.done){
-        // marcar: pergunta a data real de administração (hoje pré-selecionado, mas pode ser uma data passada)
+        // F8: "agendada" é planeamento (rec.proximaData) — gerir a data agendada, NUNCA abrir "Quando foi administrada?".
+        if(rec.proximaData && rec.proximaData>=todayISO()){
+          showDateConfirm(lx(`Data agendada — ${nome}`,`Date prévue — ${nome}`,`Scheduled date — ${nome}`), (date)=>{
+            rec.proximaData = date; save(); renderVacinas(); renderReminders();
+          }, { initial: rec.proximaData, blockFuture:false, label: tr('Data agendada') });
+          return;
+        }
+        // prevista/futura (sem agendamento): pergunta a data real de administração (hoje pré-selecionado, pode ser passada)
         showDateConfirm(lx(`Quando foi administrada — ${nome}?`,`Quand a été administré — ${nome} ?`,`When was it given — ${nome}?`), (date)=>{
           rec.done = date; save(); playChime(); renderVacinas(); renderReminders();
         });
@@ -4103,12 +4113,18 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   }
   const numTxt = v => String(v).replace('.', lx(',',',','.'));
   const msgFuturo = () => lx('A data/hora não pode ser no futuro.','La date/heure ne peut pas être dans le futur.','Date/time cannot be in the future.');
-  // Pequeno diálogo para indicar QUANDO algo aconteceu de facto (vacina administrada, marco alcançado): hoje pré-selecionado,
-  // mas editável para uma data passada. Não pode ser futura — mesma regra/validação do resto da app.
-  function showDateConfirm(title, onConfirm){
+  // Pequeno diálogo para indicar uma data: por omissão, para QUANDO algo aconteceu de facto (vacina administrada,
+  // marco alcançado) — hoje pré-selecionado, editável para uma data passada, nunca futura.
+  // opts.blockFuture:false + opts.initial + opts.label → mesmo diálogo para gerir uma data AGENDADA (F8): essa é uma
+  // data de planeamento (rec.proximaData), não a data real de administração (rec.done) — os dois nunca se misturam.
+  function showDateConfirm(title, onConfirm, opts){
+    opts = opts || {};
+    const blockFuture = opts.blockFuture !== false;
+    const initial = opts.initial || todayISO();
+    const label = opts.label || tr('Data');
     showOverlay(`<div class="voice-panel" id="dateConfirmPanel"><div class="voice-card" style="text-align:left;">
       <h2 style="margin:0 0 10px;">${title}</h2>
-      <div class="form-row"><div style="flex:1;"><label>${tr('Data')}</label><input type="date" id="dcDate" value="${todayISO()}"></div></div>
+      <div class="form-row"><div style="flex:1;"><label>${label}</label><input type="date" id="dcDate" value="${initial}"></div></div>
       <button class="btn wide" id="dcOk" type="button">${tr('Confirmar')}</button>
       <button class="btn ghost wide" id="dcCancel" type="button" style="margin-top:8px;">${tr('Cancelar')}</button>
     </div></div>`);
@@ -4120,7 +4136,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       const v=document.getElementById('dcDate').value;
       const errs=[];
       if(!v) errs.push(['dcDate', lx('Indica a data.','Indique la date.','Enter the date.')]);
-      else if(v>todayISO()) errs.push(['dcDate', msgFuturo()]);
+      else if(blockFuture && v>todayISO()) errs.push(['dcDate', msgFuturo()]);
       if(!showFieldErrors(errs)) return;
       closeOverlay(); onConfirm(v);
     });

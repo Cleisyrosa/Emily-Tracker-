@@ -75,14 +75,14 @@ a{ color:inherit; }
 .phone{ max-width:480px; margin:0 auto; min-height:100vh; background:var(--bg); display:flex; flex-direction:column; }
 @media (min-width:540px){ body{ padding:22px 12px; } .phone{ min-height:calc(100vh - 44px); border-radius:var(--r-6); box-shadow:var(--shadow); border:1px solid var(--border); overflow:hidden; } }
 
-.topbar{ position:relative; display:flex; align-items:center; gap:12px; padding:16px 16px 18px; background:var(--header-bg); border-radius:0 0 26px 26px; overflow:hidden; }
+.topbar{ position:relative; display:flex; align-items:center; gap:var(--space-2); padding:16px 14px 18px; background:var(--header-bg); border-radius:0 0 26px 26px; overflow:hidden; }
 .topbar .confetti{ position:absolute; pointer-events:none; opacity:.8; }
-.avatar{ position:relative; width:52px; height:52px; border-radius:50%; background:var(--surface); color:var(--header-ink); display:flex; align-items:center; justify-content:center; font-family:'Baloo 2'; font-size:var(--fs-xl); font-weight:700; flex:none; overflow:hidden; box-shadow:0 6px 16px -6px rgba(122,51,80,.35); border:3px solid #fff; }
+.avatar{ position:relative; width:46px; height:46px; border-radius:50%; background:var(--surface); color:var(--header-ink); display:flex; align-items:center; justify-content:center; font-family:'Baloo 2'; font-size:var(--fs-xl); font-weight:700; flex:none; overflow:hidden; box-shadow:0 6px 16px -6px rgba(122,51,80,.35); border:3px solid #fff; }
 .avatar img{ width:100%; height:100%; object-fit:cover; }
 .topbar-text{ position:relative; flex:1; min-width:0; }
 .topbar-text h1{ font-size:var(--fs-xl); line-height:1.2; color:var(--header-ink); }
-.topbar-text .age{ font-size:var(--fs-xs); color:var(--header-ink-soft); font-weight:700; }
-.blood-chip{ position:relative; background:var(--header-chip-bg); color:var(--header-chip-ink); font-weight:800; font-size:var(--fs-xs); padding:5px 10px; border-radius:var(--r-2); flex:none; text-align:center; line-height:1.1; border:none; }
+.topbar-text .age{ font-size:var(--fs-xs); color:var(--header-ink-soft); font-weight:700; line-height:1.25; }
+.blood-chip{ position:relative; background:var(--header-chip-bg); color:var(--header-chip-ink); font-weight:800; font-size:var(--fs-xs); padding:4px 7px; border-radius:var(--r-2); flex:none; text-align:center; line-height:1.1; border:none; }
 .blood-chip small{ display:block; font-size:var(--fs-xs); font-weight:700; letter-spacing:.03em; }
 
 main{ flex:1; overflow-y:auto; padding:14px 14px 84px; }
@@ -105,6 +105,10 @@ main.fade-in{ animation:fadeIn .22s ease; }
 .stat .ic.sleepc{ background:var(--sleepc-soft); color:var(--sleepc); }
 .stat .ic.feed{ background:var(--feed-soft); color:var(--feed); }
 .stat .ic.diaper{ background:var(--diaper-soft); color:var(--diaper); }
+.stat .ic.growth{ background:var(--growth-soft); color:var(--growth); }
+.field-hint{ display:flex; align-items:center; gap:var(--space-1); margin:var(--space-1) 0 0; font-size:var(--fs-xs); color:var(--ink-muted); } .field-hint svg{ width:14px; height:14px; }
+.mais-group{ font-size:var(--fs-xs); font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-muted); margin:var(--space-3) 0 var(--space-1); } .mais-group:first-child{ margin-top:0; }
+.qm-row{ display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3) 0; border-top:1px solid var(--border); } .qm-row:first-child{ border-top:none; } .qm-row .body{ flex:1; min-width:0; }
 .stat .lbl{ font-size:var(--fs-xs); letter-spacing:.03em; text-transform:uppercase; color:var(--ink-faint); font-weight:700; }
 .stat .val{ font-family:'Baloo 2'; font-size:var(--fs-lg); }
 .stat .sub{ font-size:var(--fs-xs); color:var(--ink-muted); }
@@ -1294,6 +1298,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function inRange(ts,a,b){ return ts>=a && ts<b; }
   function last7(){ return Array.from({length:7},(_,i)=>daysAgoISO(6-i)); }
 
+  // De onde vem a marca pré-preenchida: 'perfil' (Alimentação no Perfil) ou 'ultimo' (último biberão registado).
+  function formulaBrandSource(c){ if(c.alimentacao && c.alimentacao.formula && c.alimentacao.formula.trim()) return 'perfil'; return (c.mamadas||[]).some(m=>m.tipo==='biberao' && m.marcaFormula) ? 'ultimo' : null; }
   function lastFormulaBrand(c){
     if(c.alimentacao && c.alimentacao.formula && c.alimentacao.formula.trim()) return c.alimentacao.formula.trim();
     const found = (c.mamadas||[]).find(m=>m.tipo==='biberao' && m.marcaFormula);
@@ -1370,15 +1376,22 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const maisBtn = document.getElementById('tabMais');
     if(maisBtn) maisBtn.addEventListener('click', ()=>showMaisMenu(secondary));
   }
+  const MAIS_GROUPS = [
+    {pt:'Rotina', fr:'Routine', en:'Routine', ids:['perfil','evolucao','desenv','resumo']},
+    {pt:'Saúde / acompanhamento', fr:'Santé / suivi', en:'Health / follow-up', ids:['vacinas','consultas']},
+    {pt:'Emergência', fr:'Urgence', en:'Emergency', ids:['sos']},
+  ];
   function showMaisMenu(secondary){
     showOverlay(`<div class="voice-panel" id="maisPanel"><div class="voice-card" role="dialog" aria-modal="true" aria-label="${t('mais')}" style="text-align:left; padding:14px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin:0 0 10px;">
         <p style="font-weight:800; font-size:var(--fs-base); margin:0;">${t('mais')}</p>
         <button class="icon-btn" id="maisClose" type="button" aria-label="${tr('Fechar')}" title="${tr('Fechar')}">${ICONS.close}</button>
       </div>
-      <div class="mais-list">${secondary.map(tb=>`<button class="mais-item${tb.id===activeTab?' active':''}" data-tab="${tb.id}" type="button">
+      <div class="mais-list">${MAIS_GROUPS.map(g=>{
+          const items=secondary.filter(tb=>g.ids.includes(tb.id)); if(!items.length) return '';
+          return `<p class="mais-group">${lx(g.pt,g.fr,g.en)}</p>`+items.map(tb=>`<button class="mais-item${tb.id===activeTab?' active':''}" data-tab="${tb.id}" type="button">
           <span class="ic">${ICONS[tb.ic]}</span><span class="lbl">${t(tb.id)}</span>${ICONS.chevright}
-        </button>`).join('')}</div>
+        </button>`).join(''); }).join('')}</div>
     </div></div>`);
     document.querySelectorAll('.mais-item').forEach(b=>b.addEventListener('click', ()=>{
       activeTab=b.dataset.tab; openForm=null; editId=null; closeOverlay(); render();
@@ -1730,6 +1743,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       if(best===null || d>bd || (d===bd && i>bestIdx)){ best=r; bestIdx=i; } });
     return best;
   }
+  // Regras de alerta centralizadas (mesma severidade em todos os ecrãs; limiares atuais, sem novos).
+  function getWetDiaperStatus(xixiCount){ return (xixiCount>0 && xixiCount<6) ? 'warn' : null; }
+  function getFeedGapStatus(lastFeed){ return (lastFeed && (Date.now()-lastFeed.ts) > 4*3600000) ? 'warn' : null; }
   function lastOf(arr){ return arr.slice().sort((a,b)=>b.ts-a.ts)[0]; }
   function timelineSvg(){
     const [t0] = todayRange();
@@ -1741,16 +1757,18 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const xPos = ts => 10 + ((ts-t0)/86400000)*(w-20);
     const bands = sleeps.map(s=>{
       const a=Math.max(s.inicio,t0), b=Math.min(s.fim,t0+86400000);
-      return `<rect x="${xPos(a).toFixed(1)}" y="18" width="${Math.max(2,(xPos(b)-xPos(a))).toFixed(1)}" height="20" rx="4" fill="var(--accent)"/>`;
+      return `<rect x="${xPos(a).toFixed(1)}" y="18" width="${Math.max(2,(xPos(b)-xPos(a))).toFixed(1)}" height="20" rx="4" fill="var(--sleepc)" opacity=".35"/>`;
     }).join('');
-    const colors = {feed:'var(--brand)', diaper:'var(--info)', med:'var(--crit)'};
+    const colors = {feed:'var(--feed)', diaper:'var(--diaper)', med:'var(--crit)'};   // cores de categoria: não dependem do acento
     const dots = evs.map(e=>`<circle cx="${xPos(e.x).toFixed(1)}" cy="28" r="4" fill="${colors[e.type]}"/>`).join('');
     const ticks = [0,6,12,18,24].map(hh=>`<text class="axis-label" style="font-size:22px" x="${(10+hh/24*(w-20)).toFixed(1)}" y="60" text-anchor="${hh===0?'start':hh===24?'end':'middle'}">${hh}h</text>`).join('');
-    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="70">
+    const nF=evs.filter(e=>e.type==='feed').length, nD=evs.filter(e=>e.type==='diaper').length, nM=evs.filter(e=>e.type==='med').length;
+    const desc = lx('Linha do tempo de hoje: ',"Chronologie d'aujourd'hui : ","Today's timeline: ")+[pl(nF,'refeição','refeições','repas','repas','feed','feeds'), pl(nD,'fralda','fraldas','couche','couches','diaper','diapers'), pl(nM,'dose','doses','dose','doses','dose','doses'), pl(sleeps.length,'período de sono','períodos de sono','période de sommeil','périodes de sommeil','sleep period','sleep periods')].join(', ')+'.';
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="70" role="img" aria-label="${desc}">
       <line x1="10" y1="28" x2="${w-10}" y2="28" stroke="var(--border)"/>
       ${bands}${dots}${ticks}
     </svg>
-    <div class="legend"><span><i style="background:var(--brand)"></i>${tr('refeição')}</span><span><i style="background:var(--info)"></i>${tr('fralda')}</span><span><i style="background:var(--crit)"></i>${tr('medicação')}</span><span><i style="background:var(--accent)"></i>${tr('sono')}</span></div>`;
+    <div class="legend" aria-hidden="true"><span><i style="background:var(--feed)"></i>${tr('refeição')}</span><span><i style="background:var(--diaper)"></i>${tr('fralda')}</span><span><i style="background:var(--crit)"></i>${tr('medicação')}</span><span><i style="background:var(--sleepc);opacity:.45"></i>${tr('sono')}</span></div>`;
   }
 
   function renderInicio(){
@@ -1774,22 +1792,23 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       </div>`;
     }
 
-    if(xixiToday>0 && xixiToday<6){
+    const wetStatus = getWetDiaperStatus(xixiToday);
+    if(wetStatus){
       const lang=(S.settings&&S.settings.lang)||'pt';
       let msg;
       if(lang==='fr') msg = `Seulement ${xixiToday} couche(s) mouillée(s) aujourd'hui — objectif 6–8/jour. Surveille les signes de déshydratation.`;
       else if(lang==='en') msg = `Only ${xixiToday} wet diaper(s) today — target 6–8/day. Watch for dehydration signs.`;
       else msg = `Só ${xixiToday} fralda(s) de xixi hoje — meta 6–8/dia. Vigiar sinais de desidratação.`;
-      html += `<div class="alert warn">${ICONS.drop} ${msg}</div>`;
+      html += `<div class="alert ${wetStatus}">${ICONS.drop} ${msg}</div>`;
     }
-    const H = 3600000;
-    if(feed && (Date.now()-feed.ts) > 4*H) html += `<div class="alert warn">${ICONS.bottle} ${tr('Já passaram mais de 4h desde a última refeição registada.')}</div>`;
+    const feedGap = getFeedGapStatus(feed);
+    if(feedGap) html += `<div class="alert ${feedGap}">${ICONS.bottle} ${tr('Já passaram mais de 4h desde a última refeição registada.')}</div>`;
 
     html += `<div class="grid2">
       <div class="stat"><div class="ic feed">${ICONS.bottle}</div><div class="lbl">${tr('Última refeição')}</div><div class="val">${feed?agoStr(feed.ts):'—'}</div><div class="sub">${feed?feedLabel(feed):tr('sem registos')}</div></div>
       <div class="stat"><div class="ic diaper">${ICONS.drop}</div><div class="lbl">${tr('Última fralda')}</div><div class="val">${diaper?agoStr(diaper.ts):'—'}</div><div class="sub">${diaper?diaperLabel(diaper):tr('sem registos')}</div></div>
       <div class="stat"><div class="ic sleepc">${ICONS.moon}</div><div class="lbl">${isSleeping?tr('A dormir há'):tr('Sono hoje')}</div><div class="val">${isSleeping? durStr((Date.now()-S.running.sleepStart)/60000) : durStr(sleepMinsToday)}</div><div class="sub">${isSleeping?tr('em curso'):(lastSleep?(tr('último:')+' '+agoStr(lastSleep.fim)):tr('sem registos'))}</div></div>
-      <div class="stat"><div class="ic">${ICONS.chart}</div><div class="lbl">${tr('Peso atual')}</div><div class="val">${peso?peso+'kg':'—'}</div><div class="sub">${tr('ver em Evolução')}</div></div>
+      <div class="stat"><div class="ic growth">${ICONS.chart}</div><div class="lbl">${tr('Peso atual')}</div><div class="val">${peso?peso+'kg':'—'}</div><div class="sub">${tr('ver em Evolução')}</div></div>
     </div>
 
     <div class="card"><div class="section-label">${tr('Hoje')}</div>
@@ -1817,7 +1836,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       const dest=t.dataset.quick;
       if(dest==='sono' && isSleeping){ stopSleep(); return; }
       if(dest==='sono'){ S.running.sleepStart=Date.now(); save(); playChime(); render(); return; }
-      if(dest==='med'){ activeTab='perfil'; render(); return; }
+      if(dest==='med'){ showQuickMedication(); return; }
       activeTab=dest; openForm='new'; render();
     }));
   }
@@ -2345,6 +2364,38 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     save(); playChime();
     if(onDone) onDone(dose);
   }
+  // Início › Medicação: escolher medicamento → confirmar → guardar. A gestão continua no Perfil.
+  function showQuickMedication(){
+    const meds=(S.crianca.medicacoes||[]).filter(m=>m.tipo!=='tradicional');
+    const rows = meds.map(m=>{ const n=dosesToday(m).length, last=dosesOf(m).sort((a,b)=>b.ts-a.ts)[0];
+      return `<div class="qm-row"><div class="body"><b>${m.nome}</b>${m.dose?(' — '+m.dose):''}<br><span class="muted">${lx('Hoje','Aujourd\'hui','Today')}: ${n}${m.maxVezesDia?('/'+m.maxVezesDia):''} · ${lx('última','dernière','last')}: ${last?hhmm(last.ts)+' ('+agoStr(last.ts)+')':'—'}</span></div>
+        <button class="dose-btn give" data-qmDose="${m.id}" type="button">${ICONS.pill} ${tr('Dose')}</button></div>`; }).join('');
+    showOverlay(`<div class="voice-panel" id="qmPanel"><div class="voice-card" role="dialog" aria-modal="true" aria-labelledby="qmTitle" style="text-align:left;max-height:85vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:0 0 8px;">
+        <h2 id="qmTitle" style="margin:0;">${tr('Medicação')}</h2>
+        <button class="icon-btn" id="qmClose" type="button" aria-label="${tr('Fechar')}">${ICONS.close}</button>
+      </div>
+      ${meds.length ? `<p class="muted" style="margin:0 0 6px;">${lx('Escolhe o medicamento para registar uma dose.','Choisis le médicament pour enregistrer une dose.','Choose the medicine to log a dose.')}</p>${rows}` : `<p class="muted">${lx('Ainda não há medicamentos. Adiciona-os no Perfil.','Aucun médicament. Ajoute-les dans le Profil.','No medicines yet. Add them in the Profile.')}</p>`}
+      <div id="qmMsg"></div>
+      <button class="btn secondary wide" id="qmManage" type="button" style="margin-top:10px;">${lx('Gerir medicamentos no Perfil','Gérer dans le Profil','Manage in Profile')}</button>
+    </div></div>`);
+    const panel=document.getElementById('qmPanel');
+    panel.addEventListener('click', e=>{ if(e.target===panel) closeOverlay(); });
+    document.getElementById('qmClose').addEventListener('click', closeOverlay);
+    document.getElementById('qmManage').addEventListener('click', ()=>{ closeOverlay(); activeTab='perfil'; render(); const d=document.getElementById('accMed'); if(d){ d.open=true; d.scrollIntoView({block:'start'}); } });
+    panel.querySelectorAll('[data-qmDose]').forEach(b=>b.addEventListener('click', ()=>{
+      const med=meds.find(m=>m.id===b.dataset.qmdose); if(!med) return;
+      registerDose(med, dose=>{
+        render();
+        showOverlay(`<div class="voice-panel" id="qmDone"><div class="voice-card" role="alertdialog" aria-modal="true" style="text-align:left;">
+          <div class="alert good" role="status">${ICONS.pill}<span>${lx(`Dose de ${med.nome} registada às ${hhmm(dose.ts)}.`,`Dose de ${med.nome} enregistrée à ${hhmm(dose.ts)}.`,`Dose of ${med.nome} logged at ${hhmm(dose.ts)}.`)}</span></div>
+          <div class="btn-row"><button class="btn secondary wide" id="qmUndo" type="button">${ICONS.undo} ${lx('Desfazer','Annuler','Undo')}</button><button class="btn wide" id="qmOk" type="button">${tr('OK')}</button></div>
+        </div></div>`);
+        document.getElementById('qmOk').addEventListener('click', closeOverlay);
+        document.getElementById('qmUndo').addEventListener('click', ()=>{ undoDose(dose.id); closeOverlay(); render(); });
+      });
+    }));
+  }
   function undoDose(id){ const i=S.doses.findIndex(x=>x.id===id); if(i>-1){ S.doses.splice(i,1); save(); return true; } return false; }
 
   // Perfil › Dose: usa o fluxo seguro e mostra o resultado com "Desfazer".
@@ -2388,7 +2439,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 
     let html = '';
     const H=3600000;
-    if(last && (Date.now()-last.ts) > 4*H) html += `<div class="alert warn">${ICONS.bottle} ${tr('Mais de 4h sem registo de refeição.')}</div>`;
+    const feedGap = getFeedGapStatus(last);
+    if(feedGap) html += `<div class="alert ${feedGap}">${ICONS.bottle} ${tr('Mais de 4h sem registo de refeição.')}</div>`;
 
     html += `<div class="card"><div class="section-label">${tr('Hoje')}</div>
       <div class="grid2" style="grid-template-columns:repeat(3,1fr);">
@@ -2429,7 +2481,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const seg=document.getElementById('fTipo'), extra=document.getElementById('fExtra');
     function drawExtra(){
       extra.innerHTML = tipo==='biberao'
-        ? `<div class="form-row"><div style="flex:1;"><label>${tr('Marca fórmula')}</label><input type="text" id="fMarca" list="fMarcaList" placeholder="" class="${(!editing&&lastFormulaBrand(c))?'remembered-fill':''}" value="${editing?(editing.marcaFormula||''):lastFormulaBrand(c)}"><datalist id="fMarcaList">${formulaBrandOptions(c)}</datalist></div></div>
+        ? `<div class="form-row"><div style="flex:1;"><label>${tr('Marca fórmula')}</label><input type="text" id="fMarca" list="fMarcaList" placeholder="" class="${(!editing&&lastFormulaBrand(c))?'remembered-fill':''}" value="${editing?(editing.marcaFormula||''):lastFormulaBrand(c)}"><datalist id="fMarcaList">${formulaBrandOptions(c)}</datalist>${(!editing && formulaBrandSource(c)) ? `<p class="field-hint">${ICONS.note} ${formulaBrandSource(c)==='perfil' ? lx('Preenchido a partir do Perfil','Rempli depuis le Profil','Filled from the Profile') : lx('Preenchido com o último biberão','Rempli avec le dernier biberon','Filled from the last bottle')}</p>` : ''}</div></div>
            <div class="form-row"><div style="flex:1;"><label>${tr('Oferecido (ml)')}</label><input type="number" id="fOfer" placeholder="${lx('ex.','ex.','e.g.')} 150" value="${editing&&editing.mlOferecido!=null?editing.mlOferecido:''}"></div><div style="flex:1;"><label>${tr('Bebido (ml)')}</label><input type="number" id="fBeb" placeholder="${lx('ex.','ex.','e.g.')} 140" value="${editing&&editing.mlBebido!=null?editing.mlBebido:''}"></div></div>`
         : `<div class="form-row"><div style="flex:1;"><label>${tr('Duração (min)')}</label><input type="number" id="fDur" placeholder="${lx('ex.','ex.','e.g.')} 15" value="${editing&&editing.duracaoMin!=null?editing.duracaoMin:''}"></div></div>`;
     }
@@ -2494,13 +2546,14 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const cocoBars=days.map(d=>{ const a=new Date(d+"T00:00:00").getTime(),b=a+86400000; return {v:S.fraldas.filter(l=>inRange(l.ts,a,b)&&l.tipo==='coco').length, label:new Date(d+"T00:00:00").toLocaleDateString(localeTag(),{weekday:'narrow'}), date:d}; });
 
     let html='';
-    if(xixi>0 && xixi<6){
+    const wetStatus = getWetDiaperStatus(xixi);
+    if(wetStatus){
       const lang=(S.settings&&S.settings.lang)||'pt';
       let msg;
       if(lang==='fr') msg = `Alerte : ${xixi} couches mouillées aujourd'hui — sous l'objectif 6–8/jour. Signe possible de déshydratation.`;
       else if(lang==='en') msg = `Alert: ${xixi} wet diapers today — below the 6–8/day target. Possible dehydration sign.`;
       else msg = `Alerta: ${xixi} xixi hoje — abaixo da meta 6–8/dia. Possível sinal de desidratação.`;
-      html += `<div class="alert crit">${ICONS.drop} ${msg}</div>`;
+      html += `<div class="alert ${wetStatus}">${ICONS.drop} ${msg}</div>`;
     }
 
     html += `<div class="card"><div class="section-label">${tr('Hoje')}</div>
@@ -2683,30 +2736,35 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function whoRef(metric){
     return WHO_MONTHS.map((m,i)=>({m, p10:WHO[metric].p10[i], p50:WHO[metric].p50[i], p90:WHO[metric].p90[i]}));
   }
+  // Por defeito mostra só o histórico registado (sem interpretação). As curvas OMS aproximadas só aparecem se a
+  // utilizadora as ligar em Evolução (definição "showWhoRef").
   function growthChart(series, metric, unit){
-    const ref = whoRef(metric);
-    const maxM = Math.max(6, ...series.map(s=>s.m));
+    const showRef = !!S.settings.showWhoRef;
+    const ref = showRef ? whoRef(metric) : [];
+    const maxM = showRef ? Math.max(6, ...series.map(s=>s.m)) : Math.max(1, Math.ceil(Math.max(...series.map(s=>s.m))));
     const refClamped = ref.filter(r=>r.m<=maxM+1);
     const w=320,h=160,pad=30;
     const allY = [...refClamped.map(r=>r.p10),...refClamped.map(r=>r.p90),...series.map(s=>s.v)];
-    const minY=Math.min(...allY)*0.96, maxY=Math.max(...allY)*1.04;
+    let minY=Math.min(...allY)*0.96, maxY=Math.max(...allY)*1.04; if(maxY-minY<1e-9){ minY*=0.9; maxY*=1.1; }
     const x = m => pad + (m/maxM)*(w-pad-14);
     const y = v => h-pad-((v-minY)/(maxY-minY))*(h-pad-14);
     function linePath(pts,key){ return pts.map((p,i)=>`${i===0?'M':'L'}${x(p.m).toFixed(1)},${y(p[key]).toFixed(1)}`).join(' '); }
     const p10Path = linePath(refClamped,'p10'), p50Path = linePath(refClamped,'p50'), p90Path = linePath(refClamped,'p90');
     const dataPath = series.map((s,i)=>`${i===0?'M':'L'}${x(s.m).toFixed(1)},${y(s.v).toFixed(1)}`).join(' ');
-    const dots = series.map(s=>`<circle cx="${x(s.m).toFixed(1)}" cy="${y(s.v).toFixed(1)}" r="3.4" fill="var(--crit)"/>`).join('');
-    const ticks=[0,3,6,9,12].filter(m=>m<=maxM).map(m=>`<text class="axis-label" x="${x(m).toFixed(1)}" y="${h-8}" text-anchor="middle">${m}m</text>`).join('');
+    const dots = series.map(s=>`<circle cx="${x(s.m).toFixed(1)}" cy="${y(s.v).toFixed(1)}" r="3.4" fill="var(--growth)"/>`).join('');
+    const tickSet = maxM<=4 ? Array.from({length:maxM+1},(_,i)=>i) : [0,3,6,9,12,18,24,36].filter(m=>m<=maxM);
+    const ticks=tickSet.map(m=>`<text class="axis-label" x="${x(m).toFixed(1)}" y="${h-8}" text-anchor="middle">${m}m</text>`).join('');
     const lastPt = series[series.length-1];
-    const endLabel = lastPt ? `<text x="${x(lastPt.m).toFixed(1)}" y="${(y(lastPt.v)-8).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--crit)">${lastPt.v}${unit}</text>` : '';
-    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="160">
-      <path d="${p10Path}" fill="none" stroke="var(--info)" stroke-width="1.3" stroke-dasharray="3,2" opacity=".6"/>
-      <path d="${p50Path}" fill="none" stroke="var(--brand)" stroke-width="1.5" opacity=".8"/>
-      <path d="${p90Path}" fill="none" stroke="var(--info)" stroke-width="1.3" stroke-dasharray="3,2" opacity=".6"/>
-      <path d="${dataPath}" fill="none" stroke="var(--crit)" stroke-width="2.2"/>
+    const endLabel = lastPt ? `<text x="${x(lastPt.m).toFixed(1)}" y="${(y(lastPt.v)-8).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--growth)">${lastPt.v}${unit}</text>` : '';
+    const refPaths = showRef ? `<path d="${p10Path}" fill="none" stroke="var(--info)" stroke-width="1.3" stroke-dasharray="3,2" opacity=".6"/>
+      <path d="${p50Path}" fill="none" stroke="var(--ink-muted)" stroke-width="1.5" opacity=".8"/>
+      <path d="${p90Path}" fill="none" stroke="var(--info)" stroke-width="1.3" stroke-dasharray="3,2" opacity=".6"/>` : '';
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="160" role="img" aria-label="${lx('Histórico registado','Historique enregistré','Recorded history')}: ${series.map(s=>s.v+unit+' ('+s.date+')').join(', ')}">
+      ${refPaths}
+      <path d="${dataPath}" fill="none" stroke="var(--growth)" stroke-width="2.2"/>
       ${dots}${ticks}${endLabel}
     </svg>
-    <div class="legend"><span><i style="background:var(--crit)"></i>${S.crianca.nome||tr('Bebé')}</span><span><i style="background:var(--brand)"></i>${tr('P50 OMS')}</span><span><i style="background:var(--info)"></i>${tr('P10 / P90 OMS')}</span></div>`;
+    <div class="legend" aria-hidden="true"><span><i style="background:var(--growth)"></i>${S.crianca.nome||tr('Bebé')}</span>${showRef?`<span><i style="background:var(--ink-muted)"></i>${tr('P50 OMS')}</span><span><i style="background:var(--info)"></i>${tr('P10 / P90 OMS')}</span>`:''}</div>`;
   }
   function ageMonthsAt(dob, dateStr){
     const d0=new Date(dob+"T00:00:00"), d1=new Date(dateStr+"T00:00:00");
@@ -2719,7 +2777,11 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const lang=(S.settings&&S.settings.lang)||'pt';
     const ultimoLbl = lang==='fr'?'dernier :':lang==='en'?'last:':'último:';
     document.getElementById('main').innerHTML = `
-    <div class="alert info">${ICONS.chart} ${tr('Curvas de referência OMS aproximadas — não substituem avaliação pediátrica profissional.')}</div>
+    <div class="card"><h2 style="margin:0 0 2px;">${lx('Evolução ao longo do tempo','Évolution dans le temps','Growth over time')}</h2>
+      <p class="muted" style="margin:0 0 8px;">${lx('Histórico registado, por idade em meses. Sem interpretação médica.','Historique enregistré, par âge en mois. Sans interprétation médicale.','Recorded history by age in months. No medical interpretation.')}</p>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:var(--fs-sm);"><input type="checkbox" id="whoToggle" ${S.settings.showWhoRef?'checked':''}> ${lx('Mostrar referência OMS aproximada (só meninas, 0–12 meses)','Afficher la référence OMS approximative (filles, 0–12 mois)','Show approximate WHO reference (girls only, 0–12 months)')}</label>
+      ${S.settings.showWhoRef ? `<div class="alert info" style="margin:8px 0 0;">${ICONS.chart} ${tr('Curvas de referência OMS aproximadas — não substituem avaliação pediátrica profissional.')}</div>` : ''}
+    </div>
     <div class="card"><h2>${tr('Peso')}</h2><p class="muted">${ultimoLbl} ${pesoS.length?pesoS[pesoS.length-1].v+'kg':'—'} ${lang==='pt'?'em':lang==='fr'?'le':'on'} ${pesoS.length?pesoS[pesoS.length-1].date:'—'}</p><div class="chart-wrap">${pesoS.length?growthChart(pesoS,'weight','kg'):`<div class="chart-empty muted">${tr('Sem registos suficientes.')}</div>`}</div></div>
     <div class="card"><h2>${tr('Altura')}</h2><p class="muted">${ultimoLbl} ${altS.length?altS[altS.length-1].v+'cm':'—'}</p><div class="chart-wrap">${altS.length?growthChart(altS,'altura','cm'):`<div class="chart-empty muted">${tr('Sem registos suficientes.')}</div>`}</div></div>
     <div class="card"><h2>${tr('Perímetro cefálico')}</h2><p class="muted">${ultimoLbl} ${pcS.length?pcS[pcS.length-1].v+'cm':'—'}</p><div class="chart-wrap">${pcS.length?growthChart(pcS,'pc','cm'):`<div class="chart-empty muted">${tr('Sem registos suficientes.')}</div>`}</div></div>
@@ -2733,6 +2795,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <button class="btn wide" id="gSave" type="button">${tr('Guardar medição')}</button>
     </div>
     ${measurementsListHtml()}`;
+    const wt=document.getElementById('whoToggle'); if(wt) wt.addEventListener('change', ()=>{ S.settings.showWhoRef = wt.checked; save(); renderEvolucao(); });
     document.getElementById('gSave').addEventListener('click', ()=>{
       const date=document.getElementById('gDate').value||todayISO();
       clearFieldErrors(document.getElementById('main'));

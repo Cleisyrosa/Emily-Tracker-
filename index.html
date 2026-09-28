@@ -8,13 +8,16 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Baloo+2:wght@500;600;700;800&family=Mulish:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- Padrões de crescimento da OMS: dados oficiais (gerados) + cálculos. Ver tools/who-growth/. -->
+<script src="who-growth-data.js"></script>
+<script src="who-growth.js"></script>
 <style>
 :root{
   /* design system U9 — tipografia, espaçamento e raios */
   --fs-xs:12px; --fs-sm:13px; --fs-md:14px; --fs-base:16px; --fs-lg:18px; --fs-xl:21px; --fs-2xl:28px; --fs-3xl:34px;
   --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-7:32px;
   --r-1:8px; --r-2:12px; --r-3:16px; --r-4:20px; --r-5:24px; --r-6:28px;
-  --growth:#2c7280; --growth-soft:#d6eef1; --feed-text:#953f5e; --on-feed:#ffffff;
+  --growth:#2c7280; --growth-soft:#d6eef1; --who-line:#77685d; --who-band:rgba(119,104,93,.09); --feed-text:#953f5e; --on-feed:#ffffff;
   --bg:#fffaf3; --surface:#ffffff; --surface-2:#f5f0e8; --border:#f0e6d6;
   --ink:#5a4a42; --ink-muted:#76685e; --ink-faint:#817061;
   --accent:#f9dce8; --accent-ink:#7a3350; --brand:#c2708f; --brand-ink:#241d19; --brand-text:#af4b71; --on-crit:#ffffff;
@@ -37,7 +40,7 @@
     --warn:#e0be6f; --warn-soft:#3a2f14;
     --crit:#e89b92; --crit-soft:#3a201d;
     --info:#8fbde0; --info-soft:#1f2f3f;
-    --growth:#7fc8d4; --growth-soft:#1f3a3f; --feed-text:#e8a0be; --on-feed:#241d19; --feed:#e8a0be; --feed-soft:#4a2f3a; --diaper:#d9a468; --diaper-soft:#3f3222; --sleepc:#b3a3e0; --sleepc-soft:#332c47;
+    --growth:#7fc8d4; --growth-soft:#1f3a3f; --who-line:#bcb0a5; --who-band:rgba(188,176,165,.10); --feed-text:#e8a0be; --on-feed:#241d19; --feed:#e8a0be; --feed-soft:#4a2f3a; --diaper:#d9a468; --diaper-soft:#3f3222; --sleepc:#b3a3e0; --sleepc-soft:#332c47;
     --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -14px rgba(0,0,0,.55);
     --bg-scrim:rgba(42,38,34,.40); --topbar-scrim-a:rgba(248,215,230,.32); --topbar-scrim-b:rgba(61,57,53,.35);
     --header-bg:#4a2f3a; --header-ink:#f8d7e6; --header-ink-soft:#e8a0be;
@@ -52,7 +55,7 @@
   --warn:#e0be6f; --warn-soft:#3a2f14;
   --crit:#e89b92; --crit-soft:#3a201d;
   --info:#8fbde0; --info-soft:#1f2f3f;
-  --growth:#7fc8d4; --growth-soft:#1f3a3f; --feed-text:#e8a0be; --on-feed:#241d19; --feed:#e8a0be; --feed-soft:#4a2f3a; --diaper:#d9a468; --diaper-soft:#3f3222; --sleepc:#b3a3e0; --sleepc-soft:#332c47;
+  --growth:#7fc8d4; --growth-soft:#1f3a3f; --who-line:#bcb0a5; --who-band:rgba(188,176,165,.10); --feed-text:#e8a0be; --on-feed:#241d19; --feed:#e8a0be; --feed-soft:#4a2f3a; --diaper:#d9a468; --diaper-soft:#3f3222; --sleepc:#b3a3e0; --sleepc-soft:#332c47;
   --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -14px rgba(0,0,0,.55);
   --bg-scrim:rgba(42,38,34,.40); --topbar-scrim-a:rgba(248,215,230,.32); --topbar-scrim-b:rgba(61,57,53,.35);
   --header-bg:#4a2f3a; --header-ink:#f8d7e6; --header-ink-soft:#e8a0be;
@@ -228,6 +231,18 @@ details.acc[open] summary .car{ transform:rotate(180deg); }
 .axis-label{ fill:var(--ink-faint); font-size:12px; }
 .legend{ display:flex; gap:14px; font-size:var(--fs-xs); color:var(--ink-muted); margin-top:6px; flex-wrap:wrap; }
 .legend span{ display:inline-flex; align-items:center; gap:5px; }
+.growth-seg{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-bottom:12px; }
+@media (min-width:540px){ .growth-seg{ grid-template-columns:repeat(4,minmax(0,1fr)); } }
+.growth-seg button{ padding:8px 6px; min-height:44px; border:1px solid var(--border); background:var(--surface); border-radius:var(--r-1); font-size:var(--fs-xs); font-weight:700; color:var(--ink-muted); cursor:pointer; font-family:inherit; line-height:1.25; }
+.growth-seg button.on{ background:var(--brand); border-color:var(--brand); color:var(--brand-ink); }
+.growth-last{ margin:0 0 6px; font-size:var(--fs-sm); }
+.growth-pct{ display:inline-block; padding:1px 7px; border-radius:var(--r-1); background:var(--growth-soft); color:var(--ink); font-weight:700; font-size:var(--fs-xs); }
+.growth-svg{ display:block; overflow:visible; }
+.g-pt:focus-visible{ outline:none; } .g-pt:focus-visible .g-ring{ stroke:var(--brand-text); stroke-width:3; }
+.growth-legend svg{ flex:none; }
+.growth-axis, .growth-note{ font-size:var(--fs-xs); margin:6px 0 0; }
+.growth-disclaimer{ font-size:var(--fs-xs); margin:12px 0 0; padding:8px 10px; border-radius:var(--r-2); background:var(--surface-2); color:var(--ink); }
+.growth-card .day-rec .growth-pct{ flex:none; }
 .legend i{ width:12px; height:2.5px; display:inline-block; border-radius:2px; }
 
 .sos-card{ background:var(--crit-soft); border:2px solid var(--crit); border-radius:var(--r-3); padding:16px; margin-bottom:12px; }
@@ -389,14 +404,6 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 
   // Todos os ícones são decorativos (o significado vem do texto ou do aria-label do botão).
   Object.keys(ICONS).forEach(k=>{ ICONS[k]=ICONS[k].replace('<svg ','<svg aria-hidden="true" focusable="false" '); });
-
-  // ---- WHO reference (girls, approx, kg / cm) at 0,1,2,3,4,5,6,9,12 months ----
-  const WHO_MONTHS = [0,1,2,3,4,5,6,9,12];
-  const WHO = {
-    weight:{ p10:[2.9,3.6,4.5,5.2,5.7,6.1,6.5,7.3,7.9], p50:[3.3,4.2,5.1,5.8,6.4,6.9,7.3,8.2,8.9], p90:[3.7,4.8,5.8,6.6,7.3,7.8,8.3,9.3,10.1] },
-    altura:{ p10:[47.3,51.7,55.0,57.7,59.9,61.8,63.5,67.7,71.4], p50:[49.1,53.7,57.1,59.8,62.1,64.0,65.7,70.1,74.0], p90:[51.0,55.6,59.1,61.9,64.3,66.3,68.0,72.6,76.6] },
-    pc:{ p10:[32.7,35.1,36.9,38.2,39.2,40.0,40.7,42.2,43.5], p50:[33.9,36.5,38.3,39.5,40.6,41.5,42.2,43.8,45.0], p90:[35.1,37.9,39.7,41.0,42.1,43.0,43.7,45.3,46.5] }
-  };
 
   const MED_PRESETS = [
     {nome:"Vitamina D", dose:"1 gota/dia (400 UI)", intervaloHoras:20, maxVezesDia:1, horario:"08:00", notificacoes:true, tipo:"receitado"},
@@ -664,7 +671,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     "Perímetro cefálico":{fr:"Périmètre crânien",en:"Head circumference"},
     "Adicionar medição":{fr:"Ajouter une mesure",en:"Add measurement"},
     "Guardar medição":{fr:"Enregistrer la mesure",en:"Save measurement"},
-    "Emily/exemplo":{fr:"Emily/exemple",en:"Emily/example"}, "P50 OMS":{fr:"P50 OMS",en:"P50 WHO"}, "P10 / P90 OMS":{fr:"P10 / P90 OMS",en:"P10 / P90 WHO"},
+    "Emily/exemplo":{fr:"Emily/exemple",en:"Emily/example"}, "Comprimento/altura":{fr:"Longueur/taille",en:"Length/height"}, "P50 OMS":{fr:"P50 OMS",en:"P50 WHO"}, "P10 / P90 OMS":{fr:"P10 / P90 OMS",en:"P10 / P90 WHO"},
 
     // ---- Desenvolvimento ----
     "Desenvolvimento normal para a idade — tudo no tempo esperado.":
@@ -1203,8 +1210,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     }
   }
 
-  function ageInfo(dob){
-    const d0=new Date(dob+"T00:00:00"), d1=new Date();
+  function ageInfo(dob, atISO){
+    const d0=new Date(dob+"T00:00:00"), d1=atISO ? new Date(atISO+"T00:00:00") : new Date();
     let months=(d1.getFullYear()-d0.getFullYear())*12+(d1.getMonth()-d0.getMonth());
     let days=d1.getDate()-d0.getDate();
     if(days<0){ months--; const pm=new Date(d1.getFullYear(),d1.getMonth(),0); days+=pm.getDate(); }
@@ -1215,7 +1222,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     } else if(lang==='en'){
       label = months<1 ? `${days} day${days===1?'':'s'}` : `${months} month${months===1?'':'s'}`+(days>0?` and ${days} day${days===1?'':'s'}`:'');
     } else {
-      label = months<1 ? days+" dia"+(days===1?"":"s") : months+" mes"+(months===1?"":"es")+(days>0?" e "+days+" dia"+(days===1?"":"s"):"");
+      label = months<1 ? days+" dia"+(days===1?"":"s") : months+(months===1?" mês":" meses")+(days>0?" e "+days+" dia"+(days===1?"":"s"):"");
     }
     return {months, days, label};
   }
@@ -1867,7 +1874,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         <div class="form-row"><div style="flex:1;"><label>${tr('Nome')}</label><input type="text" id="pNome" value="${c.nome}"></div></div>
         <div class="form-row">
           <div style="flex:1;"><label>${tr('Data de nascimento')}</label><input type="date" id="pDob" value="${c.dataNascimento}"></div>
-          <div style="flex:1;"><label>${tr('Sexo')}</label><select id="pSexo"><option value="F" ${c.sexo==='F'?'selected':''}>${tr('Feminino')}</option><option value="M" ${c.sexo==='M'?'selected':''}>${tr('Masculino')}</option></select></div>
+          <div style="flex:1;"><label>${tr('Sexo')}</label><select id="pSexo">${c.sexo!=='F'&&c.sexo!=='M'?`<option value="" selected disabled>—</option>`:''}<option value="F" ${c.sexo==='F'?'selected':''}>${tr('Feminino')}</option><option value="M" ${c.sexo==='M'?'selected':''}>${tr('Masculino')}</option></select></div>
         </div>
         <div class="form-row">
           <div style="flex:1;"><label>${tr('Local de nascimento')}</label><input type="text" id="pLocal" value="${c.localNascimento}"></div>
@@ -2733,69 +2740,218 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   }
 
   /* ============ EVOLUÇÃO ============ */
-  function whoRef(metric){
-    return WHO_MONTHS.map((m,i)=>({m, p10:WHO[metric].p10[i], p50:WHO[metric].p50[i], p90:WHO[metric].p90[i]}));
+  // Crescimento segundo os padrões da OMS (0–5 anos).
+  //   Dados oficiais (L, M, S): who-growth-data.js — gerado por tools/who-growth/build_who_growth.py.
+  //   Cálculos (idade em dias, z-score LMS, percentil): who-growth.js → window.WhoGrowth.
+  //   Aqui só há apresentação. Nenhum registo é alterado: tudo é calculado na hora a partir de {date, valor}.
+  const GW = window.WhoGrowth || null;
+  let growthView = 'wfa';
+  const GROWTH_VIEWS = { wfa:{ic:'⚖️', metric:'peso', unit:'kg'}, lhfa:{ic:'📏', metric:'altura', unit:'cm'},
+    hcfa:{ic:'🧠', metric:'pc', unit:'cm'}, wfl:{ic:'⚖️', metric:'peso', unit:'kg'} };
+  const GROWTH_PCTS = [3, 15, 50, 85, 97];
+  const escapeAttr = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const escapeHtml = escapeAttr;
+  function growthViewLabel(v){
+    return v==='wfa' ? tr('Peso') : v==='lhfa' ? tr('Comprimento/altura') : v==='hcfa' ? tr('Perímetro cefálico') : lx('Peso/comprimento','Poids/longueur','Weight/length');
   }
-  // Por defeito mostra só o histórico registado (sem interpretação). As curvas OMS aproximadas só aparecem se a
-  // utilizadora as ligar em Evolução (definição "showWhoRef").
-  function growthChart(series, metric, unit){
-    const showRef = !!S.settings.showWhoRef;
-    const ref = showRef ? whoRef(metric) : [];
-    const maxM = showRef ? Math.max(6, ...series.map(s=>s.m)) : Math.max(1, Math.ceil(Math.max(...series.map(s=>s.m))));
-    const refClamped = ref.filter(r=>r.m<=maxM+1);
-    const w=320,h=160,pad=30;
-    const allY = [...refClamped.map(r=>r.p10),...refClamped.map(r=>r.p90),...series.map(s=>s.v)];
-    let minY=Math.min(...allY)*0.96, maxY=Math.max(...allY)*1.04; if(maxY-minY<1e-9){ minY*=0.9; maxY*=1.1; }
-    const x = m => pad + (m/maxM)*(w-pad-14);
-    const y = v => h-pad-((v-minY)/(maxY-minY))*(h-pad-14);
-    function linePath(pts,key){ return pts.map((p,i)=>`${i===0?'M':'L'}${x(p.m).toFixed(1)},${y(p[key]).toFixed(1)}`).join(' '); }
-    const p10Path = linePath(refClamped,'p10'), p50Path = linePath(refClamped,'p50'), p90Path = linePath(refClamped,'p90');
-    const dataPath = series.map((s,i)=>`${i===0?'M':'L'}${x(s.m).toFixed(1)},${y(s.v).toFixed(1)}`).join(' ');
-    const dots = series.map(s=>`<circle cx="${x(s.m).toFixed(1)}" cy="${y(s.v).toFixed(1)}" r="3.4" fill="var(--growth)"/>`).join('');
-    const tickSet = maxM<=4 ? Array.from({length:maxM+1},(_,i)=>i) : [0,3,6,9,12,18,24,36].filter(m=>m<=maxM);
-    const ticks=tickSet.map(m=>`<text class="axis-label" x="${x(m).toFixed(1)}" y="${h-8}" text-anchor="middle">${m}m</text>`).join('');
-    const lastPt = series[series.length-1];
-    const endLabel = lastPt ? `<text x="${x(lastPt.m).toFixed(1)}" y="${(y(lastPt.v)-8).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--growth)">${lastPt.v}${unit}</text>` : '';
-    const refPaths = showRef ? `<path d="${p10Path}" fill="none" stroke="var(--info)" stroke-width="1.3" stroke-dasharray="3,2" opacity=".6"/>
-      <path d="${p50Path}" fill="none" stroke="var(--ink-muted)" stroke-width="1.5" opacity=".8"/>
-      <path d="${p90Path}" fill="none" stroke="var(--info)" stroke-width="1.3" stroke-dasharray="3,2" opacity=".6"/>` : '';
-    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="160" role="img" aria-label="${lx('Histórico registado','Historique enregistré','Recorded history')}: ${series.map(s=>s.v+unit+' ('+s.date+')').join(', ')}">
-      ${refPaths}
-      <path d="${dataPath}" fill="none" stroke="var(--growth)" stroke-width="2.2"/>
-      ${dots}${ticks}${endLabel}
-    </svg>
-    <div class="legend" aria-hidden="true"><span><i style="background:var(--growth)"></i>${S.crianca.nome||tr('Bebé')}</span>${showRef?`<span><i style="background:var(--ink-muted)"></i>${tr('P50 OMS')}</span><span><i style="background:var(--info)"></i>${tr('P10 / P90 OMS')}</span>`:''}</div>`;
+  const growthNum = v => new Intl.NumberFormat(localeTag(), {maximumFractionDigits:3}).format(v);
+  const growthDate = iso => new Date(iso+'T12:00:00').toLocaleDateString(localeTag(), {day:'2-digit', month:'2-digit', year:'numeric'});
+  function pctText(p){ const r=Math.round(p); return r<1 ? '<P1' : r>99 ? '>P99' : 'P'+r; }
+  function pctSpoken(p){ const r=Math.round(p);
+    if(r<1) return lx('Percentil inferior a 1','Percentile inférieur à 1','Below percentile 1');
+    if(r>99) return lx('Percentil superior a 99','Percentile supérieur à 99','Above percentile 99');
+    return lx('Percentil ','Percentile ','Percentile ')+r; }
+  const zText = z => new Intl.NumberFormat(localeTag(), {minimumFractionDigits:2, maximumFractionDigits:2, signDisplay:'exceptZero'}).format(z);
+  function growthSexLabel(){ return S.crianca.sexo==='M' ? lx('meninos','garçons','boys') : S.crianca.sexo==='F' ? lx('meninas','filles','girls') : lx('sexo por indicar','sexe non indiqué','sex not set'); }
+  function growthReason(res){
+    switch(res && res.reason){
+      case 'no-data': return lx('As tabelas da OMS não foram carregadas (ficheiros who-growth-data.js e who-growth.js). O histórico continua disponível.','Les tables de l\'OMS n\'ont pas été chargées (fichiers who-growth-data.js et who-growth.js). L\'historique reste disponible.','The WHO tables were not loaded (files who-growth-data.js and who-growth.js). The history is still available.');
+      case 'no-dates': return lx('Indica a data de nascimento no Perfil para calcular o percentil.','Indique la date de naissance dans le Profil pour calculer le percentile.','Add the date of birth in Profile to calculate the percentile.');
+      case 'no-sex': return lx('Indica o sexo no Perfil para calcular o percentil.','Indique le sexe dans le Profil pour calculer le percentile.','Add the sex in Profile to calculate the percentile.');
+      case 'before-birth': return lx('A data da medição é anterior à data de nascimento.','La date de la mesure est antérieure à la naissance.','The measurement date is before the date of birth.');
+      case 'over-5y': return lx('Os padrões da OMS usados aqui cobrem dos 0 aos 5 anos.','Les standards de l\'OMS utilisés ici couvrent de 0 à 5 ans.','The WHO standards used here cover 0 to 5 years.');
+      case 'length-out-of-range': { const [a,b]=res.range||[];
+        return res.indicator==='wfh' ? lx(`O peso para a altura só está definido entre ${a} e ${b} cm.`,`Le poids pour la taille n'est défini qu'entre ${a} et ${b} cm.`,`Weight-for-height is only defined between ${a} and ${b} cm.`)
+          : lx(`O peso para o comprimento só está definido entre ${a} e ${b} cm.`,`Le poids pour la longueur n'est défini qu'entre ${a} et ${b} cm.`,`Weight-for-length is only defined between ${a} and ${b} cm.`); }
+      default: return lx('Não foi possível calcular o percentil para este valor.','Impossible de calculer le percentile pour cette valeur.','The percentile could not be calculated for this value.');
+    }
   }
-  function ageMonthsAt(dob, dateStr){
-    const d0=new Date(dob+"T00:00:00"), d1=new Date(dateStr+"T00:00:00");
-    return (d1.getFullYear()-d0.getFullYear())*12+(d1.getMonth()-d0.getMonth()) + (d1.getDate()-d0.getDate())/30;
+  function growthResult(metric, rec){
+    if(!GW) return {ok:false, reason:'no-data'};
+    const days=GW.ageInDays(S.crianca.dataNascimento, rec.date), sex=S.crianca.sexo, v=Number(rec.valor);
+    if(metric==='peso') return GW.weightForAge(sex, days, v);
+    if(metric==='altura') return GW.lengthForAge(sex, days, v);
+    return GW.headForAge(sex, days, v);
+  }
+  // Nome do indicador (com comprimento deitado vs altura em pé, conforme a idade — como nas tabelas da OMS).
+  function growthIndicatorName(res, metric){
+    const ind = res && res.indicator;
+    if(ind==='wfa' || (!ind && metric==='peso')) return lx('Peso para a idade','Poids pour l\'âge','Weight-for-age');
+    if(ind==='lhfa' || (!ind && metric==='altura')) return res && res.measure==='height' ? lx('Altura para a idade (medida em pé)','Taille pour l\'âge (debout)','Height-for-age (standing)')
+      : res && res.measure==='length' ? lx('Comprimento para a idade (medido deitado)','Longueur pour l\'âge (couché)','Length-for-age (lying down)') : lx('Comprimento/altura para a idade','Longueur/taille pour l\'âge','Length/height-for-age');
+    if(ind==='hcfa' || (!ind && metric==='pc')) return lx('Perímetro cefálico para a idade','Périmètre crânien pour l\'âge','Head circumference-for-age');
+    if(ind==='wfh') return lx('Peso para a altura','Poids pour la taille','Weight-for-height');
+    return lx('Peso para o comprimento','Poids pour la longueur','Weight-for-length');
+  }
+  function growthMetricWord(metric, res){
+    if(metric==='altura') return res && res.measure==='height' ? tr('Altura') : res && res.measure==='length' ? lx('Comprimento','Longueur','Length') : tr('Comprimento/altura');
+    return metric==='peso' ? tr('Peso') : tr('Perímetro cefálico');
+  }
+  // Registos de uma medida, por data (empate → ordem de inserção). Guarda o índice original para abrir o detalhe.
+  function growthSeries(metric){
+    return (S.evolucao[metric]||[]).map((r,i)=>({r,i})).filter(o=>o.r && o.r.date && Number(o.r.valor)>0)
+      .sort((a,b)=>String(a.r.date).localeCompare(String(b.r.date)) || a.i-b.i)
+      .map(o=>({date:o.r.date, v:Number(o.r.valor), idx:o.i, metric, res:growthResult(metric, o.r)}));
+  }
+  // Peso/comprimento: só com peso E comprimento/altura registados na MESMA data (se houver vários nesse dia, o último inserido).
+  function growthPairs(){
+    const byDate = arr => { const m={}; (arr||[]).forEach((r,i)=>{ if(r && r.date && Number(r.valor)>0) m[r.date]={r,i}; }); return m; };
+    const P=byDate(S.evolucao.peso), A=byDate(S.evolucao.altura);
+    return Object.keys(P).filter(d=>A[d]).sort().map(d=>{
+      const kg=Number(P[d].r.valor), cm=Number(A[d].r.valor);
+      const res = GW ? GW.weightForLengthHeight(S.crianca.sexo, GW.ageInDays(S.crianca.dataNascimento, d), cm, kg) : {ok:false, reason:'no-data'};
+      return {date:d, v:kg, cm, idx:P[d].i, metric:'peso', res};
+    });
+  }
+  function growthAria(view, p){
+    if(view==='wfl') return `${lx('Peso/comprimento em','Poids/longueur le','Weight/length on')} ${growthDate(p.date)}: ${growthNum(p.v)} kg, ${growthNum(p.cm)} cm. ${p.res.ok?pctSpoken(p.res.percentile)+'.':''}`;
+    const M=GROWTH_VIEWS[view];
+    return `${growthMetricWord(M.metric, p.res)} ${lx('em','le','on')} ${growthDate(p.date)}: ${growthNum(p.v)} ${M.unit}. ${p.res.ok?pctSpoken(p.res.percentile)+'.':''}`;
+  }
+  function niceStep(range, target){
+    const raw=range/target, mag=Math.pow(10, Math.floor(Math.log10(raw))), n=raw/mag;
+    return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*mag;
+  }
+  // Gráfico: curvas OMS (P3, P15, P50, P85, P97) + medições da criança. Cores das curvas fixas (não seguem o acento).
+  function whoGrowthChart(view, pts){
+    const sex=S.crianca.sexo, W=340, H=236, padL=36, padR=42, padT=14, padB=30;
+    let xMin=0, xMax, xTicks=[], xFmt, curves;
+    if(view!=='wfl'){
+      const maxDay=Math.max(0, ...pts.map(p=>p.res.days));
+      const winM = maxDay<=183 ? 6 : maxDay<=365 ? 12 : maxDay<=730 ? 24 : 60;
+      xMax=winM; const tstep = winM===6?1 : winM===12?2 : winM===24?3 : 12;
+      for(let m=0;m<=winM;m+=tstep) xTicks.push(m);
+      xFmt = m => m+lx('m','m','m');
+      const toDay=Math.min(GW.MAX_DAY, Math.floor(winM*GW.DAYS_PER_MONTH)), step=Math.max(1, Math.round(toDay/140));
+      const segs = view==='lhfa' && toDay>=GW.HEIGHT_FROM_DAY ? [[0,GW.HEIGHT_FROM_DAY-1],[GW.HEIGHT_FROM_DAY,toDay]] : [[0,toDay]];
+      curves = GROWTH_PCTS.map(p=>({p, segs:segs.map(([a,b])=>GW.curveByAge(view, sex, p, a, b, step).map(q=>({x:q.day/GW.DAYS_PER_MONTH, v:q.v})))}));
+      pts = pts.map(p=>Object.assign({}, p, {x:p.res.days/GW.DAYS_PER_MONTH}));
+    } else {
+      const ind=pts[pts.length-1].res.indicator, [lo,hi]= ind==='wfh' ? [65,120] : [45,110];
+      const cms=pts.map(p=>p.cm);
+      xMin=Math.max(lo, Math.floor((Math.min(...cms)-3)/5)*5); xMax=Math.min(hi, Math.ceil((Math.max(...cms)+3)/5)*5);
+      if(xMax-xMin<15){ xMax=Math.min(hi, xMin+15); xMin=Math.max(lo, xMax-15); }
+      const tstep = xMax-xMin<=30 ? 5 : 10;
+      for(let c=Math.ceil(xMin/tstep)*tstep;c<=xMax;c+=tstep) xTicks.push(c);
+      xFmt = c => String(c);
+      curves = GROWTH_PCTS.map(p=>({p, segs:[GW.curveByLength(ind, sex, p, xMin, xMax, 0.5).map(q=>({x:q.cm, v:q.v}))]}));
+      pts = pts.map(p=>Object.assign({}, p, {x:p.cm}));
+    }
+    const allV=[...curves.flatMap(c=>c.segs.flat().map(q=>q.v)), ...pts.map(p=>p.v)];
+    let yLo=Math.min(...allV), yHi=Math.max(...allV); const yStep=niceStep(yHi-yLo, 5);
+    yLo=Math.floor(yLo/yStep)*yStep; yHi=Math.ceil(yHi/yStep)*yStep;
+    const X = x => padL + (x-xMin)/(xMax-xMin)*(W-padL-padR);
+    const Y = v => H-padB - (v-yLo)/(yHi-yLo)*(H-padB-padT);
+    const path = seg => seg.map((q,i)=>`${i?'L':'M'}${X(q.x).toFixed(1)},${Y(q.v).toFixed(1)}`).join('');
+    const band = (lo,hi) => lo.segs.map((s,k)=>`<path d="${path(s)}L${hi.segs[k].slice().reverse().map(q=>`${X(q.x).toFixed(1)},${Y(q.v).toFixed(1)}`).join('L')}Z" fill="var(--who-band)" stroke="none"/>`).join('');
+    const C = p => curves.find(c=>c.p===p);
+    const DASH = {3:'2 3', 97:'2 3', 15:'6 3', 85:'6 3', 50:''};
+    const grid=[]; for(let v=yLo; v<=yHi+1e-9; v+=yStep){ const yy=Y(v).toFixed(1);
+      grid.push(`<line x1="${padL}" x2="${W-padR}" y1="${yy}" y2="${yy}" stroke="var(--border)" stroke-width="1"/><text class="axis-label" x="${padL-5}" y="${(+yy+4).toFixed(1)}" text-anchor="end">${growthNum(Math.round(v*100)/100)}</text>`); }
+    const xt = xTicks.map(t=>`<text class="axis-label" x="${X(t).toFixed(1)}" y="${H-10}" text-anchor="${t===xTicks[0]&&X(t)<padL+6?'start':'middle'}">${xFmt(t)}</text>`).join('');
+    const lines = curves.map(c=>c.segs.map(s=>`<path d="${path(s)}" fill="none" stroke="var(--who-line)" stroke-width="${c.p===50?1.8:1.3}"${DASH[c.p]?` stroke-dasharray="${DASH[c.p]}"`:''}/>`).join('')).join('');
+    // Rótulos das curvas à direita, afastados uns dos outros para não se sobreporem.
+    const lab = curves.map(c=>{ const s=c.segs[c.segs.length-1], q=s[s.length-1]; return {p:c.p, y:Y(q.v)}; }).sort((a,b)=>b.y-a.y);
+    for(let i=1;i<lab.length;i++) if(lab[i-1].y-lab[i].y<11) lab[i].y=lab[i-1].y-11;
+    const labels = lab.map(l=>`<text x="${W-padR+12}" y="${(l.y+4).toFixed(1)}" font-size="11" fill="var(--who-line)" font-weight="${l.p===50?700:500}">P${l.p}</text>`).join('');
+    const cut = view==='lhfa' && xMax>24 ? `<line x1="${X(24).toFixed(1)}" x2="${X(24).toFixed(1)}" y1="${padT}" y2="${H-padB}" stroke="var(--who-line)" stroke-width="1" stroke-dasharray="1 3"/>` : '';
+    const child = pts.length>1 ? `<path d="${pts.map((p,i)=>`${i?'L':'M'}${X(p.x).toFixed(1)},${Y(p.v).toFixed(1)}`).join('')}" fill="none" stroke="var(--growth)" stroke-width="2.4" stroke-linejoin="round"/>` : '';
+    const last=pts[pts.length-1];
+    const dots = pts.map(p=>{ const cx=X(p.x).toFixed(1), cy=Y(p.v).toFixed(1), isLast=p===last;
+      return `<g class="g-pt" role="button" tabindex="0" data-meas-metric="${p.metric}" data-meas-idx="${p.idx}" aria-label="${escapeAttr(growthAria(view,p))}${isLast?' '+lx('(última medição)','(dernière mesure)','(latest measurement)'):''}" style="cursor:pointer;">
+        <circle cx="${cx}" cy="${cy}" r="13" fill="transparent"/>
+        <circle class="g-ring" cx="${cx}" cy="${cy}" r="${isLast?10:7.5}" fill="none" stroke="${isLast?'var(--growth)':'transparent'}" stroke-width="2"/>
+        <circle cx="${cx}" cy="${cy}" r="${isLast?5.5:4}" fill="var(--growth)" stroke="var(--surface)" stroke-width="1.5"/></g>`; }).join('');
+    const lx0=X(last.x), ly0=Y(last.v);
+    const anchor = lx0>W-padR-50 ? 'end' : lx0<padL+50 ? 'start' : 'middle';
+    const tag = `<text x="${lx0.toFixed(1)}" y="${(ly0<padT+24 ? ly0+24 : ly0-15).toFixed(1)}" text-anchor="${anchor}" font-size="12" font-weight="700" fill="var(--growth)" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${growthNum(last.v)} ${GROWTH_VIEWS[view].unit} · ${pctText(last.res.percentile)}</text>`;
+    const summary = `${lx('Gráfico','Graphique','Chart')}: ${growthIndicatorName(last.res, GROWTH_VIEWS[view].metric)}, ${lx('padrões OMS para','standards OMS pour les','WHO standards for')} ${growthSexLabel()}. ${pl(pts.length,'medição','medições','mesure','mesures','measurement','measurements')}. ${lx('Curvas','Courbes','Curves')} P3, P15, P50, P85, P97. ${lx('Última','Dernière','Latest')}: ${growthAria(view,last)}`;
+    return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="group" aria-label="${escapeAttr(summary)}" class="growth-svg">
+      ${grid.join('')}${band(C(3),C(97))}${band(C(15),C(85))}${lines}${cut}${labels}${xt}${child}${dots}${tag}</svg>`;
+  }
+  function growthLegendHtml(view){
+    const sw = (stroke, dash, w, dot) => `<svg width="26" height="10" aria-hidden="true" focusable="false"><line x1="1" x2="25" y1="5" y2="5" stroke="${stroke}" stroke-width="${w}"${dash?` stroke-dasharray="${dash}"`:''}/>${dot?`<circle cx="13" cy="5" r="3.5" fill="${stroke}"/>`:''}</svg>`;
+    const axis = view==='wfl' ? lx('Horizontal: comprimento/altura (cm) · vertical: peso (kg)','Horizontal : longueur/taille (cm) · vertical : poids (kg)','Horizontal: length/height (cm) · vertical: weight (kg)')
+      : lx('Horizontal: idade (meses) · vertical: ','Horizontal : âge (mois) · vertical : ','Horizontal: age (months) · vertical: ')+GROWTH_VIEWS[view].unit;
+    return `<div class="legend growth-legend" aria-hidden="true">
+      <span>${sw('var(--growth)','',2.4,true)}${escapeHtml(S.crianca.nome||tr('Bebé'))}</span>
+      <span>${sw('var(--who-line)','',1.8)}P50</span>
+      <span>${sw('var(--who-line)','6 3',1.3)}P15 / P85</span>
+      <span>${sw('var(--who-line)','2 3',1.3)}P3 / P97</span></div>
+      <p class="muted growth-axis">${axis}</p>`;
+  }
+  function growthCardHtml(){
+    const view=growthView, V=GROWTH_VIEWS[view];
+    const seg = `<div class="growth-seg" role="group" aria-label="${lx('Indicador de crescimento','Indicateur de croissance','Growth indicator')}">${Object.keys(GROWTH_VIEWS).map(k=>`<button type="button" data-growth-view="${k}" class="${k===view?'on':''}" aria-pressed="${k===view}"><span aria-hidden="true">${GROWTH_VIEWS[k].ic}</span> ${growthViewLabel(k).replace('/','/<wbr>')}</button>`).join('')}</div>`;
+    const all = view==='wfl' ? growthPairs() : growthSeries(V.metric);
+    const valid = all.filter(p=>p.res.ok);
+    let body='';
+    const setupIssue = !GW ? {reason:'no-data'} : !S.crianca.dataNascimento ? {reason:'no-dates'} : (S.crianca.sexo!=='F' && S.crianca.sexo!=='M') ? {reason:'no-sex'} : null;
+    if(setupIssue) body = `<div class="alert info" style="margin:10px 0 0;flex-wrap:wrap;">${ICONS.chart} <span style="flex:1;min-width:180px;">${growthReason(setupIssue)}</span>${setupIssue.reason!=='no-data'?`<button type="button" class="btn secondary" id="growthToProfile" style="min-height:44px;">${lx('Abrir Perfil','Ouvrir le Profil','Open Profile')}</button>`:''}</div>`;
+    else if(!all.length) body = `<div class="chart-empty muted">${view==='wfl' ? lx('Para o peso/comprimento é preciso peso e comprimento/altura medidos no mesmo dia.','Pour le poids/longueur, il faut un poids et une longueur/taille mesurés le même jour.','Weight/length needs a weight and a length/height measured on the same day.') : tr('Sem registos suficientes.')}</div>`;
+    else if(!valid.length) body = `<div class="chart-empty muted">${growthReason(all[all.length-1].res)}</div>`;
+    else {
+      let pts = valid;
+      if(view==='wfl'){ const ind=valid[valid.length-1].res.indicator; pts=valid.filter(p=>p.res.indicator===ind); }
+      const last=pts[pts.length-1], otherInd=valid.length-pts.length, hidden=all.length-valid.length;
+      const ageTxt = view==='wfl' ? '' : ' · '+ageInfo(S.crianca.dataNascimento, last.date).label;
+      const valTxt = view==='wfl' ? `${growthNum(last.v)} kg · ${growthNum(last.cm)} cm` : `${growthNum(last.v)} ${V.unit}`;
+      body = `<p class="growth-last">${lx('Última medição: ','Dernière mesure : ','Latest measurement: ')}<b>${valTxt}</b> ${lx('em','le','on')} ${growthDate(last.date)}${ageTxt} · <b class="growth-pct">${pctText(last.res.percentile)}</b></p>
+        <div class="chart-wrap">${whoGrowthChart(view, pts)}</div>${growthLegendHtml(view)}
+        ${otherInd>0 ? `<p class="muted growth-note">${pl(otherInd,'medição','medições','mesure','mesures','measurement','measurements')} ${pts[0].res.indicator==='wfh' ? lx('de antes dos 24 meses (peso para o comprimento) fora deste gráfico de peso para a altura; ver histórico.','d\'avant 24 mois (poids pour la longueur) hors de ce graphique poids pour la taille ; voir l\'historique.','from before 24 months (weight-for-length) not in this weight-for-height chart; see history.') : lx('a partir dos 24 meses (peso para a altura) fora deste gráfico de peso para o comprimento; ver histórico.','à partir de 24 mois (poids pour la taille) hors de ce graphique poids pour la longueur ; voir l\'historique.','from 24 months (weight-for-height) not in this weight-for-length chart; see history.')}</p>` : ''}
+        ${hidden>0 ? `<p class="muted growth-note">${pl(hidden,'medição não aparece','medições não aparecem','mesure n\'apparaît pas','mesures n\'apparaissent pas','measurement is not shown','measurements are not shown')} ${lx('no gráfico (fora do intervalo dos padrões; ver histórico).','dans le graphique (hors de l\'intervalle des standards ; voir l\'historique).','in the chart (outside the range of the standards; see history).')}</p>` : ''}`;
+    }
+    const viewNote = view==='lhfa' ? lx('Até aos 24 meses, a OMS usa o comprimento medido deitado; a partir dos 24 meses, a altura medida em pé. A app assume a posição pela idade na data da medição.','Jusqu\'à 24 mois, l\'OMS utilise la longueur mesurée couché ; à partir de 24 mois, la taille mesurée debout. L\'app déduit la position de l\'âge à la date de la mesure.','Up to 24 months the WHO uses length measured lying down; from 24 months, height measured standing. The app assumes the position from the age on the measurement date.')
+      : view==='wfl' ? lx('Usa o peso e o comprimento/altura registados no mesmo dia. Até aos 24 meses: peso para o comprimento (45–110 cm); a partir dos 24 meses: peso para a altura (65–120 cm).','Utilise le poids et la longueur/taille enregistrés le même jour. Jusqu\'à 24 mois : poids pour la longueur (45–110 cm) ; à partir de 24 mois : poids pour la taille (65–120 cm).','Uses the weight and length/height logged on the same day. Up to 24 months: weight-for-length (45–110 cm); from 24 months: weight-for-height (65–120 cm).') : '';
+    const history = all.slice().reverse().map(p=>{
+      const val = view==='wfl' ? `${growthNum(p.v)} kg · ${growthNum(p.cm)} cm` : `${growthNum(p.v)} ${V.unit}`;
+      const pc = p.res.ok ? `<b class="growth-pct">${pctText(p.res.percentile)}</b>` : `<span class="muted">—</span>`;
+      const age = p.res.ok && S.crianca.dataNascimento ? ` · ${ageInfo(S.crianca.dataNascimento, p.date).label}` : '';
+      return `<button type="button" class="day-rec" data-meas-metric="${p.metric}" data-meas-idx="${p.idx}" aria-label="${escapeAttr(growthAria(view,p)+(p.res.ok?'':' '+growthReason(p.res)))}"><span>${growthDate(p.date)} · <b>${val}</b><span class="muted">${age}</span></span>${pc}${ICONS.chevright}</button>`;
+    }).join('');
+    return `<div class="card growth-card"><h2 style="margin:0 0 2px;">${lx('Crescimento','Croissance','Growth')}</h2>
+      <p class="muted" style="margin:0 0 10px;">${lx('Padrões de crescimento da OMS (0–5 anos)','Standards de croissance de l\'OMS (0–5 ans)','WHO Child Growth Standards (0–5 years)')} · ${growthSexLabel()}</p>
+      ${seg}${body}
+      ${viewNote ? `<p class="muted growth-note">${viewNote}</p>` : ''}
+      <div class="section-label" style="margin-top:14px;">${lx('Histórico','Historique','History')} · ${growthViewLabel(view)}</div>
+      ${history || `<div class="empty">${tr('Sem registos.')}</div>`}
+      <p class="growth-disclaimer">${growthDisclaimer()}</p>
+      <p class="muted growth-note">${lx('Para crianças nascidas prematuramente, a interpretação do crescimento pode exigir idade corrigida. Fala com o pediatra sobre a utilização adequada dos gráficos.','Pour les enfants nés prématurément, l\'interprétation de la croissance peut nécessiter l\'âge corrigé. Parle au pédiatre de l\'utilisation appropriée des courbes.','For children born preterm, interpreting growth may require corrected age. Talk to the paediatrician about the appropriate use of the charts.')}</p>
+    </div>`;
+  }
+  function growthDisclaimer(){
+    return lx('Os percentis comparam a medida da criança com os padrões de crescimento da OMS para crianças da mesma idade e sexo. Não constituem um diagnóstico médico.',
+      'Les percentiles comparent la mesure de l\'enfant aux standards de croissance de l\'OMS pour les enfants du même âge et du même sexe. Ils ne constituent pas un diagnostic médical.',
+      'Percentiles compare the child\'s measurement with the WHO growth standards for children of the same age and sex. They are not a medical diagnosis.');
   }
   function renderEvolucao(){
-    const dob = S.crianca.dataNascimento;
-    const toSeries = arr => arr.slice().sort((a,b)=>new Date(a.date)-new Date(b.date)).map(r=>({m:Math.max(0,ageMonthsAt(dob,r.date)), v:r.valor, date:r.date}));
-    const pesoS=toSeries(S.evolucao.peso), altS=toSeries(S.evolucao.altura), pcS=toSeries(S.evolucao.pc);
-    const lang=(S.settings&&S.settings.lang)||'pt';
-    const ultimoLbl = lang==='fr'?'dernier :':lang==='en'?'last:':'último:';
     document.getElementById('main').innerHTML = `
-    <div class="card"><h2 style="margin:0 0 2px;">${lx('Evolução ao longo do tempo','Évolution dans le temps','Growth over time')}</h2>
-      <p class="muted" style="margin:0 0 8px;">${lx('Histórico registado, por idade em meses. Sem interpretação médica.','Historique enregistré, par âge en mois. Sans interprétation médicale.','Recorded history by age in months. No medical interpretation.')}</p>
-      <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:var(--fs-sm);"><input type="checkbox" id="whoToggle" ${S.settings.showWhoRef?'checked':''}> ${lx('Mostrar referência OMS aproximada (só meninas, 0–12 meses)','Afficher la référence OMS approximative (filles, 0–12 mois)','Show approximate WHO reference (girls only, 0–12 months)')}</label>
-      ${S.settings.showWhoRef ? `<div class="alert info" style="margin:8px 0 0;">${ICONS.chart} ${tr('Curvas de referência OMS aproximadas — não substituem avaliação pediátrica profissional.')}</div>` : ''}
-    </div>
-    <div class="card"><h2>${tr('Peso')}</h2><p class="muted">${ultimoLbl} ${pesoS.length?pesoS[pesoS.length-1].v+'kg':'—'} ${lang==='pt'?'em':lang==='fr'?'le':'on'} ${pesoS.length?pesoS[pesoS.length-1].date:'—'}</p><div class="chart-wrap">${pesoS.length?growthChart(pesoS,'weight','kg'):`<div class="chart-empty muted">${tr('Sem registos suficientes.')}</div>`}</div></div>
-    <div class="card"><h2>${tr('Altura')}</h2><p class="muted">${ultimoLbl} ${altS.length?altS[altS.length-1].v+'cm':'—'}</p><div class="chart-wrap">${altS.length?growthChart(altS,'altura','cm'):`<div class="chart-empty muted">${tr('Sem registos suficientes.')}</div>`}</div></div>
-    <div class="card"><h2>${tr('Perímetro cefálico')}</h2><p class="muted">${ultimoLbl} ${pcS.length?pcS[pcS.length-1].v+'cm':'—'}</p><div class="chart-wrap">${pcS.length?growthChart(pcS,'pc','cm'):`<div class="chart-empty muted">${tr('Sem registos suficientes.')}</div>`}</div></div>
+    ${growthCardHtml()}
     <div class="card"><div class="section-label">${tr('Adicionar medição')}</div>
+      <p class="muted" style="margin:0 0 8px;">${lx('Preenche só o que mediste. Cada valor fica guardado em separado.','Remplis seulement ce que tu as mesuré. Chaque valeur est enregistrée séparément.','Fill in only what you measured. Each value is saved separately.')}</p>
       <div class="form-row"><div style="flex:1;"><label>${tr('Data')}</label><input type="date" id="gDate" value="${todayISO()}"></div></div>
       <div class="form-row">
         <div style="flex:1;"><label>${tr('Peso (kg)')}</label><input type="text" inputmode="decimal" id="gWeight"></div>
-        <div style="flex:1;"><label>${tr('Altura (cm)')}</label><input type="text" inputmode="decimal" id="gHeight"></div>
+        <div style="flex:1;"><label>${tr('Comprimento/altura')} (cm)</label><input type="text" inputmode="decimal" id="gHeight"></div>
         <div style="flex:1;"><label>${tr('PC (cm)')}</label><input type="text" inputmode="decimal" id="gHead"></div>
       </div>
       <button class="btn wide" id="gSave" type="button">${tr('Guardar medição')}</button>
-    </div>
-    ${measurementsListHtml()}`;
-    const wt=document.getElementById('whoToggle'); if(wt) wt.addEventListener('change', ()=>{ S.settings.showWhoRef = wt.checked; save(); renderEvolucao(); });
+    </div>`;
+    const gp=document.getElementById('growthToProfile'); if(gp) gp.addEventListener('click', ()=>{ activeTab='perfil'; openForm=null; editId=null; render(); });
+    document.querySelectorAll('[data-growth-view]').forEach(b=>b.addEventListener('click', ()=>{
+      growthView=b.dataset.growthView; renderEvolucao();
+      const nb=document.querySelector(`[data-growth-view="${growthView}"]`); if(nb) nb.focus();
+    }));
     document.getElementById('gSave').addEventListener('click', ()=>{
       const date=document.getElementById('gDate').value||todayISO();
       clearFieldErrors(document.getElementById('main'));
@@ -2816,7 +2972,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     });
     document.querySelectorAll('[data-meas-metric]').forEach(b=>b.addEventListener('click', ()=>showMeasurementDetails(b.dataset.measMetric, +b.dataset.measIdx)));
   }
-  const MEAS = { peso:{lbl:'Peso', unit:'kg'}, altura:{lbl:'Altura', unit:'cm'}, pc:{lbl:'Perímetro cefálico', unit:'cm'} };
+  const MEAS = { peso:{lbl:'Peso', unit:'kg'}, altura:{lbl:'Comprimento/altura', unit:'cm'}, pc:{lbl:'Perímetro cefálico', unit:'cm'} };
   // null (vazio) = sem erro. Bloqueia só texto inválido e valores <= 0.
   function measureError(metric, v){
     if(v==null) return null;
@@ -2833,14 +2989,22 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     if(metric==='altura') return lx(`Esta altura é invulgar. Tens a certeza que queres guardar ${x} cm?`,`Cette taille est inhabituelle. Veux-tu vraiment enregistrer ${x} cm ?`,`This height is unusual. Are you sure you want to save ${x} cm?`);
     return lx(`Este perímetro cefálico é invulgar. Tens a certeza que queres guardar ${x} cm?`,`Ce périmètre crânien est inhabituel. Veux-tu vraiment enregistrer ${x} cm ?`,`This head circumference is unusual. Are you sure you want to save ${x} cm?`);
   }
-  function measurementsListHtml(){
-    const items=[];
-    Object.keys(MEAS).forEach(k=>(S.evolucao[k]||[]).forEach((r,i)=>items.push({k,i,r})));
-    items.sort((x,y)=>String(y.r.date).localeCompare(String(x.r.date)));
-    const fmtD = d => d ? new Date(d+'T12:00:00').toLocaleDateString(localeTag()) : '—';
-    return `<div class="card"><div class="section-label">${lx('Medições registadas','Mesures enregistrées','Logged measurements')}</div>
-      ${items.length ? items.map(it=>`<button type="button" class="day-rec" data-meas-metric="${it.k}" data-meas-idx="${it.i}"><span><b>${tr(MEAS[it.k].lbl)}</b> · ${String(it.r.valor).replace('.', lx(',',',','.'))} ${MEAS[it.k].unit} <span class="muted">· ${fmtD(it.r.date)}</span></span>${ICONS.chevright}</button>`).join('') : `<div class="empty">${tr('Sem registos.')}</div>`}
-    </div>`;
+  // Detalhe de uma medição: idade exata, indicador OMS, percentil e z-score (o z-score só aparece aqui).
+  function growthDetailsHtml(metric, rec){
+    const res=growthResult(metric, rec);
+    const line=(k,v)=>`<div class="rec-line"><span>${k}</span><b>${v}</b></div>`;
+    let h=`<div class="section-label" style="margin-top:14px;">${lx('Padrões de crescimento da OMS','Standards de croissance de l\'OMS','WHO growth standards')}</div>`;
+    if(!res.ok) return h+`<p class="muted growth-note">${growthReason(res)}</p>`;
+    h+=line(lx('Idade na medição','Âge à la mesure','Age at measurement'), `${ageInfo(S.crianca.dataNascimento, rec.date).label} (${pl(res.days,'dia','dias','jour','jours','day','days')})`);
+    h+=line(lx('Indicador','Indicateur','Indicator'), growthIndicatorName(res, metric));
+    h+=line(lx('Percentil','Percentile','Percentile'), pctText(res.percentile));
+    h+=line('z-score', zText(res.z));
+    if(metric==='peso' || metric==='altura'){
+      const pair=growthPairs().find(p=>p.date===rec.date);
+      if(pair && pair.res.ok) h+=line(growthIndicatorName(pair.res), `${pctText(pair.res.percentile)} · z ${zText(pair.res.z)}`);
+    }
+    if(res.flagged) h+=`<p class="growth-note" style="font-weight:600;">${lx('Este valor está muito afastado dos padrões da OMS. Confirma se a medição foi registada corretamente.','Cette valeur est très éloignée des standards de l\'OMS. Vérifie que la mesure a été correctement saisie.','This value is very far from the WHO standards. Check that the measurement was entered correctly.')}</p>`;
+    return h+`<p class="muted growth-note">${growthDisclaimer()}</p>`;
   }
   function showMeasurementDetails(metric, idx, editing, typed){
     const rec=(S.evolucao[metric]||[])[idx]; if(!rec){ closeOverlay(); return; }
@@ -2851,7 +3015,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
           <div style="flex:1;"><label>${tr(M.lbl)} (${M.unit})</label><input type="text" inputmode="decimal" id="mVal" value="${typed?typed.raw:rec.valor}"></div></div>
         <button class="btn wide" id="mSave" type="button">${tr('Guardar alterações')}</button>`
       : `<div class="rec-line"><span>${tr('Data')}</span><b>${rec.date ? new Date(rec.date+'T12:00:00').toLocaleDateString(localeTag()) : '—'}</b></div>
-        <div class="rec-line"><span>${tr(M.lbl)}</span><b>${rec.valor} ${M.unit}</b></div>
+        <div class="rec-line"><span>${tr(M.lbl)}</span><b>${growthNum(Number(rec.valor))} ${M.unit}</b></div>
+        ${growthDetailsHtml(metric, rec)}
         <div class="btn-row" style="margin-top:14px;"><button class="btn secondary wide" id="mEdit" type="button">${ICONS.edit} ${lx('Editar','Modifier','Edit')}</button><button class="btn crit wide" id="mDel" type="button">${tr('Apagar')}</button></div>`}
       <button class="btn ghost wide" id="mClose" type="button" style="margin-top:8px;">${editing?tr('Cancelar'):tr('Fechar')}</button>
     </div></div>`);

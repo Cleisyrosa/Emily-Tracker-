@@ -32,6 +32,7 @@
   --shadow:0 1px 2px rgba(90,74,66,.08), 0 10px 26px -14px rgba(90,74,66,.25);
   /* SEMÂNTICA (significado fixo, nunca depende do acento) — nomes de domínio sobre os valores existentes */
   --sleep:var(--sleepc); --sleep-soft:var(--sleepc-soft); --med:var(--warn); --med-soft:var(--warn-soft); --sos:var(--crit); --sos-soft:var(--crit-soft);
+  --sos-fill:var(--crit); --on-sos-fill:#ffffff;   /* botão SOS cheio: vermelho de emergência nos dois temas */
   --bg-scrim:rgba(250,247,242,.40); --topbar-scrim-a:rgba(248,215,230,.55); --topbar-scrim-b:rgba(255,255,255,.35);
   --header-bg:#f6c9dc; --header-ink:#7a3350; --header-ink-soft:#a35e78;
   --header-chip-bg:rgba(255,255,255,.75); --header-chip-ink:#7a3350;
@@ -46,7 +47,7 @@
     --crit:#e89b92; --crit-soft:#3a201d;
     --info:#8fbde0; --info-soft:#1f2f3f;
     --growth:#7fc8d4; --growth-soft:#1f3a3f; --who-line:#bcb0a5; --who-band:rgba(188,176,165,.10); --feed-text:#e8a0be; --on-feed:#241d19; --feed:#e8a0be; --feed-soft:#4a2f3a; --diaper:#d9a468; --diaper-soft:#3f3222; --sleepc:#b3a3e0; --sleepc-soft:#332c47;
-    --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -14px rgba(0,0,0,.55);
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -14px rgba(0,0,0,.55); --sos-fill:#c2443a;
     --bg-scrim:rgba(42,38,34,.40); --topbar-scrim-a:rgba(248,215,230,.32); --topbar-scrim-b:rgba(61,57,53,.35);
     --header-bg:#4a2f3a; --header-ink:#f8d7e6; --header-ink-soft:#e8a0be;
     --header-chip-bg:rgba(0,0,0,.28); --header-chip-ink:#f8d7e6;
@@ -61,7 +62,7 @@
   --crit:#e89b92; --crit-soft:#3a201d;
   --info:#8fbde0; --info-soft:#1f2f3f;
   --growth:#7fc8d4; --growth-soft:#1f3a3f; --who-line:#bcb0a5; --who-band:rgba(188,176,165,.10); --feed-text:#e8a0be; --on-feed:#241d19; --feed:#e8a0be; --feed-soft:#4a2f3a; --diaper:#d9a468; --diaper-soft:#3f3222; --sleepc:#b3a3e0; --sleepc-soft:#332c47;
-  --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -14px rgba(0,0,0,.55);
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -14px rgba(0,0,0,.55); --sos-fill:#c2443a;
   --bg-scrim:rgba(42,38,34,.40); --topbar-scrim-a:rgba(248,215,230,.32); --topbar-scrim-b:rgba(61,57,53,.35);
   --header-bg:#4a2f3a; --header-ink:#f8d7e6; --header-ink-soft:#e8a0be;
   --header-chip-bg:rgba(0,0,0,.28); --header-chip-ink:#f8d7e6;
@@ -115,8 +116,8 @@ main.fade-in{ animation:fadeIn .22s ease; }
 .card h2{ font-size:var(--fs-base); margin-bottom:2px; }
 .muted{ color:var(--ink-muted); font-size:var(--fs-sm); }
 .section-label{ font-size:var(--fs-xs); letter-spacing:.08em; text-transform:uppercase; font-weight:800; color:var(--brand-text); margin:0 0 10px; }
-.demo-banner{ display:flex; align-items:center; gap:10px; background:var(--warn-soft); border:2px solid var(--warn); color:var(--warn); border-radius:var(--r-4); padding:10px 14px; font-size:var(--fs-sm); margin-bottom:14px; font-weight:700; }
-.demo-banner button{ margin-left:auto; background:none; border:1px solid var(--warn); color:var(--warn); border-radius:var(--r-2); padding:4px 10px; font-size:var(--fs-xs); font-weight:700; cursor:pointer; flex:none; }
+.demo-banner{ display:flex; align-items:center; gap:10px; background:var(--info-soft); border:1px solid transparent; color:var(--ink); border-radius:var(--r-4); padding:10px 14px; font-size:var(--fs-sm); margin-bottom:14px; font-weight:700; }
+.demo-banner button{ margin-left:auto; background:none; border:1px solid var(--border); color:var(--ink); border-radius:var(--r-2); padding:4px 10px; font-size:var(--fs-xs); font-weight:700; cursor:pointer; flex:none; }
 
 .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:9px; }
 .stat{ background:var(--surface); border:2px solid var(--surface-2); border-radius:var(--r-4); padding:12px 13px; display:flex; flex-direction:column; gap:3px; box-shadow:var(--shadow); }
@@ -141,6 +142,7 @@ main.fade-in{ animation:fadeIn .22s ease; }
 .qa-tile .ic.diaper{ background:var(--diaper-soft); color:var(--diaper); }
 .qa-tile .ic.sleepc{ background:var(--sleepc-soft); color:var(--sleepc); }
 .qa-tile .ic.good{ background:var(--good-soft); color:var(--good); }
+.qa-tile .ic.med{ background:var(--med-soft); color:var(--med); }
 .qa-tile.running{ border-color:var(--good); background:var(--good-soft); }
 .qa-tile .lbl{ font-size:var(--fs-xs); font-weight:700; }
 
@@ -169,6 +171,7 @@ input.remembered-fill,textarea.remembered-fill{ /* dado real guardado, não é e
 .g-del{ display:flex; align-items:center; justify-content:center; padding:0; } .g-del svg{ width:14px; height:14px; }
 .status-dot{ display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; vertical-align:middle; }
 .status-dot.good{ background:var(--good); } .status-dot.warn{ background:var(--warn); } .status-dot.crit{ background:var(--crit); }
+.status-dot.neutral{ background:transparent; border:2px solid var(--ink-faint); }
 .inline-ic{ display:inline-flex; vertical-align:middle; color:var(--ink-muted); } .inline-ic svg{ width:14px; height:14px; }
 .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .btn.wide{ width:100%; }
@@ -191,10 +194,18 @@ input.remembered-fill,textarea.remembered-fill{ /* dado real guardado, não é e
 .example-hint .ex-tag{ font-style:normal; font-size:var(--fs-xs); font-weight:800; text-transform:uppercase; letter-spacing:.05em; background:var(--surface-2); color:var(--ink-muted); border-radius:var(--r-1); padding:2px 6px; margin-right:6px; }
 
 .alert{ display:flex; gap:8px; align-items:flex-start; padding:10px 14px; border-radius:var(--r-3); font-size:var(--fs-sm); font-weight:600; margin-bottom:10px; }
+.alert svg{ flex:none; }
+/* Hierarquia de estados (F2), do mais leve ao mais forte:
+   info   = informação neutra/contexto (backup, lembretes, factos)  · fundo suave, sem contorno
+   good   = estado normal / concluído                                 · fundo suave, sem contorno
+   warn   = atenção — algo a observar                                 · âmbar suave, contorno fino
+   action = ação necessária — o utilizador deve fazer algo            · âmbar com contorno forte
+   crit   = urgente — só quando a lógica o justifica                  · vermelho com contorno forte */
+.alert.info{ background:var(--info-soft); color:var(--ink); border:1px solid transparent; } .alert.info svg{ color:var(--info); }
+.alert.good{ background:var(--good-soft); color:var(--ink); border:1px solid transparent; } .alert.good svg{ color:var(--good); }
+.alert.warn{ background:var(--warn-soft); color:var(--ink); border:1px solid color-mix(in srgb, var(--warn) 45%, transparent); } .alert.warn svg{ color:var(--warn); }
+.alert.action{ background:var(--warn-soft); color:var(--ink); border:2px solid var(--warn); } .alert.action svg{ color:var(--warn); }
 .alert.crit{ background:var(--crit-soft); color:var(--crit); border:2px solid var(--crit); }
-.alert.warn{ background:var(--warn-soft); color:var(--warn); border:2px solid var(--warn); }
-.alert.good{ background:var(--good-soft); color:var(--good); border:2px solid var(--good); }
-.alert.info{ background:var(--info-soft); color:var(--info); border:2px solid var(--info); }
 
 details.acc{ border:1px solid var(--border); border-radius:var(--r-2); margin-bottom:8px; background:var(--surface); overflow:hidden; }
 details.acc summary{ cursor:pointer; padding:12px 13px; font-weight:700; font-size:var(--fs-md); list-style:none; display:flex; align-items:center; gap:9px; background:var(--surface-2); }
@@ -229,6 +240,8 @@ details.acc[open] summary .car{ transform:rotate(180deg); }
 .vax-badge.done{ background:var(--good-soft); color:var(--good); }
 .vax-badge.pending{ background:var(--warn-soft); color:var(--warn); }
 .vax-badge.soon{ background:var(--crit-soft); color:var(--crit); }
+/* dose futura (ainda não é altura): neutra · agendada: informação · prevista para a idade e por registar: atenção (.pending) */
+.vax-badge.future{ background:var(--surface-2); color:var(--ink-muted); } .vax-badge.scheduled{ background:var(--info-soft); color:var(--info); }
 
 .milestone-band{ border-top:1px solid var(--border); padding:10px 0; }
 .milestone-card{ border-radius:var(--r-5); padding:28px 22px; text-align:center; color:#3d3935; box-shadow:0 8px 24px -10px rgba(0,0,0,.25); }
@@ -240,7 +253,9 @@ details.acc[open] summary .car{ transform:rotate(180deg); }
 .milestone-band h3{ font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.04em; color:var(--ink-muted); margin-bottom:6px; }
 .mi-row{ display:flex; align-items:center; gap:9px; padding:5px 0; font-size:var(--fs-sm); }
 .mi-row .dot{ width:9px; height:9px; border-radius:50%; flex:none; }
-.mi-row.done .dot{ background:var(--good); } .mi-row.pending .dot{ background:var(--warn); }
+.mi-row.done .dot{ background:var(--good); }
+/* marco já esperado para a idade mas ainda não registado: atenção muito leve (só contorno); marco futuro: neutro */
+.mi-row.expected .dot{ background:transparent; border:2px solid var(--warn); } .mi-row.future .dot{ background:transparent; border:2px solid var(--border); } .mi-row.future > span:nth-child(2){ color:var(--ink-muted); }
 .mi-row .d{ margin-left:auto; font-size:var(--fs-xs); color:var(--ink-faint); font-family:'IBM Plex Mono'; }
 
 .chart-wrap{ overflow-x:auto; } .chart-wrap svg{ font-family:'IBM Plex Mono',monospace; }
@@ -323,7 +338,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 .topbar .icon-btn{ background:var(--header-chip-bg); color:var(--header-chip-ink); }
 .icon-btn.on{ background:var(--crit); border-color:var(--crit); color:#fff; animation:pulse 1.2s infinite; }
 @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.55;} }
-.sos-fab{ width:40px; height:40px; border-radius:50%; background:var(--sos); color:var(--on-crit); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; box-shadow:var(--shadow); }
+.sos-fab{ width:40px; height:40px; border-radius:50%; background:var(--sos-fill); color:var(--on-sos-fill); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; box-shadow:var(--shadow); }
 .voice-panel{ position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:flex-end; justify-content:center; z-index:50; }
 @media (min-width:540px){ .voice-panel{ align-items:center; } }
 .voice-card{ background:var(--surface); border-radius:var(--r-4) 18px 0 0; padding:20px; max-width:460px; width:100%; text-align:center; }
@@ -813,12 +828,13 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   ];
 
   const VAX = [
-    {id:"bcg", nome:"BCG", doses:["À nascença"]},
-    {id:"hepb", nome:"Hepatite B", doses:["1ª dose","2ª dose (1 mês)","3ª dose (6 meses)"]},
-    {id:"penta", nome:"Pentavalente (DTPa/IPV/Hib)", doses:["1ª dose (2 meses)","2ª dose (3 meses)","3ª dose (4 meses)","Reforço (6 meses)"]},
-    {id:"rota", nome:"Rotavírus", doses:["1ª dose (2 meses)","2ª dose (3 meses)","3ª dose (4 meses)"]},
-    {id:"pneumo", nome:"Pneumocócica Conjugada", doses:["1ª dose (2 meses)","2ª dose (3 meses)","3ª dose (4 meses)","Reforço (6 meses)"]},
-    {id:"menc", nome:"Meningocócica C", doses:["Dose única (6 meses)"]},
+    // due = idade prevista de cada dose (meses), na mesma ordem das doses — só para o estado visual (futura/prevista)
+    {id:"bcg", nome:"BCG", doses:["À nascença"], due:[0]},
+    {id:"hepb", nome:"Hepatite B", doses:["1ª dose","2ª dose (1 mês)","3ª dose (6 meses)"], due:[0,1,6]},
+    {id:"penta", nome:"Pentavalente (DTPa/IPV/Hib)", doses:["1ª dose (2 meses)","2ª dose (3 meses)","3ª dose (4 meses)","Reforço (6 meses)"], due:[2,3,4,6]},
+    {id:"rota", nome:"Rotavírus", doses:["1ª dose (2 meses)","2ª dose (3 meses)","3ª dose (4 meses)"], due:[2,3,4]},
+    {id:"pneumo", nome:"Pneumocócica Conjugada", doses:["1ª dose (2 meses)","2ª dose (3 meses)","3ª dose (4 meses)","Reforço (6 meses)"], due:[2,3,4,6]},
+    {id:"menc", nome:"Meningocócica C", doses:["Dose única (6 meses)"], due:[6]},
   ];
 
   function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
@@ -1160,7 +1176,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function renderSyncBadge(){
     const el = document.getElementById('syncBanner'); if(!el) return;
     if(dbSyncState==='local' || dbSyncState==='synced'){ el.innerHTML=''; return; }
-    const kind = dbSyncState==='readonly' ? 'warn' : dbSyncState==='error' ? 'warn' : 'info';
+    const kind = dbSyncState==='readonly' ? 'warn' : dbSyncState==='error' ? 'action' : 'info';
     el.innerHTML = `<div style="padding:0 14px;"><div class="alert ${kind}">${ICONS.note} ${syncStatusLabel()}</div></div>`;
   }
 
@@ -1734,14 +1750,14 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         if(days>=0 && days<=14){
           const dd=Math.ceil(days), dateStr=new Date(d.proximaData+"T00:00:00").toLocaleDateString(lang==='en'?'en-GB':lang==='fr'?'fr-FR':'pt-PT');
           let txt;
-          if(lang==='fr') txt = `Vaccin prévu le ${dateStr} (${dd} jours)`;
-          else if(lang==='en') txt = `Vaccine scheduled for ${dateStr} (${dd} days)`;
-          else txt = `Vacina agendada para ${dateStr} (${dd} dias)`;
+          if(lang==='fr') txt = `Vaccin prévu le ${dateStr} (${dd} ${dd===1?'jour':'jours'})`;
+          else if(lang==='en') txt = `Vaccine scheduled for ${dateStr} (${dd} ${dd===1?'day':'days'})`;
+          else txt = `Vacina agendada para ${dateStr} (${dd} ${dd===1?'dia':'dias'})`;
           msgs.push(ICONS.syringe+' '+txt);
         }
       }
     });
-    el.innerHTML = msgs.length ? `<div style="padding:0 14px;">${msgs.map(m=>`<div class="alert warn">${m}</div>`).join('')}</div>` : '';
+    el.innerHTML = msgs.length ? `<div style="padding:0 14px;">${msgs.map(m=>`<div class="alert info">${m}</div>`).join('')}</div>` : '';   // lembretes = informação
   }
 
   /* ============ textos de ajuda "Exemplo" (só visuais — nunca guardados nem contados) ============ */
@@ -1777,6 +1793,14 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     return best;
   }
   // Regras de alerta centralizadas (mesma severidade em todos os ecrãs; limiares atuais, sem novos).
+  // Texto do aviso de poucas fraldas de xixi (Início e Fraldas): tom de atenção, reconhece que o dia ainda decorre,
+  // mantém a orientação sobre sinais de desidratação. A regra (getWetDiaperStatus) não muda.
+  function wetDiaperMsg(n){
+    const one = n===1;
+    return lx(`Até agora, ${n} ${one?'fralda':'fraldas'} de xixi hoje (referência: 6–8 por dia). Se continuar baixo, observa sinais de desidratação.`,
+      `Jusqu'ici, ${n} ${one?'couche mouillée':'couches mouillées'} aujourd'hui (repère : 6–8 par jour). Si cela reste bas, surveille les signes de déshydratation.`,
+      `So far, ${n} wet ${one?'diaper':'diapers'} today (reference: 6–8 a day). If it stays low, watch for signs of dehydration.`);
+  }
   function getWetDiaperStatus(xixiCount){ return (xixiCount>0 && xixiCount<6) ? 'warn' : null; }
   function getFeedGapStatus(lastFeed){ return (lastFeed && (Date.now()-lastFeed.ts) > 4*3600000) ? 'warn' : null; }
   function lastOf(arr){ return arr.slice().sort((a,b)=>b.ts-a.ts)[0]; }
@@ -1829,10 +1853,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     if(wetStatus){
       const lang=(S.settings&&S.settings.lang)||'pt';
       let msg;
-      const one = xixiToday===1;
-      if(lang==='fr') msg = `${xixiToday===0?'Aucune couche mouillée':'Seulement '+xixiToday+' '+(one?'couche mouillée':'couches mouillées')} aujourd'hui — objectif 6–8/jour. Surveille les signes de déshydratation.`;
-      else if(lang==='en') msg = `${xixiToday===0?'No wet diapers':'Only '+xixiToday+' wet '+(one?'diaper':'diapers')} today — target 6–8/day. Watch for dehydration signs.`;
-      else msg = `${xixiToday===0?'Nenhuma fralda':'Só '+xixiToday+' '+(one?'fralda':'fraldas')} de xixi hoje — meta 6–8/dia. Vigiar sinais de desidratação.`;
+      msg = wetDiaperMsg(xixiToday);
       html += `<div class="alert ${wetStatus}">${ICONS.drop} ${msg}</div>`;
     }
     const feedGap = getFeedGapStatus(feed);
@@ -1860,7 +1881,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         <button type="button" class="qa-tile" data-quick="mamadas"><div class="ic feed">${ICONS.bottle}</div><span class="lbl">${tr('Mamada')}</span></button>
         <button type="button" class="qa-tile" data-quick="fraldas"><div class="ic diaper">${ICONS.drop}</div><span class="lbl">${tr('Fralda')}</span></button>
         <button type="button" class="qa-tile${isSleeping?' running':''}" data-quick="sono"><div class="ic sleepc">${ICONS.moon}</div><span class="lbl">${isSleeping?tr('Terminar'):tr('Sono')}</span></button>
-        <button type="button" class="qa-tile" data-quick="med"><div class="ic good">${ICONS.pill}</div><span class="lbl">${tr('Medicação')}</span></button>
+        <button type="button" class="qa-tile" data-quick="med"><div class="ic med">${ICONS.pill}</div><span class="lbl">${tr('Medicação')}</span></button>
       </div>
     </div>`;
     document.getElementById('main').innerHTML = html;
@@ -2584,9 +2605,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     if(wetStatus){
       const lang=(S.settings&&S.settings.lang)||'pt';
       let msg;
-      if(lang==='fr') msg = `Alerte : ${xixi} couches mouillées aujourd'hui — sous l'objectif 6–8/jour. Signe possible de déshydratation.`;
-      else if(lang==='en') msg = `Alert: ${xixi} wet diapers today — below the 6–8/day target. Possible dehydration sign.`;
-      else msg = `Alerta: ${xixi} xixi hoje — abaixo da meta 6–8/dia. Possível sinal de desidratação.`;
+      msg = wetDiaperMsg(xixi);
       html += `<div class="alert ${wetStatus}">${ICONS.drop} ${msg}</div>`;
     }
 
@@ -2653,6 +2672,17 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   }
 
   /* ============ SONO ============ */
+  // Estado do sono de HOJE. O dia ainda está a decorrer: comparar o sono acumulado com a meta de 24 h
+  // faria de qualquer manhã um "crítico". Por isso:
+  //  good     → já atingiu o mínimo da meta
+  //  watch    → já passou ¾ do dia e está a menos de metade do proporcional esperado até agora (atenção, nunca crítico)
+  //  progress → caso contrário: dia em curso, sem juízo
+  function sleepDayState(hoursSoFar, targetLo, elapsedFrac){
+    const f = Math.max(0, Math.min(1, elapsedFrac));
+    if(hoursSoFar >= targetLo) return 'good';
+    if(f >= 0.75 && hoursSoFar < targetLo*f*0.5) return 'watch';
+    return 'progress';
+  }
   function sleepTargetH(months){ if(months<1) return [14,17]; if(months<4) return [14,16]; if(months<6) return [12,15]; if(months<12) return [11,14]; return [10,13]; }
   function renderSono(){
     const isSleeping=!!S.running.sleepStart;
@@ -2661,8 +2691,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const months = ageInfo(S.crianca.dataNascimento).months;
     const [lo,hi]=sleepTargetH(months);
     const hoursToday = todayMins/60;
-    const status = hoursToday>=lo ? (hoursToday<=hi+2?'good':'good') : (hoursToday>=lo-2?'warn':'crit');
-    const statusLabel = `<span class="status-dot ${status}" aria-hidden="true"></span>`+(status==='good'?tr('OK'):status==='warn'?tr('BAIXO'):tr('CRÍTICO'));
+    const dayState = sleepDayState(hoursToday, lo, (Date.now()-t0)/86400000);
+    const statusDot = dayState==='good' ? 'good' : dayState==='watch' ? 'warn' : 'neutral';
+    const statusLabel = `<span class="status-dot ${statusDot}" aria-hidden="true"></span>`+(dayState==='good'?lx('Na meta','Objectif atteint','On target'):dayState==='watch'?lx('A observar','À surveiller','Keep an eye'):lx('Dia em curso','Journée en cours','Day in progress'));
     const withQual = S.sono.filter(l=>typeof l.qualidade==='number' && l.qualidade>0);
     const avgQual = withQual.length ? (withQual.reduce((s,l)=>s+l.qualidade,0)/withQual.length).toFixed(1) : '—';
     const days=last7();
@@ -3071,18 +3102,29 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 
   /* ============ DESENVOLVIMENTO ============ */
   function renderDesenv(){
-    let allDone=true, totalDone=0, totalItems=0;
+    let allDone=true, totalDone=0, totalItems=0, relItems=0, relDone=0;
     const lang=(S.settings&&S.settings.lang)||'pt';
+    const dob=S.crianca.dataNascimento, ageM = dob ? ageInfo(dob).months : null;
     const bands = MILESTONE_BANDS.map(band=>{
+      const start = parseInt(band.band,10);                 // "0-1 mês" → 0, "4-6 meses" → 4
+      const future = ageM!=null && start > ageM;            // ainda não é altura: neutro
       const rows = band.items.map(item=>{
         const key = band.band+"|"+item;
         const done = S.desenvolvimento.done[key];
         totalItems++; if(done) totalDone++; else allDone=false;
-        return `<div class="mi-row ${done?'done':'pending'}"><span class="dot"></span><span>${tr(item)}</span>${done?`<span class="d">${done}</span>`:`<span class="d">${tr('esperado')}</span>`}${done?`<button class="log-del" data-card-mi="${key}" type="button" style="margin-left:4px;" title="${tr('Ver cartão')}" aria-label="${tr('Ver cartão')}">${ICONS.card}</button>`:''}<button class="log-del" data-toggle-mi="${key}" type="button" style="margin-left:4px;" aria-label="${done?lx('Desmarcar marco','Décocher l\'étape','Unmark milestone'):lx('Marcar como alcançado','Marquer comme atteint','Mark as reached')}" title="${done?lx('Desmarcar marco','Décocher l\'étape','Unmark milestone'):lx('Marcar como alcançado','Marquer comme atteint','Mark as reached')}">${done?ICONS.undo:ICONS.check}</button></div>`;
+        if(!future){ relItems++; if(done) relDone++; }
+        const state = done ? 'done' : future ? 'future' : 'expected';
+        const right = done ? done : future ? lx(`${start}+ meses`,`${start}+ mois`,`${start}+ months`) : tr('esperado');
+        return `<div class="mi-row ${state}"><span class="dot"></span><span>${tr(item)}</span><span class="d">${right}</span>${done?`<button class="log-del" data-card-mi="${key}" type="button" style="margin-left:4px;" title="${tr('Ver cartão')}" aria-label="${tr('Ver cartão')}">${ICONS.card}</button>`:''}<button class="log-del" data-toggle-mi="${key}" type="button" style="margin-left:4px;" aria-label="${done?lx('Desmarcar marco','Décocher l\'étape','Unmark milestone'):lx('Marcar como alcançado','Marquer comme atteint','Mark as reached')}" title="${done?lx('Desmarcar marco','Décocher l\'étape','Unmark milestone'):lx('Marcar como alcançado','Marquer comme atteint','Mark as reached')}">${done?ICONS.undo:ICONS.check}</button></div>`;
       }).join('');
       return `<div class="milestone-band"><h3>${tr(band.band)}</h3>${rows}</div>`;
     }).join('');
-    const progressTxt = lang==='fr' ? `${totalDone} sur ${totalItems} étapes atteintes pour l'instant.` : lang==='en' ? `${totalDone} of ${totalItems} milestones reached so far.` : `${totalDone} de ${totalItems} marcos alcançados até agora.`;
+    const later = totalItems-relItems;
+    const progressTxt = ageM==null
+      ? (lang==='fr' ? `${totalDone} sur ${totalItems} étapes notées pour l'instant.` : lang==='en' ? `${totalDone} of ${totalItems} milestones noted so far.` : `${totalDone} de ${totalItems} marcos registados até agora.`)
+      : lx(`${relDone} de ${relItems} marcos habituais até esta idade estão registados${later?` · ${later} são para mais tarde`:''}. Cada criança tem o seu ritmo.`,
+           `${relDone} sur ${relItems} étapes habituelles à cet âge sont notées${later?` · ${later} viendront plus tard`:''}. Chaque enfant a son rythme.`,
+           `${relDone} of ${relItems} milestones usual by this age are noted${later?` · ${later} come later`:''}. Every child has their own pace.`);
     document.getElementById('main').innerHTML = `
       <div class="alert ${allDone?'good':'info'}">${ICONS.brain} ${allDone?tr('Desenvolvimento normal para a idade — tudo no tempo esperado.'):progressTxt}</div>
       <div class="card">${bands}</div>`;
@@ -3100,19 +3142,34 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   }
 
   /* ============ VACINAÇÃO ============ */
+  function vaxDueTxt(n){ return lx(`${n} ${n===1?'dose prevista':'doses previstas'} para a idade ainda por registar — confirma no boletim de vacinas.`,
+    `${n} ${n===1?'dose prévue':'doses prévues'} pour l'âge pas encore ${n===1?'notée':'notées'} — vérifie le carnet de vaccination.`,
+    `${n} ${n===1?'dose':'doses'} due for this age not logged yet — check the vaccination record.`); }
+  function vaxOkTxt(m, next){ if(m==null) return lx('Indica a data de nascimento no Perfil para ver o calendário por idade.','Indique la date de naissance dans le Profil pour voir le calendrier par âge.','Add the date of birth in Profile to see the schedule by age.');
+    return lx(`Em dia para a idade.${next!=null?` Próximas doses aos ${next} meses.`:''}`, `À jour pour l'âge.${next!=null?` Prochaines doses à ${next} mois.`:''}`, `Up to date for this age.${next!=null?` Next doses at ${next} months.`:''}`); }
   function vaxRec(key){ S.vacinacao.doses = S.vacinacao.doses||{}; if(!S.vacinacao.doses[key]) S.vacinacao.doses[key]={done:null,pais:'',reacao:'',proximaData:''}; return S.vacinacao.doses[key]; }
   function renderVacinas(){
-    const months = ageInfo(S.crianca.dataNascimento).months;
-    let complete=true;
+    const dob=S.crianca.dataNascimento, months = dob ? ageInfo(dob).months : null;
+    let complete=true, dueCount=0, nextDue=null;
+    const fmtShort = iso => new Date(iso+'T12:00:00').toLocaleDateString(localeTag(), {day:'2-digit', month:'2-digit'});
     const groups = VAX.map(v=>{
       const doses = v.doses.map((label,i)=>{
         const key=v.id+'-'+i; const rec=vaxRec(key);
         if(!rec.done) complete=false;
+        // Estado visual: administrada · agendada (data futura) · futura (ainda não é altura) · prevista para a idade e por registar.
+        // Não afirmamos "atrasada": os calendários variam e a dose pode só não ter sido registada.
+        const due = v.due ? v.due[i] : null;
+        let vState='pending', vLbl=tr('pendente');
+        if(rec.done){ vState='done'; vLbl=rec.done; }
+        else if(rec.proximaData && rec.proximaData>=todayISO()){ vState='scheduled'; vLbl=lx('Agendada ','Prévue ','Scheduled ')+fmtShort(rec.proximaData); }
+        else if(months==null || due==null){ vState='future'; }
+        else if(due>months){ vState='future'; vLbl= due===0 ? lx('À nascença','À la naissance','At birth') : lx(`Aos ${due} meses`,`À ${due} mois`,`At ${due} months`); if(nextDue==null||due<nextDue) nextDue=due; }
+        else { vState='pending'; vLbl=lx('Prevista','Prévue','Due'); dueCount++; }
         const extra = rec.done
           ? `<div class="form-row" style="margin-top:4px;"><div style="flex:1;"><input type="text" data-vaxPais="${key}" placeholder="${tr('País')}" value="${rec.pais||''}"></div><div style="flex:1;"><input type="text" data-vaxReacao="${key}" placeholder="${tr('Reação')}" value="${rec.reacao||''}"></div></div>`
           : `<div class="form-row" style="margin-top:4px;"><div style="flex:1;"><label style="font-size:var(--fs-xs);">${tr('Data agendada')}</label><input type="date" data-vaxData="${key}" value="${rec.proximaData||''}"></div></div>`;
         return `<div class="vax-dose" style="flex-direction:column;align-items:stretch;">
-          <div style="display:flex;align-items:center;gap:8px;"><span class="lbl">${tr(label)}</span><button class="vax-badge ${rec.done?'done':'pending'}" data-vax="${key}">${rec.done? rec.done : tr('pendente')}</button></div>
+          <div style="display:flex;align-items:center;gap:8px;"><span class="lbl">${tr(label)}</span><button class="vax-badge ${vState}" data-vax="${key}" title="${rec.done?lx('Desmarcar','Décocher','Unmark'):lx('Marcar como administrada','Marquer comme administré','Mark as given')}">${vLbl}</button></div>
           ${extra}
         </div>`;
       }).join('');
@@ -3121,7 +3178,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const lang=(S.settings&&S.settings.lang)||'pt';
     const completeTxt = lang==='fr' ? `À jour — tous les vaccins pour ${months} mois sont complets.` : lang==='en' ? `Up to date — all vaccines for ${months} months are complete.` : `Em dia — todas as vacinas para os ${months} meses estão completas.`;
     document.getElementById('main').innerHTML = `
-      <div class="alert ${complete?'good':'warn'}">${ICONS.syringe} ${complete?completeTxt:tr('Há doses pendentes — verifica o calendário abaixo.')}</div>
+      <div class="alert ${complete?'good':dueCount?'warn':months==null?'info':'good'}">${ICONS.syringe} ${complete?completeTxt:dueCount?vaxDueTxt(dueCount):vaxOkTxt(months,nextDue)}</div>
       <div class="card">${groups}
         <button class="btn wide" id="saveVacinas" type="button" style="margin-top:10px;">${ICONS.check} ${tr('Guardar')}</button>
       </div>
@@ -3682,7 +3739,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <h2 style="margin:0 0 8px;">${lx('Importar dados?','Importer les données ?','Import data?')}</h2>
       <div class="rec-line"><span>${lx('No ficheiro','Dans le fichier','In the file')}</span><b>${pl(nNew,'registo','registos','enregistrement','enregistrements','record','records')} · ${names}</b></div>
       <div class="rec-line"><span>${lx('Neste dispositivo agora','Sur cet appareil','On this device now')}</span><b>${pl(nCur,'registo','registos','enregistrement','enregistrements','record','records')}</b></div>
-      <div class="alert warn" style="margin-top:10px;">${ICONS.note} ${lx('Os dados atuais serão SUBSTITUÍDOS pelos do ficheiro. Antes disso é guardada automaticamente uma cópia de segurança dos dados atuais neste dispositivo.','Les données actuelles seront REMPLACÉES. Une copie de sécurité est enregistrée automatiquement avant.','Current data will be REPLACED. A backup of the current data is saved automatically first.')}</div>
+      <div class="alert action" style="margin-top:10px;">${ICONS.note} ${lx('Os dados atuais serão SUBSTITUÍDOS pelos do ficheiro. Antes disso é guardada automaticamente uma cópia de segurança dos dados atuais neste dispositivo.','Les données actuelles seront REMPLACÉES. Une copie de sécurité est enregistrée automatiquement avant.','Current data will be REPLACED. A backup of the current data is saved automatically first.')}</div>
       <div class="btn-row" style="margin-top:12px;">
         <button class="btn ghost wide" id="impCancel" type="button">${tr('Cancelar')}</button>
         <button class="btn crit wide" id="impOk" type="button">${lx('Substituir e importar','Remplacer et importer','Replace and import')}</button>

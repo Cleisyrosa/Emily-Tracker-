@@ -136,6 +136,7 @@ main.fade-in{ animation:fadeIn .22s ease; }
 .field-hint{ display:flex; align-items:center; gap:var(--space-1); margin:var(--space-1) 0 0; font-size:var(--fs-xs); color:var(--ink-muted); } .field-hint svg{ width:14px; height:14px; }
 .mais-group{ font-size:var(--fs-xs); font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-muted); margin:var(--space-3) 0 var(--space-1); } .mais-group:first-child{ margin-top:0; }
 .qm-row{ display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3) 0; border-top:1px solid var(--border); } .qm-row:first-child{ border-top:none; } .qm-row .body{ flex:1; min-width:0; }
+.stat-link{ cursor:pointer; } .stat-link:hover{ border-color:var(--brand-text); }
 .stat .lbl{ font-size:var(--fs-xs); letter-spacing:.03em; text-transform:uppercase; color:var(--ink-faint); font-weight:700; }
 .stat .val{ font-family:'Baloo 2'; font-size:var(--fs-lg); }
 .stat .sub{ font-size:var(--fs-xs); color:var(--ink-muted); }
@@ -1454,12 +1455,10 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     }));
     // Sair sem escolher nada: tocar no fundo escuro (fora do cartão) ou no ✕.
     const panel=document.getElementById('maisPanel');
-    panel.addEventListener('click', e=>{ if(e.target===panel) closeMaisMenu(); });
+    /* toque fora: regra comum */
     document.getElementById('maisClose').addEventListener('click', closeMaisMenu);
   }
-  function closeMaisMenu(){ if(document.getElementById('maisPanel')) closeOverlay(); }
-  // ESC no computador fecha o menu "Mais" (só este menu — os outros painéis mantêm o comportamento atual).
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeMaisMenu(); });
+  function closeMaisMenu(){ if(document.getElementById('maisPanel')) closeOverlay(); }   // Escape/Back: padrão comum dos diálogos
   function renderHeader(){
     const c=S.crianca;
     document.getElementById('childName').textContent = c.nome||"Bebé";
@@ -1480,10 +1479,103 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     }));
     document.getElementById('addChildBtn').addEventListener('click', addChildFlow);
   }
-  function showOverlay(html){ document.getElementById('voiceOverlay').innerHTML = html; }
-  function closeOverlay(){ document.getElementById('voiceOverlay').innerHTML=''; }
+  /* ---- Diálogos (F4): um só padrão para todos os painéis sobrepostos ----
+     • role="dialog" (ou "alertdialog" nas confirmações), aria-modal e nome acessível (primeiro título/parágrafo)
+     • foco inicial razoável (Cancelar nas confirmações, senão o primeiro botão), preso dentro do diálogo (Tab)
+     • Escape, Back do browser/Android e toque fora "dispensam" o diálogo, como o seu botão Cancelar/Fechar
+     • toque fora NÃO fecha confirmações nem diálogos com campos por preencher (evita perder o que foi escrito)
+     • ao fechar, o foco volta ao elemento que abriu o diálogo
+     • Back: abrir um diálogo acrescenta uma entrada ao histórico; o 1.º Back fecha o diálogo, o 2.º segue o normal */
+  let overlayOpener=null, overlayHist=false, ignorePop=false, popping=false;
+  const overlayEl = () => document.getElementById('voiceOverlay');
+  const overlayOpen = () => !!(overlayEl() && overlayEl().firstElementChild);
+  const overlayCard = () => overlayEl() && overlayEl().querySelector('.voice-card');
+  const FOCUSABLE = 'button:not([disabled]),[href],input:not([type=hidden]):not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])';
+  function showOverlay(html){
+    const ov=overlayEl(); const wasOpen=overlayOpen();
+    const prevFocus=document.activeElement, prevId=prevFocus&&ov.contains(prevFocus)?prevFocus.id:'';
+    if(!wasOpen){ overlayOpener = (prevFocus && prevFocus!==document.body && !ov.contains(prevFocus)) ? prevFocus : null; }
+    ov.innerHTML = html;
+    const card=overlayCard();
+    if(card){
+      if(!card.getAttribute('role')) card.setAttribute('role', card.hasAttribute('data-confirm') ? 'alertdialog' : 'dialog');
+      card.setAttribute('aria-modal','true');
+      if(!card.getAttribute('aria-label') && !card.getAttribute('aria-labelledby')){
+        const h=card.querySelector('h1,h2,h3,p'); if(h){ if(!h.id) h.id='dlgTitle'; card.setAttribute('aria-labelledby', h.id); }
+      }
+      if(!card.hasAttribute('tabindex')) card.setAttribute('tabindex','-1');
+      if(!ov.contains(document.activeElement) || document.activeElement===document.body){
+        const f = (prevId && card.querySelector('#'+CSS.escape(prevId))) || card.querySelector('[data-autofocus],#mCancel') || card.querySelector('button:not([disabled])') || card;
+        try{ f.focus({preventScroll:true}); }catch(e){}
+      }
+    }
+    if(!overlayHist){ try{ history.pushState({emilyOverlay:true}, ''); overlayHist=true; }catch(e){} }
+  }
+  function closeOverlay(){
+    const ov=overlayEl(); if(!ov) return;
+    if(typeof recognition!=='undefined' && recognition && listening){ try{ recognition.stop(); }catch(e){} }
+    const had=overlayOpen(); ov.innerHTML='';
+    const op=overlayOpener; overlayOpener=null;
+    if(had && op && document.contains(op)){ try{ op.focus({preventScroll:true}); }catch(e){} }
+    // fechado pela UI: retira a entrada de histórico do diálogo (a não ser que outro diálogo abra logo a seguir)
+    if(overlayHist && !popping){ setTimeout(()=>{ if(!overlayOpen() && overlayHist){ overlayHist=false; ignorePop=true; history.back(); } }, 0); }
+  }
+  // Toque fora: só em diálogos sem risco (não confirmações, não formulários com campos de texto).
+  function overlayBackdropAllowed(){
+    const card=overlayCard(); if(!card) return true;
+    if(card.hasAttribute('data-confirm') || card.getAttribute('role')==='alertdialog') return false;
+    return !card.querySelector('input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]),textarea,select');
+  }
+  // "Dispensar" = o mesmo que o botão Cancelar/Fechar do diálogo (mantém a lógica própria de cada um).
+  function dismissOverlay(){
+    const card=overlayCard(); if(!card){ closeOverlay(); return; }
+    const btn = card.querySelector('[data-dismiss],#mCancel,#mClose,#closeSettings,#vCancel,#mCardClose,[id$="Cancel"],[id$="Close"],[id$="cancel"],[id$="close"]');
+    if(btn) btn.click(); else closeOverlay();
+    if(overlayOpen() && card===overlayCard() && !btn) closeOverlay();
+  }
+  function backdropDismiss(){ if(overlayBackdropAllowed()) dismissOverlay(); }
+  document.getElementById('voiceOverlay').addEventListener('click', e=>{ if(e.target.classList && e.target.classList.contains('voice-panel') && overlayOpen()) backdropDismiss(); });
+  document.addEventListener('keydown', e=>{
+    if(!overlayOpen()) return;
+    if(e.key==='Escape'){ e.preventDefault(); dismissOverlay(); return; }
+    if(e.key==='Tab'){
+      const card=overlayCard(); if(!card) return;
+      const items=[...card.querySelectorAll(FOCUSABLE)].filter(x=>x.offsetParent!==null);
+      if(!items.length){ e.preventDefault(); card.focus(); return; }
+      const first=items[0], last=items[items.length-1];
+      if(!card.contains(document.activeElement)){ e.preventDefault(); first.focus(); }
+      else if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+    }
+  });
+  window.addEventListener('popstate', ()=>{
+    if(ignorePop){ ignorePop=false; return; }
+    if(!overlayOpen()) return;
+    overlayHist=false; popping=true;
+    try{ dismissOverlay(); } finally{ popping=false; }
+    if(overlayOpen() && !overlayHist){ try{ history.pushState({emilyOverlay:true}, ''); overlayHist=true; }catch(e){} }   // ex.: Cancelar de "editar" volta ao detalhe
+  });
+  // Tema e idioma redesenham a tela: guarda o que estava escrito nos formulários abertos e repõe-no depois
+  // (seleções .seg, valores, caixas de verificação e marcação de erro). Não grava nada por si.
+  function withFormState(fn){
+    const main=document.getElementById('main');
+    const fields = el => [...el.querySelectorAll('input,select,textarea')].filter(x=>x.type!=='file' && x.type!=='hidden');
+    const before = main ? fields(main).map((x,i)=>({id:x.id, i, type:x.type, v:x.value, c:x.checked})) : [];
+    const segs = main ? [...main.querySelectorAll('.seg[id]')].map(sg=>{ const on=sg.querySelector('button.on'); return {id:sg.id, v:on?on.dataset.v:null}; }) : [];
+    const errs = main ? [...main.querySelectorAll('.input-err')].map(x=>x.id).filter(Boolean) : [];
+    fn();
+    const m2=document.getElementById('main'); if(!m2 || !before.length) return;
+    segs.forEach(sg=>{ if(sg.v==null) return; const b=m2.querySelector(`#${CSS.escape(sg.id)} button[data-v="${sg.v}"]`); if(b && !b.classList.contains('on')) b.click(); });
+    const after=fields(m2);
+    before.forEach(f=>{
+      const el = f.id ? m2.querySelector('#'+CSS.escape(f.id)) : (after.length===before.length ? after[f.i] : null);
+      if(!el || el.type!==f.type) return;
+      if(f.type==='checkbox'||f.type==='radio') el.checked=f.c; else if(el.value!==f.v) el.value=f.v;
+    });
+    errs.forEach(id=>{ const el=m2.querySelector('#'+CSS.escape(id)); if(el) el.classList.add('input-err'); });
+  }
   function showConfirm(message, onYes){
-    showOverlay(`<div class="voice-panel"><div class="voice-card">
+    showOverlay(`<div class="voice-panel"><div class="voice-card" data-confirm>
       <p>${message}</p>
       <div class="btn-row" style="margin-top:12px;">
         <button class="btn ghost wide" id="mCancel" type="button">${tr('Cancelar')}</button>
@@ -1494,7 +1586,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     document.getElementById('mOk').addEventListener('click', ()=>{ closeOverlay(); onYes(); });
   }
   function showAlert(message){
-    showOverlay(`<div class="voice-panel"><div class="voice-card"><p>${message}</p><button class="btn wide" id="mOk" type="button">${tr('OK')}</button></div></div>`);
+    showOverlay(`<div class="voice-panel"><div class="voice-card"><p>${message}</p><button class="btn wide" id="mOk" type="button" data-dismiss>${tr('OK')}</button></div></div>`);
     document.getElementById('mOk').addEventListener('click', closeOverlay);
   }
 
@@ -1643,13 +1735,12 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function startVoice(){
     const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if(!Rec) return;
-    const overlay = document.getElementById('voiceOverlay');
-    overlay.innerHTML = `<div class="voice-panel"><div class="voice-card">
+    showOverlay(`<div class="voice-panel"><div class="voice-card">
       <h2>${ICONS.mic} ${tr('A ouvir…')}</h2>
       <p class="muted">${tr('Diz, por exemplo: "mamada biberão 120 mililitros", "fralda xixi", "começou a dormir", "acordou".')}</p>
       <div class="voice-transcript" id="vTranscript">…</div>
       <button class="btn ghost wide" id="vCancel" type="button">${tr('Cancelar')}</button>
-    </div></div>`;
+    </div></div>`);
     document.getElementById('vCancel').addEventListener('click', stopVoice);
     recognition = new Rec();
     recognition.lang = 'pt-PT'; recognition.continuous=false; recognition.interimResults=true;
@@ -1670,7 +1761,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     try{ recognition.start(); listening=true; }
     catch(err){ closeOverlay(); showAlert(tr('Não foi possível iniciar o microfone aqui.')); }
   }
-  function stopVoice(){ if(recognition && listening){ try{recognition.stop();}catch(e){} } const overlay=document.getElementById('voiceOverlay'); if(overlay) overlay.innerHTML=''; }
+  function stopVoice(){ if(recognition && listening){ try{recognition.stop();}catch(e){} } closeOverlay(); }
   function parseVoice(text){
     const low = text.toLowerCase();
     const num = (low.match(/\d+/)||[])[0];
@@ -1695,9 +1786,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       toast = tr('Não percebi — tenta novamente.');
     }
     stopVoice();
-    const overlay=document.getElementById('voiceOverlay');
-    overlay.innerHTML = `<div class="voice-panel"><div class="voice-card"><p>${toast}</p><button class="btn wide" id="vOk" type="button">OK</button></div></div>`;
-    document.getElementById('vOk').addEventListener('click', ()=>{ overlay.innerHTML=''; render(); });
+    showOverlay(`<div class="voice-panel"><div class="voice-card"><p>${toast}</p><button class="btn wide" id="vOk" type="button" data-dismiss>OK</button></div></div>`);
+    document.getElementById('vOk').addEventListener('click', ()=>{ closeOverlay(); render(); });
   }
 
   function medDueSoon(m){
@@ -1870,7 +1960,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <div class="stat"><div class="ic feed">${ICONS.bottle}</div><div class="lbl">${tr('Última refeição')}</div><div class="val">${feed?agoStr(feed.ts):'—'}</div><div class="sub">${feed?feedLabel(feed):tr('sem registos')}</div></div>
       <div class="stat"><div class="ic diaper">${ICONS.drop}</div><div class="lbl">${tr('Última fralda')}</div><div class="val">${diaper?agoStr(diaper.ts):'—'}</div><div class="sub">${diaper?diaperLabel(diaper):tr('sem registos')}</div></div>
       <div class="stat"><div class="ic sleepc">${ICONS.moon}</div><div class="lbl">${isSleeping?tr('A dormir há'):tr('Sono hoje')}</div><div class="val">${isSleeping? durStr((Date.now()-S.running.sleepStart)/60000) : durStr(sleepMinsToday)}</div><div class="sub">${isSleeping?tr('em curso'):(lastSleep?(tr('último:')+' '+agoStr(lastSleep.fim)):tr('sem registos'))}</div></div>
-      <div class="stat"><div class="ic growth">${ICONS.chart}</div><div class="lbl">${tr('Peso atual')}</div><div class="val">${peso?fmtNum(peso,3)+' kg':'—'}</div><div class="sub">${tr('ver em Evolução')}</div></div>
+      <div class="stat stat-link" role="button" tabindex="0" data-go="evolucao"><div class="ic growth">${ICONS.chart}</div><div class="lbl">${tr('Peso atual')}</div><div class="val">${peso?fmtNum(peso,3)+' kg':'—'}</div><div class="sub">${tr('ver em Evolução')}</div></div>
     </div>
 
     <div class="card"><div class="section-label">${tr('Hoje')}</div>
@@ -1894,6 +1984,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     document.getElementById('main').innerHTML = html;
     const dn=document.getElementById('dismissDemoNotice');
     if(dn) dn.addEventListener('click', ()=>{ delete S.settings.demoCleanupNotice; save(); render(); });
+    document.querySelectorAll('#main [data-go]').forEach(el=>el.addEventListener('click', ()=>{ activeTab=el.dataset.go; openForm=null; editId=null; render(); }));
     document.querySelectorAll('[data-quick]').forEach(t=>t.addEventListener('click', ()=>{
       const dest=t.dataset.quick;
       if(dest==='sono' && isSleeping){ stopSleep(); return; }
@@ -1914,6 +2005,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function pageTitle(txt, icon){ return `<h2 class="page-title">${icon||''}<span>${txt}</span></h2>`; }
   function renderPerfil(){
     const c=S.crianca;
+    // Ao redesenhar o Perfil (depois de acrescentar/editar/remover), os acordeões que estavam abertos continuam abertos.
+    const prevAcc = document.querySelector('#main details.acc') ? [...document.querySelectorAll('#main details.acc')].map(d=>d.open) : null;
     const doseCalcPeso = latestMeasure('peso') ? latestMeasure('peso').valor : null;
     let html = `${pageTitle(lx('Perfil','Profil','Profile'))}<div class="card"><div class="photo-row">
         <div class="photo-box" id="photoBox">${c.foto?`<img src="${c.foto}">`:ICONS.camera}</div>
@@ -2131,6 +2224,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     </details>`;
 
     document.getElementById('main').innerHTML = html;
+    if(prevAcc){ const now=[...document.querySelectorAll('#main details.acc')]; if(now.length===prevAcc.length) now.forEach((d,i)=>{ d.open=prevAcc[i]; }); }
     renderGallery();
 
     function wireSectionSave(id){
@@ -2179,13 +2273,15 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       c.condicoesCronicas=c.condicoesCronicas||[]; c.condicoesCronicas.push({id:uid(), nome, nota:document.getElementById('newCronicaNota').value.trim()});
       save(); renderPerfil();
     });
-    document.querySelectorAll('[data-rmCronica]').forEach(b=>b.addEventListener('click', ()=>{ c.condicoesCronicas=c.condicoesCronicas.filter(a=>a.id!==b.dataset.rmcronica); save(); renderPerfil(); }));
+    document.querySelectorAll('[data-rmCronica]').forEach(b=>b.addEventListener('click', ()=>{ const it=(c.condicoesCronicas||[]).find(a=>a.id===b.dataset.rmcronica); if(!it) return;
+      showConfirm(lx(`Apagar a condição crónica «${it.nome}»? Deixa de aparecer no Perfil e na ficha de emergência.`,`Supprimer la maladie chronique « ${it.nome} » ? Elle n'apparaîtra plus dans le Profil ni dans la fiche d'urgence.`,`Delete the chronic condition "${it.nome}"? It will no longer appear in Profile or on the emergency sheet.`), ()=>{ c.condicoesCronicas=c.condicoesCronicas.filter(a=>a.id!==b.dataset.rmcronica); save(); renderPerfil(); }); }));
     document.getElementById('addDefic').addEventListener('click', ()=>{
       const nome=document.getElementById('newDefic').value.trim(); if(!nome) return;
       c.deficiencias=c.deficiencias||[]; c.deficiencias.push({id:uid(), nome, nota:document.getElementById('newDeficNota').value.trim()});
       save(); renderPerfil();
     });
-    document.querySelectorAll('[data-rmDefic]').forEach(b=>b.addEventListener('click', ()=>{ c.deficiencias=c.deficiencias.filter(a=>a.id!==b.dataset.rmdefic); save(); renderPerfil(); }));
+    document.querySelectorAll('[data-rmDefic]').forEach(b=>b.addEventListener('click', ()=>{ const it=(c.deficiencias||[]).find(a=>a.id===b.dataset.rmdefic); if(!it) return;
+      showConfirm(lx(`Apagar «${it.nome}»? Deixa de aparecer no Perfil e na ficha de emergência.`,`Supprimer « ${it.nome} » ? Cela n'apparaîtra plus dans le Profil ni dans la fiche d'urgence.`,`Delete "${it.nome}"? It will no longer appear in Profile or on the emergency sheet.`), ()=>{ c.deficiencias=c.deficiencias.filter(a=>a.id!==b.dataset.rmdefic); save(); renderPerfil(); }); }));
     document.getElementById('addTrad').addEventListener('click', ()=>{
       const nome=document.getElementById('newTradNome').value.trim(); if(!nome) return;
       c.medicacoes.push({id:uid(), nome, dose:document.getElementById('newTradUso').value.trim(), intervaloHoras:24, maxVezesDia:1, horario:'', notificacoes:false, tipo:'tradicional'});
@@ -2250,13 +2346,15 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       c.alergiasMed.push({id:uid(), nome, reacao:document.getElementById('newAmReacao').value.trim(), gravidade:'Moderada', alternativa:document.getElementById('newAmAlt').value.trim(), status:'ATIVA'});
       save(); renderPerfil();
     });
-    document.querySelectorAll('[data-rmAlergiaMed]').forEach(b=>b.addEventListener('click', ()=>{ c.alergiasMed=c.alergiasMed.filter(a=>a.id!==b.dataset.rmalergiamed); save(); renderPerfil(); }));
+    document.querySelectorAll('[data-rmAlergiaMed]').forEach(b=>b.addEventListener('click', ()=>{ const it=(c.alergiasMed||[]).find(a=>a.id===b.dataset.rmalergiamed); if(!it) return;
+      showConfirm(lx(`Apagar a alergia a «${it.nome}»? Deixa de ser verificada ao registar doses e sai da ficha de emergência.`,`Supprimer l'allergie à « ${it.nome} » ? Elle ne sera plus vérifiée lors de l'enregistrement des doses et disparaîtra de la fiche d'urgence.`,`Delete the allergy to "${it.nome}"? It will no longer be checked when logging doses and will be removed from the emergency sheet.`), ()=>{ c.alergiasMed=c.alergiasMed.filter(a=>a.id!==b.dataset.rmalergiamed); save(); renderPerfil(); }); }));
     document.getElementById('addIntol').addEventListener('click', ()=>{
       const nome=document.getElementById('newInNome').value.trim(); if(!nome) return;
       c.intolerancias.push({id:uid(), nome, manifestacao:document.getElementById('newInManif').value.trim(), gravidade:'Moderada', consequencia:document.getElementById('newInCons').value.trim(), status:'ATIVA'});
       save(); renderPerfil();
     });
-    document.querySelectorAll('[data-rmIntol]').forEach(b=>b.addEventListener('click', ()=>{ c.intolerancias=c.intolerancias.filter(a=>a.id!==b.dataset.rmintol); save(); renderPerfil(); }));
+    document.querySelectorAll('[data-rmIntol]').forEach(b=>b.addEventListener('click', ()=>{ const it=(c.intolerancias||[]).find(a=>a.id===b.dataset.rmintol); if(!it) return;
+      showConfirm(lx(`Apagar a intolerância a «${it.nome}»? Deixa de aparecer no Perfil e na ficha de emergência.`,`Supprimer l'intolérance à « ${it.nome} » ? Elle n'apparaîtra plus dans le Profil ni dans la fiche d'urgence.`,`Delete the intolerance to "${it.nome}"? It will no longer appear in Profile or on the emergency sheet.`), ()=>{ c.intolerancias=c.intolerancias.filter(a=>a.id!==b.dataset.rmintol); save(); renderPerfil(); }); }));
     document.getElementById('addMed').addEventListener('click', ()=>{
       clearFieldErrors(document.getElementById('accMed'));
       const nome=document.getElementById('newMedNome').value.trim();
@@ -2267,7 +2365,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         horario:document.getElementById('newMedHorario').value, notificacoes:document.getElementById('newMedNotif').checked, tipo:'receitado'});
       save(); rerenderMeds();
     });
-    document.querySelectorAll('[data-rmMed]').forEach(b=>b.addEventListener('click', ()=>{ c.medicacoes=c.medicacoes.filter(m=>m.id!==b.dataset.rmmed); save(); renderPerfil(); }));
+    document.querySelectorAll('[data-rmMed]').forEach(b=>b.addEventListener('click', ()=>{ const it=(c.medicacoes||[]).find(m=>m.id===b.dataset.rmmed); if(!it) return;
+      showConfirm(lx(`Apagar «${it.nome}» da medicação? A dose, o intervalo e o máximo diário configurados deixam de existir. As doses já registadas não são apagadas.`,`Supprimer « ${it.nome} » des médicaments ? La dose, l'intervalle et le maximum par jour configurés seront supprimés. Les doses déjà enregistrées ne sont pas effacées.`,`Delete "${it.nome}" from medication? Its dose, interval and daily maximum will be removed. Doses already logged are not deleted.`), ()=>{ c.medicacoes=c.medicacoes.filter(m=>m.id!==b.dataset.rmmed); save(); renderPerfil(); }); }));
     document.querySelectorAll('[data-giveDose]').forEach(b=>b.addEventListener('click', ()=>{
       const med = c.medicacoes.find(m=>m.id===b.dataset.givedose);
       giveDose(med);
@@ -2304,7 +2403,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <button class="btn ghost wide" id="doseCancel" type="button" style="margin-top:8px;">${tr('Cancelar')}</button>
     </div></div>`);
     const panel=document.getElementById('dosePanel');
-    panel.addEventListener('click', e=>{ if(e.target===panel) closeOverlay(); });
+    /* toque fora: regra comum em overlayBackdropAllowed() */
     document.getElementById('doseCancel').addEventListener('click', closeOverlay);
     document.getElementById('doseSave').addEventListener('click', ()=>{
       clearFieldErrors(panel);
@@ -2338,7 +2437,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <button class="btn ghost wide" id="meCancel" type="button" style="margin-top:8px;">${tr('Cancelar')}</button>
     </div></div>`);
     const panel=document.getElementById('medEditPanel');
-    panel.addEventListener('click', e=>{ if(e.target===panel) closeOverlay(); });
+    /* toque fora: regra comum em overlayBackdropAllowed() */
     document.getElementById('meCancel').addEventListener('click', closeOverlay);
     document.getElementById('meSave').addEventListener('click', ()=>{
       clearFieldErrors(panel);
@@ -2444,7 +2543,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <button class="btn secondary wide" id="qmManage" type="button" style="margin-top:10px;">${lx('Gerir medicamentos no Perfil','Gérer dans le Profil','Manage in Profile')}</button>
     </div></div>`);
     const panel=document.getElementById('qmPanel');
-    panel.addEventListener('click', e=>{ if(e.target===panel) closeOverlay(); });
+    /* toque fora: regra comum em overlayBackdropAllowed() */
     document.getElementById('qmClose').addEventListener('click', closeOverlay);
     document.getElementById('qmManage').addEventListener('click', ()=>{ closeOverlay(); activeTab='perfil'; render(); const d=document.getElementById('accMed'); if(d){ d.open=true; d.scrollIntoView({block:'start'}); } });
     panel.querySelectorAll('[data-qmDose]').forEach(b=>b.addEventListener('click', ()=>{
@@ -2482,7 +2581,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const el = document.getElementById('docGrid'); if(!el) return;
     const c=S.crianca;
     el.innerHTML = (c.documentos||[]).map(d=>`<div class="doc-item"><img src="${d.src}"><div class="doc-tag">${d.tipo}</div><button class="g-del" data-rmDoc="${d.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.close}</button></div>`).join('') || `<span class="muted" style="grid-column:1/-1;">${tr('Sem documentos guardados.')}</span>`;
-    el.querySelectorAll('[data-rmDoc]').forEach(b=>b.addEventListener('click', ()=>{ c.documentos=c.documentos.filter(d=>d.id!==b.dataset.rmdoc); save(); renderDocGrid(); }));
+    el.querySelectorAll('[data-rmDoc]').forEach(b=>b.addEventListener('click', ()=>{ const it=(c.documentos||[]).find(d=>d.id===b.dataset.rmdoc); if(!it) return;
+      showConfirm(lx(`Apagar o documento «${it.tipo}»? A imagem é removida deste dispositivo e não pode ser recuperada.`,`Supprimer le document « ${it.tipo} » ? L'image est supprimée de cet appareil et ne peut pas être récupérée.`,`Delete the document "${it.tipo}"? The image is removed from this device and cannot be recovered.`), ()=>{ c.documentos=c.documentos.filter(d=>d.id!==b.dataset.rmdoc); save(); renderDocGrid(); }); }));
   }
   function hidrTotalToday(c){
     const [t0,t1]=todayRange();
@@ -3089,7 +3189,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <button class="btn ghost wide" id="mClose" type="button" style="margin-top:8px;">${editing?tr('Cancelar'):tr('Fechar')}</button>
     </div></div>`);
     const panel=document.getElementById('measPanel');
-    panel.addEventListener('click', e=>{ if(e.target===panel) closeOverlay(); });
+    /* toque fora: regra comum em overlayBackdropAllowed() */
     document.getElementById('mClose').addEventListener('click', ()=> editing ? showMeasurementDetails(metric, idx, false) : closeOverlay());
     const eb=document.getElementById('mEdit'); if(eb) eb.addEventListener('click', ()=>showMeasurementDetails(metric, idx, true));
     const db=document.getElementById('mDel'); if(db) db.addEventListener('click', ()=>showConfirm(lx('Apagar esta medição?','Supprimer cette mesure ?','Delete this measurement?'), ()=>{
@@ -3170,7 +3270,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         // Não afirmamos "atrasada": os calendários variam e a dose pode só não ter sido registada.
         const due = v.due ? v.due[i] : null;
         let vState='pending', vLbl=tr('pendente');
-        if(rec.done){ vState='done'; vLbl=rec.done; }
+        if(rec.done){ vState='done'; vLbl=new Date(rec.done+'T12:00:00').toLocaleDateString(localeTag()); }
         else if(rec.proximaData && rec.proximaData>=todayISO()){ vState='scheduled'; vLbl=lx('Agendada ','Prévue ','Scheduled ')+fmtShort(rec.proximaData); }
         else if(months==null || due==null){ vState='future'; }
         else if(due>months){ vState='future'; vLbl= due===0 ? lx('À nascença','À la naissance','At birth') : lx(`Aos ${due} meses`,`À ${due} mois`,`At ${due} months`); if(nextDue==null||due<nextDue) nextDue=due; }
@@ -3194,8 +3294,16 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       </div>
       <p class="muted" style="text-align:center;">${tr('Calendário Bélgica (Wallonie) + Luxemburgo. Confirma sempre datas exatas com o/a pediatra.')}</p>`;
     document.querySelectorAll('[data-vax]').forEach(b=>b.addEventListener('click', ()=>{
-      const rec=vaxRec(b.dataset.vax); const wasDone=!!rec.done; rec.done = rec.done ? null : todayISO();
-      save(); if(!wasDone && rec.done) playChime(); renderVacinas(); renderReminders();
+      const key=b.dataset.vax, rec=vaxRec(key);
+      if(!rec.done){ rec.done = todayISO(); save(); playChime(); renderVacinas(); renderReminders(); return; }   // marcar: data de hoje, que fica registada
+      // desmarcar: confirmação (a data de administração é removida; país e reação ficam guardados)
+      const [vid, di] = [key.slice(0,key.lastIndexOf('-')), +key.slice(key.lastIndexOf('-')+1)];
+      const v = VAX.find(x=>x.id===vid); const nome = v ? tr(v.nome)+' — '+tr(v.doses[di]) : key;
+      const when = new Date(rec.done+'T12:00:00').toLocaleDateString(localeTag());
+      showConfirm(lx(`Remover o registo de administração de ${nome} (${when})? A data de administração é apagada. O país e a reação, se preenchidos, ficam guardados.`,
+        `Retirer l'enregistrement d'administration de ${nome} (${when}) ? La date d'administration est supprimée. Le pays et la réaction, s'ils sont remplis, restent enregistrés.`,
+        `Remove the record that ${nome} was given (${when})? The date given is deleted. Country and reaction, if filled in, are kept.`),
+        ()=>{ rec.done=null; save(); renderVacinas(); renderReminders(); });
     }));
     document.querySelectorAll('[data-vaxPais]').forEach(el=>el.addEventListener('input', ()=>{ vaxRec(el.dataset.vaxpais).pais=el.value; save(); }));
     document.querySelectorAll('[data-vaxReacao]').forEach(el=>el.addEventListener('input', ()=>{ vaxRec(el.dataset.vaxreacao).reacao=el.value; save(); }));
@@ -3746,7 +3854,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function showImportConfirm(raw){
     const kids=importChildren(raw), nNew=countRecords(kids), nCur=countRecords(S.criancas);
     const names=kids.map(c=>c.nome||tr('Bebé')).join(', ');
-    showOverlay(`<div class="voice-panel" id="importPanel"><div class="voice-card" style="text-align:left;">
+    showOverlay(`<div class="voice-panel" id="importPanel"><div class="voice-card" data-confirm style="text-align:left;">
       <h2 style="margin:0 0 8px;">${lx('Importar dados?','Importer les données ?','Import data?')}</h2>
       <div class="rec-line"><span>${lx('No ficheiro','Dans le fichier','In the file')}</span><b>${pl(nNew,'registo','registos','enregistrement','enregistrements','record','records')} · ${names}</b></div>
       <div class="rec-line"><span>${lx('Neste dispositivo agora','Sur cet appareil','On this device now')}</span><b>${pl(nCur,'registo','registos','enregistrement','enregistrements','record','records')}</b></div>
@@ -3831,11 +3939,11 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       ${breast.length ? `<div class="day-sec"><div class="sum-title">${ICONS.bottle}<span>${lx('Amamentação','Allaitement','Breastfeeding')}</span></div>${breastRows}</div>` : ''}
       <div class="day-sec"><div class="sum-title">${ICONS.drop}<span>${tr('Fraldas')}</span></div>${diaperRows||none}</div>
       <div class="day-sec"><div class="sum-title">${ICONS.moon}<span>${tr('Sono')}</span></div>${sleepRows||none}</div>
-      <button class="btn wide" id="mOk" type="button" style="margin-top:6px;">${tr('Fechar')}</button>
+      <button class="btn wide" id="mOk" type="button" data-dismiss style="margin-top:6px;">${tr('Fechar')}</button>
     </div></div>`);
     document.getElementById('mOk').addEventListener('click', closeOverlay);
     const panel=document.getElementById('dayPanel');
-    panel.addEventListener('click', e=>{ if(e.target===panel) closeOverlay(); });
+    /* toque fora: regra comum em overlayBackdropAllowed() */
     panel.querySelectorAll('[data-rec-id]').forEach(btn=>btn.addEventListener('click', ()=>showRecordDetails(btn.dataset.recKind, btn.dataset.recId, ()=>showDaySummary(dateISO))));
   }
 
@@ -3870,7 +3978,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   const FUTURE_TOL_MS = 60000;   // 1 min de tolerância para relógios ligeiramente diferentes
   // Confirmação para valores possíveis mas invulgares: Cancelar não grava; Guardar grava exatamente o valor introduzido.
   function confirmUnusual(lines, onSave, onCancel){
-    showOverlay(`<div class="voice-panel" id="unusualPanel"><div class="voice-card">
+    showOverlay(`<div class="voice-panel" id="unusualPanel"><div class="voice-card" data-confirm>
       ${lines.map(l=>`<p style="margin:0 0 8px;">${l}</p>`).join('')}
       <div class="btn-row" style="margin-top:12px;">
         <button class="btn ghost wide" id="unCancel" type="button">${tr('Cancelar')}</button>
@@ -3945,7 +4053,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <button class="btn ghost wide" id="recClose" type="button" style="margin-top:8px;">${back ? lx('Voltar ao dia','Retour au jour','Back to day') : tr('Fechar')}</button>
     </div></div>`);
     const panel=document.getElementById('recPanel');
-    panel.addEventListener('click', e=>{ if(e.target===panel) closeOverlay(); });
+    /* toque fora: regra comum em overlayBackdropAllowed() */
     document.getElementById('recClose').addEventListener('click', ()=>{ if(back) back(); else closeOverlay(); });
     document.getElementById('recEdit').addEventListener('click', ()=>{
       closeOverlay(); activeTab=K.tab; openForm='new'; editId=id; render();
@@ -3997,9 +4105,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     }
   });
   function wireFooterSettings(){
-    document.getElementById('themeSeg').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ S.settings.theme=b.dataset.v; save(); applyTheme(); render(); renderSettingsOverlay(); }));
+    document.getElementById('themeSeg').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ S.settings.theme=b.dataset.v; save(); applyTheme(); withFormState(render); renderSettingsOverlay(); }));
     document.querySelectorAll('[data-accent]').forEach(sw=>sw.addEventListener('click', ()=>{ S.settings.accentIndex=+sw.dataset.accent; save(); applyTheme(); render(); renderSettingsOverlay(); }));
-    document.getElementById('langSeg').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ S.settings.lang=b.dataset.v; save(); render(); renderSettingsOverlay(); }));
+    document.getElementById('langSeg').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ S.settings.lang=b.dataset.v; save(); withFormState(render); renderSettingsOverlay(); }));
     document.getElementById('soundToggle').addEventListener('change', e=>{ S.settings.sound = e.target.checked; save(); });
     document.getElementById('testSound').addEventListener('click', ()=>playChime(true));
     const bgBtn=document.getElementById('bgPhotoBtn'), bgInput=document.getElementById('bgPhotoInput'), bgRemove=document.getElementById('bgPhotoRemove');
@@ -4066,7 +4174,10 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   applyTheme(); render(); initSync();
   setInterval(()=>{
     renderReminders();
-    if(S.running.sleepStart && (activeTab==='inicio'||activeTab==='sono')) render();
+    // Atualiza o tempo de sono em curso, mas nunca por cima de um formulário aberto, de um campo em edição ou de um diálogo.
+    const a=document.activeElement, main=document.getElementById('main');
+    const busy = !!openForm || overlayOpen() || (a && main && main.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
+    if(S.running.sleepStart && (activeTab==='inicio'||activeTab==='sono') && !busy) render();
   }, 30000);
 })();
 </script>

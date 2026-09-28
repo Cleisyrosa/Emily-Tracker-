@@ -1371,6 +1371,12 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function todayRange(){ const t0=new Date(); t0.setHours(0,0,0,0); return [t0.getTime(), t0.getTime()+86400000]; }
   function inRange(ts,a,b){ return ts>=a && ts<b; }
   function last7(){ return Array.from({length:7},(_,i)=>daysAgoISO(6-i)); }
+  // Minutos de [inicio,fim] que caem dentro de [dayStart,dayEnd) — usado para contar sono por dia mesmo
+  // quando um período atravessa a meia-noite (ex.: 22h ontem → 6h hoje conta 2h ontem, 6h hoje, nunca as 8h duas vezes).
+  function overlapMinutes(inicio, fim, dayStart, dayEnd){
+    const a = Math.max(inicio, dayStart), b = Math.min(fim, dayEnd);
+    return b > a ? (b - a) / 60000 : 0;
+  }
 
   // De onde vem a marca pré-preenchida: 'perfil' (Alimentação no Perfil) ou 'ultimo' (último biberão registado).
   function formulaBrandSource(c){ if(c.alimentacao && c.alimentacao.formula && c.alimentacao.formula.trim()) return 'perfil'; return (c.mamadas||[]).some(m=>m.tipo==='biberao' && m.marcaFormula) ? 'ultimo' : null; }
@@ -2826,7 +2832,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function renderSono(){
     const isSleeping=!!S.running.sleepStart;
     const [t0,t1]=todayRange();
-    const todayMins=S.sono.filter(l=>inRange(l.inicio,t0,t1)||inRange(l.fim,t0,t1)).reduce((s,l)=>s+(l.duracaoMin||0),0);
+    const todayMins=S.sono.filter(l=>l.inicio<t1 && l.fim>t0).reduce((s,l)=>s+overlapMinutes(l.inicio,l.fim,t0,t1),0);
     const months = ageInfo(S.crianca.dataNascimento).months;
     const [lo,hi]=sleepTargetH(months);
     const hoursToday = todayMins/60;
@@ -2836,7 +2842,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const withQual = S.sono.filter(l=>typeof l.qualidade==='number' && l.qualidade>0);
     const avgQual = withQual.length ? (withQual.reduce((s,l)=>s+l.qualidade,0)/withQual.length).toFixed(1) : '—';
     const days=last7();
-    const bars=days.map(d=>{ const a=new Date(d+"T00:00:00").getTime(),b=a+86400000; const mins=S.sono.filter(l=>inRange(l.inicio,a,b)).reduce((s,l)=>s+(l.duracaoMin||0),0); return {v:+(mins/60).toFixed(1), label:new Date(d+"T00:00:00").toLocaleDateString(localeTag(),{weekday:'narrow'}), date:d}; });
+    const bars=days.map(d=>{ const a=new Date(d+"T00:00:00").getTime(),b=a+86400000; const mins=S.sono.filter(l=>l.inicio<b && l.fim>a).reduce((s,l)=>s+overlapMinutes(l.inicio,l.fim,a,b),0); return {v:+(mins/60).toFixed(1), label:new Date(d+"T00:00:00").toLocaleDateString(localeTag(),{weekday:'narrow'}), date:d}; });
 
     const lang=(S.settings&&S.settings.lang)||'pt';
     const metaLbl = lang==='fr' ? `objectif (${months}m)` : lang==='en' ? `target (${months}m)` : `meta (${months}m)`;
@@ -3780,7 +3786,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         <text class="axis-label" x="${(bx+bw/2).toFixed(1)}" y="${h-8}" text-anchor="middle">${b.label}</text>
         <text x="${(bx+bw/2).toFixed(1)}" y="${(by-5).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">${fmtNum(b.v,1)}</text></g>`;
     }).join('');
-    const target = opts.targetLine ? `<line x1="${pad}" y1="${(h-pad-bh(opts.targetLine)).toFixed(1)}" x2="${w-8}" y2="${(h-pad-bh(opts.targetLine)).toFixed(1)}" stroke="var(--crit)" stroke-dasharray="4,3" stroke-width="1.2"/>` : '';
+    const target = opts.targetLine ? `<line x1="${pad}" y1="${(h-pad-bh(opts.targetLine)).toFixed(1)}" x2="${w-8}" y2="${(h-pad-bh(opts.targetLine)).toFixed(1)}" stroke="var(--ink-faint)" stroke-dasharray="4,3" stroke-width="1.2"/>` : '';
     return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="140">
       <line x1="${pad}" y1="${h-pad}" x2="${w-8}" y2="${h-pad}" stroke="var(--border)"/>
       ${bars_}${target}

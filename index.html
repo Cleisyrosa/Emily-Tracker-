@@ -450,8 +450,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   // Anything not found simply falls back to Portuguese — never breaks, just untranslated.
   function tr(text){
     const lang=(S.settings&&S.settings.lang)||'pt';
-    if(lang==='pt') return text;
     const e=I18N[text];
+    if(lang==='pt') return (e && e.pt) || text;   // "pt" opcional: muda só o texto mostrado, a chave (usada nos dados) fica igual
     return (e && e[lang]) || text;
   }
   const I18N = {
@@ -661,7 +661,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     "Consistência":{fr:"Consistance",en:"Consistency"}, "Mole":{fr:"Molle",en:"Loose"}, "Dura":{fr:"Dure",en:"Hard"}, "Seca":{fr:"Sèche",en:"Dry"},
 
     // ---- Sono ----
-    "total":{fr:"total",en:"total"}, "estado":{fr:"état",en:"status"}, "sonecas hoje":{fr:"siestes aujourd'hui",en:"naps today"},
+    "total":{fr:"total",en:"total"}, "estado":{fr:"état",en:"status"}, "sestas hoje":{fr:"siestes aujourd'hui",en:"naps today"},
     "Iniciar sono agora":{fr:"Démarrer le sommeil",en:"Start sleep now"},
     "+ Registo manual":{fr:"+ Saisie manuelle",en:"+ Manual entry"},
     "Registos":{fr:"Registres",en:"Log"},
@@ -729,7 +729,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     "Resumo semanal":{fr:"Résumé hebdomadaire",en:"Weekly summary"},
     "últimos 7 dias":{fr:"7 derniers jours",en:"last 7 days"},
     "Resumo inteligente":{fr:"Résumé intelligent",en:"Smart summary"},
-    "Calculado automaticamente a partir dos teus registos — sem IA.":{fr:"Calculé automatiquement à partir de tes données — sans IA.",en:"Calculated automatically from your own logs — no AI."},
+    "Calculado automaticamente a partir dos teus registos.":{fr:"Calculé automatiquement à partir de tes données.",en:"Calculated automatically from your own logs."},
     "Regista mais dados para veres tendências aqui.":{fr:"Enregistre plus de données pour voir des tendances ici.",en:"Log more data to see trends here."},
     "Exportar PDF semanal":{fr:"Exporter le PDF hebdomadaire",en:"Export weekly PDF"},
     "Resumo mensal":{fr:"Résumé mensuel",en:"Monthly summary"},
@@ -741,7 +741,6 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 
     // ---- SOS ----
     "nascida":{fr:"née le",en:"born"},
-    "Doador universal se O":{fr:"Donneur universel si O",en:"Universal donor if O"},
     "Medicações ativas":{fr:"Médicaments actifs",en:"Active medications"},
     "Contacto de emergência":{fr:"Contact d'urgence",en:"Emergency contact"},
     "Emergência — 112":{fr:"Urgence — 112",en:"Emergency — 112"},
@@ -750,13 +749,11 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     "Dados atuais":{fr:"Données actuelles",en:"Current data"},
     "Nº documento":{fr:"N° de document",en:"ID number"},
     "Exportar ficha de emergência (PDF)":{fr:"Exporter la fiche d'urgence (PDF)",en:"Export emergency card (PDF)"},
-    "Código QR partilhável — disponível numa próxima versão.":{fr:"Code QR partageable — disponible dans une prochaine version.",en:"Shareable QR code — coming in a future version."},
 
     // ---- Definições ----
     "Aparência":{fr:"Apparence",en:"Appearance"},
     "Sistema":{fr:"Système",en:"System"}, "Claro":{fr:"Clair",en:"Light"}, "Escuro":{fr:"Sombre",en:"Dark"},
     "Cor da app":{fr:"Couleur de l'appli",en:"App color"},
-    "— tons de exemplo, substituíveis":{fr:"— teintes d'exemple, remplaçables",en:"— example tones, replaceable"},
     "Idioma":{fr:"Langue",en:"Language"},
     "— navegação apenas, dados ficam como escreveste":{fr:"— navigation seulement, tes données restent telles quelles",en:"— navigation only, your own data stays as written"},
     "Sincronização entre pais":{fr:"Synchronisation entre parents",en:"Sync between parents"},
@@ -768,8 +765,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     "Importar dados":{fr:"Importer des données",en:"Import data"},
     "Apagar todos os dados":{fr:"Supprimer toutes les données",en:"Delete all data"},
     "Remover perfil de":{fr:"Supprimer le profil de",en:"Remove profile for"},
-    "Tudo guardado neste dispositivo (localStorage) — sem servidor, sem conta.":
-      {fr:"Tout est enregistré sur cet appareil (localStorage) — sans serveur, sans compte.",en:"Everything is stored on this device (localStorage) — no server, no account."},
+    "Tudo fica guardado neste dispositivo — sem servidor, sem conta.":
+      {fr:"Tout reste enregistré sur cet appareil — sans serveur, sans compte.",en:"Everything stays on this device — no server, no account."},
     "Exportação indisponível aqui":{fr:"Export indisponible ici",en:"Export unavailable here"},
     "Guardado!":{fr:"Enregistré !",en:"Saved!"},
     "Não foi possível exportar":{fr:"Échec de l'export",en:"Couldn't export"},
@@ -779,7 +776,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     "2-3 meses":{fr:"2-3 mois",en:"2-3 months"}, "3-4 meses":{fr:"3-4 mois",en:"3-4 months"}, "4-6 meses":{fr:"4-6 mois",en:"4-6 months"},
     "Sorri reflexo":{fr:"Sourit par réflexe",en:"Reflex smile"}, "Acompanha olhar":{fr:"Suit du regard",en:"Follows with eyes"},
     "Reage a barulhos":{fr:"Réagit aux bruits",en:"Reacts to sounds"}, "Reflexo de sucção":{fr:"Réflexe de succion",en:"Sucking reflex"},
-    "Sorriso social":{fr:"Sourire social",en:"Social smile"}, "Emite sons (cooing)":{fr:"Émet des sons (gazouillis)",en:"Makes sounds (cooing)"},
+    "Sorriso social":{fr:"Sourire social",en:"Social smile"}, "Emite sons (cooing)":{pt:"Emite sons (palreio)",fr:"Émet des sons (gazouillis)",en:"Makes cooing sounds"},
     "Levanta cabeça ligeiramente":{fr:"Lève un peu la tête",en:"Lifts head slightly"}, "Puxa objetos":{fr:"Attrape des objets",en:"Pulls at objects"},
     "Levanta cabeça/peito com braços":{fr:"Lève tête/poitrine sur les bras",en:"Lifts head/chest on arms"},
     "Abre/fecha mãos":{fr:"Ouvre/ferme les mains",en:"Opens/closes hands"},
@@ -1362,9 +1359,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function doseRefTxt(kg){
     const lang=(S.settings&&S.settings.lang)||'pt';
     const pLo=(kg*10).toFixed(0), pHi=(kg*15).toFixed(0), iLo=(kg*5).toFixed(0), iHi=(kg*10).toFixed(0);
-    if(lang==='fr') return `Référence (poids ${kg}kg) — Paracétamol : ${pLo}–${pHi}mg/dose · Ibuprofène : ${iLo}–${iHi}mg/dose. Confirme toujours avec le/la pédiatre avant d'administrer.`;
-    if(lang==='en') return `Reference (weight ${kg}kg) — Paracetamol: ${pLo}–${pHi}mg/dose · Ibuprofen: ${iLo}–${iHi}mg/dose. Always confirm with the pediatrician before giving.`;
-    return `Referência (peso ${kg}kg) — Paracetamol: ${pLo}–${pHi}mg/dose · Ibuprofeno: ${iLo}–${iHi}mg/dose. Confirma sempre com o/a pediatra antes de administrar.`;
+    if(lang==='fr') return `Référence (poids ${fmtNum(kg,3)} kg) — Paracétamol : ${pLo}–${pHi}mg/dose · Ibuprofène : ${iLo}–${iHi}mg/dose. Confirme toujours avec le/la pédiatre avant d'administrer.`;
+    if(lang==='en') return `Reference (weight ${fmtNum(kg,3)} kg) — Paracetamol: ${pLo}–${pHi}mg/dose · Ibuprofen: ${iLo}–${iHi}mg/dose. Always confirm with the pediatrician before giving.`;
+    return `Referência (peso ${fmtNum(kg,3)} kg) — Paracetamol: ${pLo}–${pHi}mg/dose · Ibuprofeno: ${iLo}–${iHi}mg/dose. Confirma sempre com o/a pediatra antes de administrar.`;
   }
 
   const TABS = [
@@ -1706,9 +1703,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       if(days>=0 && days<=3){
         const dd=Math.ceil(days), esp=cs.especialista||tr('especialista'), dateStr=new Date(cs.data+"T00:00:00").toLocaleDateString(lang==='en'?'en-GB':lang==='fr'?'fr-FR':'pt-PT');
         let txt;
-        if(lang==='fr') txt = `Rendez-vous avec ${esp} dans ${dd} jour(s) — ${dateStr}`;
-        else if(lang==='en') txt = `Appointment with ${esp} in ${dd} day(s) — ${dateStr}`;
-        else txt = `Consulta com ${esp} em ${dd} dia(s) — ${dateStr}`;
+        if(lang==='fr') txt = `Rendez-vous avec ${esp} dans ${dd} ${dd===1?'jour':'jours'} — ${dateStr}`;
+        else if(lang==='en') txt = `Appointment with ${esp} in ${dd} ${dd===1?'day':'days'} — ${dateStr}`;
+        else txt = `Consulta com ${esp} em ${dd} ${dd===1?'dia':'dias'} — ${dateStr}`;
         msgs.push(ICONS.calendar+' '+txt);
       }
     });
@@ -1814,9 +1811,10 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     if(wetStatus){
       const lang=(S.settings&&S.settings.lang)||'pt';
       let msg;
-      if(lang==='fr') msg = `Seulement ${xixiToday} couche(s) mouillée(s) aujourd'hui — objectif 6–8/jour. Surveille les signes de déshydratation.`;
-      else if(lang==='en') msg = `Only ${xixiToday} wet diaper(s) today — target 6–8/day. Watch for dehydration signs.`;
-      else msg = `Só ${xixiToday} fralda(s) de xixi hoje — meta 6–8/dia. Vigiar sinais de desidratação.`;
+      const one = xixiToday===1;
+      if(lang==='fr') msg = `${xixiToday===0?'Aucune couche mouillée':'Seulement '+xixiToday+' '+(one?'couche mouillée':'couches mouillées')} aujourd'hui — objectif 6–8/jour. Surveille les signes de déshydratation.`;
+      else if(lang==='en') msg = `${xixiToday===0?'No wet diapers':'Only '+xixiToday+' wet '+(one?'diaper':'diapers')} today — target 6–8/day. Watch for dehydration signs.`;
+      else msg = `${xixiToday===0?'Nenhuma fralda':'Só '+xixiToday+' '+(one?'fralda':'fraldas')} de xixi hoje — meta 6–8/dia. Vigiar sinais de desidratação.`;
       html += `<div class="alert ${wetStatus}">${ICONS.drop} ${msg}</div>`;
     }
     const feedGap = getFeedGapStatus(feed);
@@ -1826,14 +1824,14 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <div class="stat"><div class="ic feed">${ICONS.bottle}</div><div class="lbl">${tr('Última refeição')}</div><div class="val">${feed?agoStr(feed.ts):'—'}</div><div class="sub">${feed?feedLabel(feed):tr('sem registos')}</div></div>
       <div class="stat"><div class="ic diaper">${ICONS.drop}</div><div class="lbl">${tr('Última fralda')}</div><div class="val">${diaper?agoStr(diaper.ts):'—'}</div><div class="sub">${diaper?diaperLabel(diaper):tr('sem registos')}</div></div>
       <div class="stat"><div class="ic sleepc">${ICONS.moon}</div><div class="lbl">${isSleeping?tr('A dormir há'):tr('Sono hoje')}</div><div class="val">${isSleeping? durStr((Date.now()-S.running.sleepStart)/60000) : durStr(sleepMinsToday)}</div><div class="sub">${isSleeping?tr('em curso'):(lastSleep?(tr('último:')+' '+agoStr(lastSleep.fim)):tr('sem registos'))}</div></div>
-      <div class="stat"><div class="ic growth">${ICONS.chart}</div><div class="lbl">${tr('Peso atual')}</div><div class="val">${peso?peso+'kg':'—'}</div><div class="sub">${tr('ver em Evolução')}</div></div>
+      <div class="stat"><div class="ic growth">${ICONS.chart}</div><div class="lbl">${tr('Peso atual')}</div><div class="val">${peso?fmtNum(peso,3)+' kg':'—'}</div><div class="sub">${tr('ver em Evolução')}</div></div>
     </div>
 
     <div class="card"><div class="section-label">${tr('Hoje')}</div>
       <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
         <div class="stat" style="align-items:center;text-align:center;"><div class="val">${feedsToday}</div><div class="sub">${feedsToday===1?lx('refeição','repas','feeding'):tr('refeições')}</div></div>
         <div class="stat" style="align-items:center;text-align:center;"><div class="val">${xixiToday}x/${cocoToday}x</div><div class="sub">${tr('xixi / cocó')}</div></div>
-        <div class="stat" style="align-items:center;text-align:center;"><div class="val">${(sleepMinsToday/60).toFixed(1)}h</div><div class="sub">${tr('sono')}</div></div>
+        <div class="stat" style="align-items:center;text-align:center;"><div class="val">${fmtNum(sleepMinsToday/60,1,true)} h</div><div class="sub">${tr('sono')}</div></div>
       </div>
     </div>
 
@@ -1882,25 +1880,25 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 
     <details class="acc" open><summary>${ICONS.baby} ${tr('Dados básicos')} <span class="car">▾</span></summary>
       <div class="acc-body">
-        <div class="form-row"><div style="flex:1;"><label>${tr('Nome')}</label><input type="text" id="pNome" value="${c.nome}"></div></div>
+        <div class="form-row"><div style="flex:1;"><label>${tr('Nome')}</label><input type="text" id="pNome" value="${fv(c.nome)}"></div></div>
         <div class="form-row">
-          <div style="flex:1;"><label>${tr('Data de nascimento')}</label><input type="date" id="pDob" value="${c.dataNascimento}"></div>
+          <div style="flex:1;"><label>${tr('Data de nascimento')}</label><input type="date" id="pDob" value="${fv(c.dataNascimento)}"></div>
           <div style="flex:1;"><label>${tr('Sexo')}</label><select id="pSexo">${c.sexo!=='F'&&c.sexo!=='M'?`<option value="" selected disabled>—</option>`:''}<option value="F" ${c.sexo==='F'?'selected':''}>${tr('Feminino')}</option><option value="M" ${c.sexo==='M'?'selected':''}>${tr('Masculino')}</option></select></div>
         </div>
         <div class="form-row">
-          <div style="flex:1;"><label>${tr('Local de nascimento')}</label><input type="text" id="pLocal" value="${c.localNascimento}"></div>
-          <div style="flex:1;"><label>${tr('Nacionalidade')}</label><input type="text" id="pNac" value="${c.nacionalidade}"></div>
+          <div style="flex:1;"><label>${tr('Local de nascimento')}</label><input type="text" id="pLocal" value="${fv(c.localNascimento)}"></div>
+          <div style="flex:1;"><label>${tr('Nacionalidade')}</label><input type="text" id="pNac" value="${fv(c.nacionalidade)}"></div>
         </div>
         <div class="form-row">
-          <div style="flex:1;"><label>${tr('Nº documento identidade')}</label><input type="text" id="pDocId" value="${c.documentoId}"></div>
-          <div style="flex:1;"><label>${tr('Sistema de saúde')}</label><input type="text" id="pSaude" placeholder="" value="${c.sistemaSaude}"></div>
+          <div style="flex:1;"><label>${tr('Nº documento identidade')}</label><input type="text" id="pDocId" value="${fv(c.documentoId)}"></div>
+          <div style="flex:1;"><label>${tr('Sistema de saúde')}</label><input type="text" id="pSaude" placeholder="" value="${fv(c.sistemaSaude)}"></div>
         </div>
-        <div class="form-row"><div style="flex:1;"><label>${tr('Morada atual')}</label><input type="text" id="pMorada" value="${c.moradaAtual}"></div></div>
+        <div class="form-row"><div style="flex:1;"><label>${tr('Morada atual')}</label><input type="text" id="pMorada" value="${fv(c.moradaAtual)}"></div></div>
         <div class="section-label" style="margin-top:6px;">${tr('Ao nascer')}</div>
         <div class="form-row">
-          <div style="flex:1;"><label>${tr('Peso (kg)')}</label><input type="text" inputmode="decimal" id="pNascPeso" value="${c.nascimento.peso}"></div>
-          <div style="flex:1;"><label>${tr('Altura (cm)')}</label><input type="text" inputmode="decimal" id="pNascAlt" value="${c.nascimento.altura}"></div>
-          <div style="flex:1;"><label>${tr('Perím. cefálico (cm)')}</label><input type="text" inputmode="decimal" id="pNascPc" value="${c.nascimento.pc}"></div>
+          <div style="flex:1;"><label>${tr('Peso (kg)')}</label><input type="text" inputmode="decimal" id="pNascPeso" value="${fv(c.nascimento.peso)}"></div>
+          <div style="flex:1;"><label>${tr('Altura (cm)')}</label><input type="text" inputmode="decimal" id="pNascAlt" value="${fv(c.nascimento.altura)}"></div>
+          <div style="flex:1;"><label>${tr('Perím. cefálico (cm)')}</label><input type="text" inputmode="decimal" id="pNascPc" value="${fv(c.nascimento.pc)}"></div>
         </div>
         <button class="btn wide" id="saveBasicos" type="button" style="margin-top:4px;">${ICONS.check} ${tr('Guardar')}</button>
       </div>
@@ -1913,8 +1911,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         <div class="rh">${tr('Fator Rh:')} ${c.fatorRh}</div>
       </div>
       <div class="form-row">
-        <div style="flex:1;"><label>${tr('Tipo sanguíneo')}</label><input type="text" id="pBlood" value="${c.tipoSanguineo}"></div>
-        <div style="flex:1;"><label>${tr('Fator Rh')}</label><input type="text" id="pRh" value="${c.fatorRh}"></div>
+        <div style="flex:1;"><label>${tr('Tipo sanguíneo')}</label><input type="text" id="pBlood" value="${fv(c.tipoSanguineo)}"></div>
+        <div style="flex:1;"><label>${tr('Fator Rh')}</label><input type="text" id="pRh" value="${fv(c.fatorRh)}"></div>
       </div>
       <button class="btn wide" id="saveCriticos" type="button" style="margin-top:10px;">${ICONS.check} ${tr('Guardar')}</button>
     </div>
@@ -1957,7 +1955,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     <details class="acc" id="accMed"><summary>${ICONS.pill} ${tr('Medicações & remédios tradicionais')} <span class="car">▾</span></summary>
       <div class="acc-body">
         <div class="section-label">${tr('Receitados')}</div>
-        ${c.medicacoes.filter(m=>m.tipo!=='tradicional').map(m=>`<div class="med-row med-actions"><span class="body"><b>${m.nome}</b> — ${m.dose} · ${medIntervalTxt(m.intervaloHoras,m.maxVezesDia)}${m.horario?(' · '+tr('horário')+' '+m.horario):''} ${m.notificacoes?`<span class="inline-ic" title="${tr('Notificar')}">${ICONS.bell}<span class="sr-only">${tr('Notificar')}</span></span>`:''}<br><span class="muted">${lx('Hoje','Aujourd\'hui','Today')}: <b>${dosesToday(m).length}${m.maxVezesDia?('/'+m.maxVezesDia):''}</b> ${lx('dose(s)','dose(s)','dose(s)')}</span></span>
+        ${c.medicacoes.filter(m=>m.tipo!=='tradicional').map(m=>`<div class="med-row med-actions"><span class="body"><b>${m.nome}</b> — ${m.dose} · ${medIntervalTxt(m.intervaloHoras,m.maxVezesDia)}${m.horario?(' · '+tr('horário')+' '+m.horario):''} ${m.notificacoes?`<span class="inline-ic" title="${tr('Notificar')}">${ICONS.bell}<span class="sr-only">${tr('Notificar')}</span></span>`:''}<br><span class="muted">${lx('Hoje','Aujourd\'hui','Today')}: <b>${dosesToday(m).length}${m.maxVezesDia?('/'+m.maxVezesDia):''}</b> ${((m.maxVezesDia||dosesToday(m).length)===1)?'dose':'doses'}</span></span>
           <button class="dose-btn give" data-giveDose="${m.id}" type="button">${ICONS.pill} ${tr('Dose')}</button>
           <button class="dose-btn" data-medEdit="${m.id}" type="button">${ICONS.edit} ${lx('Editar','Modifier','Edit')}</button>
           <button class="log-del" data-rmMed="${m.id}" type="button">${ICONS.trash}</button></div>`).join('') || `<span class="muted">${tr('Sem medicação regular.')}</span>`}
@@ -1980,12 +1978,12 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 
     <details class="acc"><summary>${ICONS.phone} ${tr('Pediatra')} <span class="car">▾</span></summary>
       <div class="acc-body">
-        <div class="form-row"><div style="flex:1;"><label>${tr('Nome')}</label><input type="text" id="pediNome" value="${c.pediatra.nome}"></div></div>
+        <div class="form-row"><div style="flex:1;"><label>${tr('Nome')}</label><input type="text" id="pediNome" value="${fv(c.pediatra.nome)}"></div></div>
         <div class="form-row">
-          <div style="flex:1;"><label>${tr('Telefone')}</label><input type="text" id="pediTel" value="${c.pediatra.telefone}"></div>
-          <div style="flex:1;"><label>${tr('Email')}</label><input type="text" id="pediEmail" value="${c.pediatra.email}"></div>
+          <div style="flex:1;"><label>${tr('Telefone')}</label><input type="text" id="pediTel" value="${fv(c.pediatra.telefone)}"></div>
+          <div style="flex:1;"><label>${tr('Email')}</label><input type="text" id="pediEmail" value="${fv(c.pediatra.email)}"></div>
         </div>
-        <div class="form-row"><div style="flex:1;"><label>${tr('Clínica/local')}</label><input type="text" id="pediLocal" value="${c.pediatra.local}"></div></div>
+        <div class="form-row"><div style="flex:1;"><label>${tr('Clínica/local')}</label><input type="text" id="pediLocal" value="${fv(c.pediatra.local)}"></div></div>
         <div class="form-row"><div style="flex:1;"><label>${tr('Morada')}</label><input type="text" id="pediMorada" value="${c.pediatra.morada||''}"></div></div>
         <button class="btn wide" id="savePediatra" type="button">${ICONS.check} ${tr('Guardar')}</button>
       </div>
@@ -1994,10 +1992,10 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     <details class="acc"><summary>${ICONS.calendar} ${tr('Hospital de referência & emergência')} <span class="car">▾</span></summary>
       <div class="acc-body">
         <div class="section-label">${tr('Hospital de referência')}</div>
-        <div class="form-row"><div style="flex:1;"><input type="text" id="hospNome" placeholder="${tr('Nome')}" value="${c.hospitalReferencia.nome}"></div><div style="flex:1;"><input type="text" id="hospTel" placeholder="${tr('Telefone')}" value="${c.hospitalReferencia.telefone}"></div></div>
-        <div class="form-row"><div style="flex:1;"><input type="text" id="hospMorada" placeholder="${tr('Morada')}" value="${c.hospitalReferencia.morada}"></div></div>
+        <div class="form-row"><div style="flex:1;"><input type="text" id="hospNome" placeholder="${tr('Nome')}" value="${fv(c.hospitalReferencia.nome)}"></div><div style="flex:1;"><input type="text" id="hospTel" placeholder="${tr('Telefone')}" value="${fv(c.hospitalReferencia.telefone)}"></div></div>
+        <div class="form-row"><div style="flex:1;"><input type="text" id="hospMorada" placeholder="${tr('Morada')}" value="${fv(c.hospitalReferencia.morada)}"></div></div>
         <div class="section-label" style="margin-top:8px;">${tr('Contacto de emergência (amigo/familiar)')}</div>
-        <div class="form-row"><div style="flex:1;"><input type="text" id="ceNome" placeholder="${tr('Nome')}" value="${c.contactoEmergencia.nome}"></div><div style="flex:1;"><input type="text" id="ceRel" placeholder="${tr('Relação')}" value="${c.contactoEmergencia.relacao}"></div><div style="flex:1;"><input type="text" id="ceTel" placeholder="${tr('Telefone')}" value="${c.contactoEmergencia.telefone}"></div></div>
+        <div class="form-row"><div style="flex:1;"><input type="text" id="ceNome" placeholder="${tr('Nome')}" value="${fv(c.contactoEmergencia.nome)}"></div><div style="flex:1;"><input type="text" id="ceRel" placeholder="${tr('Relação')}" value="${fv(c.contactoEmergencia.relacao)}"></div><div style="flex:1;"><input type="text" id="ceTel" placeholder="${tr('Telefone')}" value="${fv(c.contactoEmergencia.telefone)}"></div></div>
         <button class="btn wide" id="saveHospital" type="button">${ICONS.check} ${tr('Guardar')}</button>
       </div>
     </details>
@@ -2005,12 +2003,12 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     <details class="acc"><summary>${ICONS.baby} ${tr('Família')} <span class="car">▾</span></summary>
       <div class="acc-body">
         <div class="section-label">${tr('Mãe')}</div>
-        <div class="form-row"><div style="flex:1;"><input type="text" id="maeNome" placeholder="${tr('Nome')}" value="${c.mae.nome}"></div><div style="flex:1;"><input type="text" id="maeTel" placeholder="${tr('Telefone')}" value="${c.mae.telefone}"></div></div>
-        <div class="form-row"><div style="flex:1;"><input type="text" id="maeNac" placeholder="${tr('Nacionalidade')}" value="${c.mae.nacionalidade}"></div><div style="flex:1;"><input type="text" id="maeNat" placeholder="${tr('Naturalidade')}" value="${c.mae.naturalidade||''}"></div><div style="flex:1;"><input type="text" id="maeBlood" placeholder="${tr('Tipo sanguíneo')}" value="${c.mae.tipoSanguineo||''}"></div></div>
+        <div class="form-row"><div style="flex:1;"><input type="text" id="maeNome" placeholder="${tr('Nome')}" value="${fv(c.mae.nome)}"></div><div style="flex:1;"><input type="text" id="maeTel" placeholder="${tr('Telefone')}" value="${fv(c.mae.telefone)}"></div></div>
+        <div class="form-row"><div style="flex:1;"><input type="text" id="maeNac" placeholder="${tr('Nacionalidade')}" value="${fv(c.mae.nacionalidade)}"></div><div style="flex:1;"><input type="text" id="maeNat" placeholder="${tr('Naturalidade')}" value="${c.mae.naturalidade||''}"></div><div style="flex:1;"><input type="text" id="maeBlood" placeholder="${tr('Tipo sanguíneo')}" value="${c.mae.tipoSanguineo||''}"></div></div>
         <textarea id="maeAntec" placeholder="${tr('Antecedentes médicos')}">${c.mae.antecedentes||''}</textarea>
         <div class="section-label" style="margin-top:10px;">${tr('Pai')}</div>
-        <div class="form-row"><div style="flex:1;"><input type="text" id="paiNome" placeholder="${tr('Nome')}" value="${c.pai.nome}"></div><div style="flex:1;"><input type="text" id="paiTel" placeholder="${tr('Telefone')}" value="${c.pai.telefone}"></div></div>
-        <div class="form-row"><div style="flex:1;"><input type="text" id="paiNac" placeholder="${tr('Nacionalidade')}" value="${c.pai.nacionalidade}"></div><div style="flex:1;"><input type="text" id="paiNat" placeholder="${tr('Naturalidade')}" value="${c.pai.naturalidade||''}"></div><div style="flex:1;"><input type="text" id="paiBlood" placeholder="${tr('Tipo sanguíneo')}" value="${c.pai.tipoSanguineo||''}"></div></div>
+        <div class="form-row"><div style="flex:1;"><input type="text" id="paiNome" placeholder="${tr('Nome')}" value="${fv(c.pai.nome)}"></div><div style="flex:1;"><input type="text" id="paiTel" placeholder="${tr('Telefone')}" value="${fv(c.pai.telefone)}"></div></div>
+        <div class="form-row"><div style="flex:1;"><input type="text" id="paiNac" placeholder="${tr('Nacionalidade')}" value="${fv(c.pai.nacionalidade)}"></div><div style="flex:1;"><input type="text" id="paiNat" placeholder="${tr('Naturalidade')}" value="${c.pai.naturalidade||''}"></div><div style="flex:1;"><input type="text" id="paiBlood" placeholder="${tr('Tipo sanguíneo')}" value="${c.pai.tipoSanguineo||''}"></div></div>
         <textarea id="paiAntec" placeholder="${tr('Antecedentes médicos')}">${c.pai.antecedentes||''}</textarea>
         <button class="btn wide" id="saveFamilia" type="button">${ICONS.check} ${tr('Guardar')}</button>
       </div>
@@ -2037,8 +2035,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <div class="acc-body">
         <div class="form-row"><div style="flex:1;"><label>${tr('Tipo')}</label><select id="alimTipo"><option value="Misto" ${c.alimentacao.tipo==='Misto'?'selected':''}>${tr('Misto')}</option><option value="Leite materno" ${c.alimentacao.tipo==='Leite materno'?'selected':''}>${tr('Leite materno')}</option><option value="Fórmula" ${c.alimentacao.tipo==='Fórmula'?'selected':''}>${tr('Fórmula')}</option><option value="Sólidos" ${c.alimentacao.tipo==='Sólidos'?'selected':''}>${tr('Sólidos')}</option></select></div></div>
         <div class="form-row">
-          <div style="flex:1;"><label>${tr('Fórmula / marca (campo livre)')}</label><input type="text" id="alimFormula" value="${c.alimentacao.formula}"></div>
-          <div style="flex:1;"><label>${tr('Quantidade/refeição (ml)')}</label><input type="text" id="alimQtd" value="${c.alimentacao.quantidadeRefeicao}"></div>
+          <div style="flex:1;"><label>${tr('Fórmula / marca (campo livre)')}</label><input type="text" id="alimFormula" value="${fv(c.alimentacao.formula)}"></div>
+          <div style="flex:1;"><label>${tr('Quantidade/refeição (ml)')}</label><input type="text" id="alimQtd" value="${fv(c.alimentacao.quantidadeRefeicao)}"></div>
         </div>
         <div class="form-row"><div style="flex:1;"><label>${tr('Início dos sólidos')}</label><input type="date" id="alimInicioSolidos" value="${c.alimentacao.dataInicioSolidos||''}"></div></div>
         <div class="section-label" style="margin-top:8px;">${tr('Introdução alimentar')}</div>
@@ -2070,16 +2068,16 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     <details class="acc"><summary>${ICONS.drop} ${tr('Transição para o penico')} <span class="car">▾</span></summary>
       <div class="acc-body">
         <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:var(--fs-md);"><input type="checkbox" id="penIniciado" ${c.penico.iniciado?'checked':''} style="width:auto;"> ${tr('Já começámos')}</label>
-        <div class="form-row"><div style="flex:1;"><label>${tr('Data de início')}</label><input type="date" id="penData" value="${c.penico.dataInicio}"></div></div>
+        <div class="form-row"><div style="flex:1;"><label>${tr('Data de início')}</label><input type="date" id="penData" value="${fv(c.penico.dataInicio)}"></div></div>
         <div class="counter-row"><span>${tr('Sucessos:')} <b id="penSuc">${c.penico.sucessos}</b></span><button class="counter-btn" data-pen="sucessos" type="button">+1</button>
           <span style="margin-left:12px;">${tr('Acidentes:')} <b id="penAcc">${c.penico.acidentes}</b></span><button class="counter-btn" data-pen="acidentes" type="button">+1</button></div>
-        <textarea id="penNotas" placeholder="${tr('Progresso/notas')}">${c.penico.notas}</textarea>
+        <textarea id="penNotas" placeholder="${tr('Progresso/notas')}">${fv(c.penico.notas)}</textarea>
         <button class="btn wide" id="savePenico" type="button">${ICONS.check} ${tr('Guardar')}</button>
       </div>
     </details>
 
     <details class="acc"><summary>${ICONS.note} ${tr('Notas gerais')} <span class="car">▾</span></summary>
-      <div class="acc-body"><textarea id="pNotas" placeholder="${tr('Observações, rotinas…')}">${c.notas}</textarea>
+      <div class="acc-body"><textarea id="pNotas" placeholder="${tr('Observações, rotinas…')}">${fv(c.notas)}</textarea>
         <button class="btn wide" id="saveNotas" type="button">${ICONS.check} ${tr('Guardar')}</button>
       </div>
     </details>`;
@@ -2654,15 +2652,15 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 
     const lang=(S.settings&&S.settings.lang)||'pt';
     const metaLbl = lang==='fr' ? `objectif (${months}m)` : lang==='en' ? `target (${months}m)` : `meta (${months}m)`;
-    const qualTxt = avgQual==='—' ? '—' : avgQual+'/10';
+    const qualTxt = avgQual==='—' ? '—' : fmtNum(avgQual,1)+'/10';
     const qualMedLbl = lang==='fr' ? `Qualité moyenne : ${qualTxt}` : lang==='en' ? `Average quality: ${qualTxt}` : `Qualidade média: ${qualTxt}`;
     const terminarLbl = lang==='fr' ? `Terminer le sommeil (${durStr((Date.now()-S.running.sleepStart)/60000)})` : lang==='en' ? `End sleep (${durStr((Date.now()-S.running.sleepStart)/60000)})` : `Terminar sono (${durStr((Date.now()-S.running.sleepStart)/60000)})`;
     const horasDiaLbl = lang==='fr' ? `heures par jour · objectif ${lo}–${hi}h` : lang==='en' ? `hours per day · target ${lo}–${hi}h` : `horas por dia · meta ${lo}–${hi}h`;
-    const napsToday = S.sono.filter(l=>inRange(l.inicio,t0,t1) && l.periodo==='sesta').length;   // só sestas; noites e "sem período" não são sonecas
+    const napsToday = S.sono.filter(l=>inRange(l.inicio,t0,t1) && l.periodo==='sesta').length;   // só sestas; noites e "sem período" não contam
     let html = `<div class="card"><div class="section-label">${tr('Hoje')}</div>
       <div class="grid2" style="grid-template-columns:repeat(3,1fr);">
-        <div class="stat" style="text-align:center;align-items:center;"><div class="ic sleepc">${ICONS.moon}</div><div class="val">${hoursToday.toFixed(1)}h</div><div class="sub">${tr('total')}</div></div>
-        <div class="stat" style="text-align:center;align-items:center;"><div class="ic sleepc">${ICONS.moon}</div><div class="val">${napsToday}</div><div class="sub">${napsToday===1?lx('soneca hoje','sieste aujourd\'hui','nap today'):tr('sonecas hoje')}</div></div>
+        <div class="stat" style="text-align:center;align-items:center;"><div class="ic sleepc">${ICONS.moon}</div><div class="val">${fmtNum(hoursToday,1,true)} h</div><div class="sub">${tr('total')}</div></div>
+        <div class="stat" style="text-align:center;align-items:center;"><div class="ic sleepc">${ICONS.moon}</div><div class="val">${napsToday}</div><div class="sub">${napsToday===1?lx('sesta hoje','sieste aujourd\'hui','nap today'):tr('sestas hoje')}</div></div>
         <div class="stat" style="text-align:center;align-items:center;"><div class="ic sleepc">${ICONS.chart}</div><div class="val">${statusLabel}</div><div class="sub">${tr('estado')}</div></div>
       </div>
       <p class="muted" style="margin-top:6px;">${qualMedLbl}</p>
@@ -3178,6 +3176,11 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   }
   function dayKey(ts){ const d=new Date(ts); return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate(); }
   function fmtInt(n){ return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' '); }
+  // Valor de formulário: vazio em vez de "undefined"/"null" quando o campo nunca foi preenchido.
+  function fv(v){ return v==null ? '' : v; }
+  // Número para mostrar, com a vírgula/ponto do idioma e sem zeros a mais (6,45 · 8 · 7,5). fixed=true → casas fixas (1,0).
+  function fmtNum(v, maxD, fixed){ const lang=(S.settings&&S.settings.lang)||'pt';
+    return new Intl.NumberFormat(lang==='en'?'en-GB':lang==='fr'?'fr-FR':'pt-PT', {minimumFractionDigits:fixed?maxD:0, maximumFractionDigits:maxD, useGrouping:false}).format(+v); }
   function fmtDec(n,d){ const v=(+n).toFixed(d); return ((S.settings&&S.settings.lang)||'pt')==='en' ? v : v.replace('.',','); }
   // Estatísticas objetivas de um período, só com registos reais. As médias por dia usam
   // APENAS os dias que têm registos dessa categoria — um dia sem registos não conta como 0.
@@ -3337,7 +3340,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     if(feeds3.length>=2){
       const diffs=[]; for(let i=1;i<feeds3.length;i++) diffs.push((feeds3[i].ts-feeds3[i-1].ts)/3600000);
       const avgInt=fmtDec(diffs.reduce((s,v)=>s+v,0)/diffs.length,1);
-      items.push({ic:ICONS.bottle, txt:lx(`Intervalo médio entre mamadas registadas (últimos 3 dias): ${avgInt}h.`,`Intervalle moyen entre repas enregistrés (3 derniers jours) : ${avgInt}h.`,`Average interval between logged feeds (last 3 days): ${avgInt}h.`)});
+      items.push({ic:ICONS.bottle, txt:lx(`Intervalo médio entre mamadas registadas (últimos 3 dias): ${avgInt} h.`,`Intervalle moyen entre repas enregistrés (3 derniers jours) : ${avgInt} h.`,`Average interval between logged feeds (last 3 days): ${avgInt} h.`)});
     }
     if(cur.diaper.xixiPerDay!=null && cur.diaper.xixi>0){   // sem xixi registado não se mostra "~0,0/dia"
       let txt = `${lx('Fraldas de xixi','Couches mouillées','Wet diapers')}: ~${fmtDec(cur.diaper.xixiPerDay,1)}/${dia} (${pl(cur.diaper.days,'dia com registos','dias com registos','jour avec enregistrements','jours avec enregistrements','day with records','days with records')} ${lx('nos últimos 7 dias','sur les 7 derniers jours','in the last 7 days')})`;
@@ -3352,7 +3355,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       const last=pesoArr[pesoArr.length-1], prevM=pesoArr[pesoArr.length-2];
       const deltaKg=last.valor-prevM.valor, sign=deltaKg>=0?'+':'−';
       const days=Math.max(1, Math.round((new Date(last.date)-new Date(prevM.date))/86400000));
-      items.push({ic:ICONS.chart, txt:lx(`Peso: ${sign}${fmtDec(Math.abs(deltaKg),2)}kg entre as duas últimas pesagens (${days} dias de intervalo).`,`Poids : ${sign}${fmtDec(Math.abs(deltaKg),2)}kg entre les deux dernières pesées (${days} jours d'écart).`,`Weight: ${sign}${fmtDec(Math.abs(deltaKg),2)}kg between the last two weigh-ins (${days} days apart).`)});
+      items.push({ic:ICONS.chart, txt:lx(`Peso: ${sign}${fmtDec(Math.abs(deltaKg),2)} kg entre as duas últimas pesagens (${days} dias de intervalo).`,`Poids : ${sign}${fmtDec(Math.abs(deltaKg),2)} kg entre les deux dernières pesées (${days} jours d'écart).`,`Weight: ${sign}${fmtDec(Math.abs(deltaKg),2)} kg between the last two weigh-ins (${days} days apart).`)});
     }
     return items;
   }
@@ -3421,7 +3424,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function renderResumo(){
     const insights = smartInsights();
     document.getElementById('main').innerHTML = `
-    <div class="card"><h2>${tr('Resumo inteligente')}</h2><p class="muted">${tr('Calculado automaticamente a partir dos teus registos — sem IA.')}</p>
+    <div class="card"><h2>${tr('Resumo inteligente')}</h2><p class="muted">${tr('Calculado automaticamente a partir dos teus registos.')}</p>
       ${insights.length ? insights.map(i=>`<div class="alert info" style="margin-bottom:6px;">${i.ic} ${i.txt}</div>`).join('') : `<div class="empty">${tr('Regista mais dados para veres tendências aqui.')}</div>`}
     </div>
     <div class="card"><h2>${tr('Resumo semanal')}</h2>
@@ -3471,7 +3474,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <div class="photo-box" style="width:80px;height:80px;border-radius:50%;margin:0 auto 8px;">${c.foto?`<img src="${c.foto}">`:ICONS.baby}</div>
       <h2>${c.nome}</h2><p class="muted">${ageInfo(c.dataNascimento).label} · ${tr('nascida')} ${new Date(c.dataNascimento+"T00:00:00").toLocaleDateString(localeTag())}</p>
     </div>
-    <div class="critical-block"><div class="bt">${c.tipoSanguineo||'—'}</div><div class="rh">${tr('Fator Rh:')} ${c.fatorRh||'—'} · ${tr('Doador universal se O')}</div></div>
+    <div class="critical-block"><div class="bt">${c.tipoSanguineo||'—'}</div><div class="rh">${tr('Fator Rh:')} ${c.fatorRh||'—'}</div></div>
 
     ${c.alergiasMed.map(a=>{
       const lbl = lang==='fr'?'Allergie':lang==='en'?'Allergy':'Alergia'; const altLbl = lang==='fr'?'alternative':lang==='en'?'alternative':'alternativa';
@@ -3493,15 +3496,14 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     <a class="call-btn" href="tel:112" style="border-color:var(--crit);"><div class="ic" style="background:var(--crit-soft);color:var(--crit);">${ICONS.phone}</div><div><div class="t1" style="color:var(--crit);">${tr('Emergência — 112')}</div><div class="t2">${tr('Bélgica / Luxemburgo')}</div></div></a>
 
     <div class="card"><div class="section-label">${tr('Dados atuais')}</div>
-      <div class="sos-line"><span>${tr('Peso')}</span><b>${latestMeasure('peso')?latestMeasure('peso').valor+'kg':'—'}</b></div>
-      <div class="sos-line"><span>${tr('Altura')}</span><b>${latestMeasure('altura')?latestMeasure('altura').valor+'cm':'—'}</b></div>
+      <div class="sos-line"><span>${tr('Peso')}</span><b>${latestMeasure('peso')?fmtNum(latestMeasure('peso').valor,3)+' kg':'—'}</b></div>
+      <div class="sos-line"><span>${tr('Altura')}</span><b>${latestMeasure('altura')?fmtNum(latestMeasure('altura').valor,1)+' cm':'—'}</b></div>
       <div class="sos-line"><span>${tr('Alimentação')}</span><b>${tr(c.alimentacao.tipo)}${c.alimentacao.formula?(' · '+c.alimentacao.formula):''}</b></div>
       <div class="sos-line"><span>${tr('Nº documento')}</span><b>${c.documentoId||'—'}</b></div>
       <div class="sos-line"><span>${tr('Sistema de saúde')}</span><b>${c.sistemaSaude||'—'}</b></div>
       <div class="sos-line"><span>${tr('Morada')}</span><b>${c.moradaAtual||'—'}</b></div>
     </div>
     <button class="btn wide" id="sosPdf" type="button">${tr('Exportar ficha de emergência (PDF)')}</button>
-    <p class="muted" style="text-align:center;margin-top:10px;">${tr('Código QR partilhável — disponível numa próxima versão.')}</p>
     </div>`;
     document.getElementById('sosPdf').addEventListener('click', exportSosPdf);
   }
@@ -3552,7 +3554,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       return `${open}<rect x="${bx.toFixed(1)}" y="0" width="${bw.toFixed(1)}" height="${h}" fill="transparent"/>
         <rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh(b.v).toFixed(1)}" rx="3" fill="var(--brand)"/>
         <text class="axis-label" x="${(bx+bw/2).toFixed(1)}" y="${h-8}" text-anchor="middle">${b.label}</text>
-        <text x="${(bx+bw/2).toFixed(1)}" y="${(by-5).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">${b.v}</text></g>`;
+        <text x="${(bx+bw/2).toFixed(1)}" y="${(by-5).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">${fmtNum(b.v,1)}</text></g>`;
     }).join('');
     const target = opts.targetLine ? `<line x1="${pad}" y1="${(h-pad-bh(opts.targetLine)).toFixed(1)}" x2="${w-8}" y2="${(h-pad-bh(opts.targetLine)).toFixed(1)}" stroke="var(--crit)" stroke-dasharray="4,3" stroke-width="1.2"/>` : '';
     return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="140">
@@ -3580,7 +3582,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         <button data-v="light" class="${S.settings.theme==='light'?'on':''}">${tr('Claro')}</button>
         <button data-v="dark" class="${S.settings.theme==='dark'?'on':''}">${tr('Escuro')}</button>
       </div>
-      <div class="section-label" style="margin-top:14px;">${tr('Cor da app')} <span class="muted" style="text-transform:none;font-weight:400;">${tr('— tons de exemplo, substituíveis')}</span></div>
+      <div class="section-label" style="margin-top:14px;">${tr('Cor da app')}</div>
       <div class="swatch-grid">
         ${ACCENTS.map((a,i)=>`<button type="button" class="swatch ${S.settings.accentIndex===i?'on':''}" style="background:${a.accent}" data-accent="${i}" title="${a.n}" aria-label="${a.n}" aria-pressed="${S.settings.accentIndex===i}"></button>`).join('')}
       </div>
@@ -3614,7 +3616,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <button class="btn crit wide" id="resetBtn" type="button" style="margin-top:8px;">${tr('Apagar todos os dados')}</button>
       ${S.criancas.length>1 ? `<button class="btn crit wide" id="removeChildBtn" type="button" style="margin-top:8px;">${tr('Remover perfil de')} ${S.crianca.nome}</button>` : ''}
     </div>
-    <p class="muted" style="text-align:center;">${tr('Tudo guardado neste dispositivo (localStorage) — sem servidor, sem conta.')}</p>`;
+    <p class="muted" style="text-align:center;">${tr('Tudo fica guardado neste dispositivo — sem servidor, sem conta.')}</p>`;
   }
 
   /* ============ exportar / importar (Fase 2) ============

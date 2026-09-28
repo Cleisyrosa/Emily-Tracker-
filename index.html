@@ -10,11 +10,16 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
+  /* design system U9 — tipografia, espaçamento e raios */
+  --fs-xs:12px; --fs-sm:13px; --fs-md:14px; --fs-base:16px; --fs-lg:18px; --fs-xl:21px; --fs-2xl:28px; --fs-3xl:34px;
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-7:32px;
+  --r-1:8px; --r-2:12px; --r-3:16px; --r-4:20px; --r-5:24px; --r-6:28px;
+  --growth:#2c7280; --growth-soft:#d6eef1; --feed-text:#953f5e; --on-feed:#ffffff;
   --bg:#fffaf3; --surface:#ffffff; --surface-2:#f5f0e8; --border:#f0e6d6;
   --ink:#5a4a42; --ink-muted:#76685e; --ink-faint:#817061;
   --accent:#f9dce8; --accent-ink:#7a3350; --brand:#c2708f; --brand-ink:#241d19; --brand-text:#af4b71; --on-crit:#ffffff;
   --good:#2f6b4f; --good-soft:#dcefd4;
-  --warn:#8a6a10; --warn-soft:#fce4a4;
+  --warn:#81630f; --warn-soft:#fce4a4;
   --crit:#93332b; --crit-soft:#f5c4c4;
   --info:#2f5a86; --info-soft:#d9e8f7;
   --feed:#b8567a; --feed-soft:#f6c9dc; --diaper:#a06a3a; --diaper-soft:#f0e2c9; --sleepc:#6b5aa8; --sleepc-soft:#e2dcf0;
@@ -32,7 +37,7 @@
     --warn:#e0be6f; --warn-soft:#3a2f14;
     --crit:#e89b92; --crit-soft:#3a201d;
     --info:#8fbde0; --info-soft:#1f2f3f;
-    --feed:#e8a0be; --feed-soft:#4a2f3a; --diaper:#d9a468; --diaper-soft:#3f3222; --sleepc:#b3a3e0; --sleepc-soft:#332c47;
+    --growth:#7fc8d4; --growth-soft:#1f3a3f; --feed-text:#e8a0be; --on-feed:#241d19; --feed:#e8a0be; --feed-soft:#4a2f3a; --diaper:#d9a468; --diaper-soft:#3f3222; --sleepc:#b3a3e0; --sleepc-soft:#332c47;
     --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -14px rgba(0,0,0,.55);
     --bg-scrim:rgba(42,38,34,.40); --topbar-scrim-a:rgba(248,215,230,.32); --topbar-scrim-b:rgba(61,57,53,.35);
     --header-bg:#4a2f3a; --header-ink:#f8d7e6; --header-ink-soft:#e8a0be;
@@ -47,7 +52,7 @@
   --warn:#e0be6f; --warn-soft:#3a2f14;
   --crit:#e89b92; --crit-soft:#3a201d;
   --info:#8fbde0; --info-soft:#1f2f3f;
-  --feed:#e8a0be; --feed-soft:#4a2f3a; --diaper:#d9a468; --diaper-soft:#3f3222; --sleepc:#b3a3e0; --sleepc-soft:#332c47;
+  --growth:#7fc8d4; --growth-soft:#1f3a3f; --feed-text:#e8a0be; --on-feed:#241d19; --feed:#e8a0be; --feed-soft:#4a2f3a; --diaper:#d9a468; --diaper-soft:#3f3222; --sleepc:#b3a3e0; --sleepc-soft:#332c47;
   --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -14px rgba(0,0,0,.55);
   --bg-scrim:rgba(42,38,34,.40); --topbar-scrim-a:rgba(248,215,230,.32); --topbar-scrim-b:rgba(61,57,53,.35);
   --header-bg:#4a2f3a; --header-ink:#f8d7e6; --header-ink-soft:#e8a0be;
@@ -59,7 +64,7 @@ body{ color:var(--ink); font-family:'Mulish',system-ui,-apple-system,sans-serif;
 h1,h2,h3,.display{ font-family:'Baloo 2','Fraunces',Georgia,serif; font-weight:700; text-wrap:balance; color:var(--ink); margin:0; }
 .mono{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; }
 button{ font-family:inherit; } input,select,textarea{ font-family:inherit; }
-:focus-visible{ outline:3px solid var(--brand-text); outline-offset:2px; border-radius:6px; }
+:focus-visible{ outline:3px solid var(--brand-text); outline-offset:2px; border-radius:var(--r-1); }
 input:focus-visible, select:focus-visible, textarea:focus-visible{ outline:2px solid var(--brand-text); outline-offset:1px; }
 .topbar :focus-visible{ outline-color:var(--header-ink); }
 button:disabled, .btn:disabled{ opacity:.45; cursor:not-allowed; }
@@ -68,17 +73,17 @@ svg{ display:block; }
 a{ color:inherit; }
 
 .phone{ max-width:480px; margin:0 auto; min-height:100vh; background:var(--bg); display:flex; flex-direction:column; }
-@media (min-width:540px){ body{ padding:22px 12px; } .phone{ min-height:calc(100vh - 44px); border-radius:26px; box-shadow:var(--shadow); border:1px solid var(--border); overflow:hidden; } }
+@media (min-width:540px){ body{ padding:22px 12px; } .phone{ min-height:calc(100vh - 44px); border-radius:var(--r-6); box-shadow:var(--shadow); border:1px solid var(--border); overflow:hidden; } }
 
 .topbar{ position:relative; display:flex; align-items:center; gap:12px; padding:16px 16px 18px; background:var(--header-bg); border-radius:0 0 26px 26px; overflow:hidden; }
 .topbar .confetti{ position:absolute; pointer-events:none; opacity:.8; }
-.avatar{ position:relative; width:52px; height:52px; border-radius:50%; background:var(--surface); color:var(--header-ink); display:flex; align-items:center; justify-content:center; font-family:'Baloo 2'; font-size:1.35rem; font-weight:700; flex:none; overflow:hidden; box-shadow:0 6px 16px -6px rgba(122,51,80,.35); border:3px solid #fff; }
+.avatar{ position:relative; width:52px; height:52px; border-radius:50%; background:var(--surface); color:var(--header-ink); display:flex; align-items:center; justify-content:center; font-family:'Baloo 2'; font-size:var(--fs-xl); font-weight:700; flex:none; overflow:hidden; box-shadow:0 6px 16px -6px rgba(122,51,80,.35); border:3px solid #fff; }
 .avatar img{ width:100%; height:100%; object-fit:cover; }
 .topbar-text{ position:relative; flex:1; min-width:0; }
-.topbar-text h1{ font-size:1.2rem; line-height:1.2; color:var(--header-ink); }
-.topbar-text .age{ font-size:.78rem; color:var(--header-ink-soft); font-weight:700; }
-.blood-chip{ position:relative; background:var(--header-chip-bg); color:var(--header-chip-ink); font-weight:800; font-size:.78rem; padding:5px 10px; border-radius:10px; flex:none; text-align:center; line-height:1.1; border:none; }
-.blood-chip small{ display:block; font-size:.75rem; font-weight:700; letter-spacing:.03em; }
+.topbar-text h1{ font-size:var(--fs-xl); line-height:1.2; color:var(--header-ink); }
+.topbar-text .age{ font-size:var(--fs-xs); color:var(--header-ink-soft); font-weight:700; }
+.blood-chip{ position:relative; background:var(--header-chip-bg); color:var(--header-chip-ink); font-weight:800; font-size:var(--fs-xs); padding:5px 10px; border-radius:var(--r-2); flex:none; text-align:center; line-height:1.1; border:none; }
+.blood-chip small{ display:block; font-size:var(--fs-xs); font-weight:700; letter-spacing:.03em; }
 
 main{ flex:1; overflow-y:auto; padding:14px 14px 84px; }
 @keyframes fadeIn{ from{ opacity:.5; transform:translateY(5px); } to{ opacity:1; transform:translateY(0); } }
@@ -87,26 +92,26 @@ main.fade-in{ animation:fadeIn .22s ease; }
 .panel{ display:none; animation:fade .2s ease; } .panel.active{ display:block; }
 @keyframes fade{ from{opacity:0; transform:translateY(4px);} to{opacity:1;transform:translateY(0);} }
 
-.card{ background:var(--surface); border:2px solid var(--surface-2); border-radius:20px; padding:15px; margin-bottom:12px; box-shadow:var(--shadow); transition:box-shadow .15s ease; }
-.card h2{ font-size:1.02rem; margin-bottom:2px; }
-.muted{ color:var(--ink-muted); font-size:.83rem; }
-.section-label{ font-size:.75rem; letter-spacing:.08em; text-transform:uppercase; font-weight:800; color:var(--brand-text); margin:0 0 10px; }
-.demo-banner{ display:flex; align-items:center; gap:10px; background:var(--warn-soft); border:2px solid var(--warn); color:var(--warn); border-radius:18px; padding:10px 14px; font-size:.8rem; margin-bottom:14px; font-weight:700; }
-.demo-banner button{ margin-left:auto; background:none; border:1px solid var(--warn); color:var(--warn); border-radius:10px; padding:4px 10px; font-size:.75rem; font-weight:700; cursor:pointer; flex:none; }
+.card{ background:var(--surface); border:2px solid var(--surface-2); border-radius:var(--r-4); padding:15px; margin-bottom:12px; box-shadow:var(--shadow); transition:box-shadow .15s ease; }
+.card h2{ font-size:var(--fs-base); margin-bottom:2px; }
+.muted{ color:var(--ink-muted); font-size:var(--fs-sm); }
+.section-label{ font-size:var(--fs-xs); letter-spacing:.08em; text-transform:uppercase; font-weight:800; color:var(--brand-text); margin:0 0 10px; }
+.demo-banner{ display:flex; align-items:center; gap:10px; background:var(--warn-soft); border:2px solid var(--warn); color:var(--warn); border-radius:var(--r-4); padding:10px 14px; font-size:var(--fs-sm); margin-bottom:14px; font-weight:700; }
+.demo-banner button{ margin-left:auto; background:none; border:1px solid var(--warn); color:var(--warn); border-radius:var(--r-2); padding:4px 10px; font-size:var(--fs-xs); font-weight:700; cursor:pointer; flex:none; }
 
 .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:9px; }
-.stat{ background:var(--surface); border:2px solid var(--surface-2); border-radius:18px; padding:12px 13px; display:flex; flex-direction:column; gap:3px; box-shadow:var(--shadow); }
+.stat{ background:var(--surface); border:2px solid var(--surface-2); border-radius:var(--r-4); padding:12px 13px; display:flex; flex-direction:column; gap:3px; box-shadow:var(--shadow); }
 .stat .ic{ width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--accent); color:var(--brand-text); margin-bottom:2px;}
 .stat .ic.sleepc{ background:var(--sleepc-soft); color:var(--sleepc); }
 .stat .ic.feed{ background:var(--feed-soft); color:var(--feed); }
 .stat .ic.diaper{ background:var(--diaper-soft); color:var(--diaper); }
-.stat .lbl{ font-size:.75rem; letter-spacing:.03em; text-transform:uppercase; color:var(--ink-faint); font-weight:700; }
-.stat .val{ font-family:'Baloo 2'; font-size:1.05rem; }
-.stat .sub{ font-size:.75rem; color:var(--ink-muted); }
+.stat .lbl{ font-size:var(--fs-xs); letter-spacing:.03em; text-transform:uppercase; color:var(--ink-faint); font-weight:700; }
+.stat .val{ font-family:'Baloo 2'; font-size:var(--fs-lg); }
+.stat .sub{ font-size:var(--fs-xs); color:var(--ink-muted); }
 
 .qa-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
 .qa-grid.g3{ grid-template-columns:repeat(3,1fr); }
-.qa-tile{ border:2px solid var(--surface-2); background:var(--surface-2); border-radius:18px; padding:10px 4px; display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; color:var(--ink); text-align:center; min-height:64px; justify-content:center;  font:inherit; width:100%;}
+.qa-tile{ border:2px solid var(--surface-2); background:var(--surface-2); border-radius:var(--r-4); padding:10px 4px; display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; color:var(--ink); text-align:center; min-height:64px; justify-content:center;  font:inherit; width:100%;}
 .qa-tile:hover{ border-color:var(--brand); }
 .qa-tile .ic{ width:34px; height:34px; border-radius:50%; background:var(--surface); color:var(--brand-text); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px -2px rgba(90,74,66,.2); }
 .qa-tile .ic.feed{ background:var(--feed-soft); color:var(--feed); }
@@ -114,22 +119,35 @@ main.fade-in{ animation:fadeIn .22s ease; }
 .qa-tile .ic.sleepc{ background:var(--sleepc-soft); color:var(--sleepc); }
 .qa-tile .ic.good{ background:var(--good-soft); color:var(--good); }
 .qa-tile.running{ border-color:var(--good); background:var(--good-soft); }
-.qa-tile .lbl{ font-size:.75rem; font-weight:700; }
+.qa-tile .lbl{ font-size:var(--fs-xs); font-weight:700; }
 
 .timeline-wrap{ overflow-x:auto; }
-.form-panel{ margin-top:12px; padding:13px; border-radius:12px; background:var(--surface-2); border:1px solid var(--border); display:flex; flex-direction:column; gap:9px; }
+.form-panel{ margin-top:12px; padding:13px; border-radius:var(--r-2); background:var(--surface-2); border:1px solid var(--border); display:flex; flex-direction:column; gap:9px; }
 .form-row{ display:flex; gap:8px; flex-wrap:wrap; }
-.form-row label{ font-size:.75rem; font-weight:700; color:var(--ink-muted); display:block; margin-bottom:4px; }
+.form-row label{ font-size:var(--fs-xs); font-weight:700; color:var(--ink-muted); display:block; margin-bottom:4px; }
 .seg{ display:flex; gap:6px; flex-wrap:wrap; }
-.seg button{ flex:1; min-width:64px; padding:8px 6px; border:1px solid var(--border); background:var(--surface); border-radius:9px; font-size:.75rem; font-weight:700; color:var(--ink-muted); cursor:pointer;  min-height:44px;}
+.seg button{ flex:1; min-width:64px; padding:8px 6px; border:1px solid var(--border); background:var(--surface); border-radius:var(--r-1); font-size:var(--fs-xs); font-weight:700; color:var(--ink-muted); cursor:pointer;  min-height:44px;}
 .seg button.on{ background:var(--brand); border-color:var(--brand); color:var(--brand-ink); }
 input[type=checkbox]{ width:20px; height:20px; accent-color:var(--brand-text); }
-input[type=number],input[type=text],input[type=date],input[type=time],select,textarea{ width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:9px; background:var(--surface); color:var(--ink); font-size:.83rem; }
+input[type=number],input[type=text],input[type=date],input[type=time],select,textarea{ width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:var(--r-1); background:var(--surface); color:var(--ink); font-size:var(--fs-sm); }
 textarea{ min-height:56px; resize:vertical; }
 input.remembered-fill,textarea.remembered-fill{ /* dado real guardado, não é exemplo — mantém aspeto normal, só limpa ao tocar */ }
-.btn{ padding:10px 18px; border-radius:14px; border:none; background:var(--brand); color:var(--brand-ink); min-height:44px; font-weight:700; font-size:.83rem; cursor:pointer; }
+.btn{ padding:10px 18px; border-radius:var(--r-3); border:none; background:var(--brand); color:var(--brand-ink); min-height:44px; font-weight:700; font-size:var(--fs-sm); cursor:pointer;  display:inline-flex; align-items:center; justify-content:center; gap:var(--space-2); font-family:inherit; line-height:1.2; transition:transform .06s ease, filter .12s ease;}
 .btn.ghost{ background:transparent; border:1px solid var(--border); color:var(--ink-muted); }
-.btn.crit{ background:var(--crit); color:var(--on-crit); }
+.btn.crit, .btn.danger{ background:var(--crit); color:var(--on-crit); }
+.btn.secondary{ background:var(--surface-2); color:var(--ink); border:1.5px solid var(--border); }
+.btn.sensitive{ background:var(--warn-soft); color:var(--warn); border:1.5px solid var(--warn); }
+.btn:active:not(:disabled), .dose-btn:active:not(:disabled), .qa-tile:active{ transform:translateY(1px) scale(.99); filter:brightness(.96); }
+.btn svg, .dose-btn svg{ width:16px; height:16px; flex:none; }
+.dose-btn{ display:inline-flex; align-items:center; gap:6px; }
+.dose-btn.give{ background:var(--warn-soft); color:var(--warn); border:1.5px solid var(--warn); }
+.icon-btn svg{ width:18px; height:18px; }
+.log-del svg{ width:18px; height:18px; }
+.g-del{ display:flex; align-items:center; justify-content:center; padding:0; } .g-del svg{ width:14px; height:14px; }
+.status-dot{ display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+.status-dot.good{ background:var(--good); } .status-dot.warn{ background:var(--warn); } .status-dot.crit{ background:var(--crit); }
+.inline-ic{ display:inline-flex; vertical-align:middle; color:var(--ink-muted); } .inline-ic svg{ width:14px; height:14px; }
+.sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .btn.wide{ width:100%; }
 .btn-row{ display:flex; gap:8px; }
 
@@ -140,28 +158,28 @@ input.remembered-fill,textarea.remembered-fill{ /* dado real guardado, não é e
 .log-item .ic.diaper{ background:var(--diaper-soft); color:var(--diaper); }
 .log-item .ic.sleepc{ background:var(--sleepc-soft); color:var(--sleepc); }
 .log-item .body{ flex:1; min-width:0; }
-.log-item .title{ font-size:.83rem; font-weight:700; }
-.log-item .meta{ font-size:.75rem; color:var(--ink-muted); }
-.log-item .time{ font-family:'IBM Plex Mono'; font-size:.7rem; color:var(--ink-faint); flex:none; }
-.log-del{ background:none; border:none; color:var(--ink-muted); cursor:pointer; font-size:.85rem; flex:none; padding:4px; min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; border-radius:12px; }
+.log-item .title{ font-size:var(--fs-sm); font-weight:700; }
+.log-item .meta{ font-size:var(--fs-xs); color:var(--ink-muted); }
+.log-item .time{ font-family:'IBM Plex Mono'; font-size:var(--fs-xs); color:var(--ink-faint); flex:none; }
+.log-del{ background:none; border:none; color:var(--ink-muted); cursor:pointer; font-size:var(--fs-md); flex:none; padding:4px; min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--r-2); }
 .log-del:hover{ color:var(--crit); }
-.empty{ color:var(--ink-faint); font-size:.8rem; font-style:italic; padding:8px 3px; }
-.example-hint{ font-size:.76rem; color:var(--ink-faint); border:1px dashed var(--border); border-radius:10px; padding:7px 10px; margin-top:6px; font-style:italic; }
-.example-hint .ex-tag{ font-style:normal; font-size:.6rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; background:var(--surface-2); color:var(--ink-muted); border-radius:6px; padding:2px 6px; margin-right:6px; }
+.empty{ color:var(--ink-faint); font-size:var(--fs-sm); font-style:italic; padding:8px 3px; }
+.example-hint{ font-size:var(--fs-xs); color:var(--ink-faint); border:1px dashed var(--border); border-radius:var(--r-2); padding:7px 10px; margin-top:6px; font-style:italic; }
+.example-hint .ex-tag{ font-style:normal; font-size:var(--fs-xs); font-weight:800; text-transform:uppercase; letter-spacing:.05em; background:var(--surface-2); color:var(--ink-muted); border-radius:var(--r-1); padding:2px 6px; margin-right:6px; }
 
-.alert{ display:flex; gap:8px; align-items:flex-start; padding:10px 14px; border-radius:16px; font-size:.8rem; font-weight:600; margin-bottom:10px; }
+.alert{ display:flex; gap:8px; align-items:flex-start; padding:10px 14px; border-radius:var(--r-3); font-size:var(--fs-sm); font-weight:600; margin-bottom:10px; }
 .alert.crit{ background:var(--crit-soft); color:var(--crit); border:2px solid var(--crit); }
 .alert.warn{ background:var(--warn-soft); color:var(--warn); border:2px solid var(--warn); }
 .alert.good{ background:var(--good-soft); color:var(--good); border:2px solid var(--good); }
 .alert.info{ background:var(--info-soft); color:var(--info); border:2px solid var(--info); }
 
-details.acc{ border:1px solid var(--border); border-radius:12px; margin-bottom:8px; background:var(--surface); overflow:hidden; }
-details.acc summary{ cursor:pointer; padding:12px 13px; font-weight:700; font-size:.86rem; list-style:none; display:flex; align-items:center; gap:9px; background:var(--surface-2); }
+details.acc{ border:1px solid var(--border); border-radius:var(--r-2); margin-bottom:8px; background:var(--surface); overflow:hidden; }
+details.acc summary{ cursor:pointer; padding:12px 13px; font-weight:700; font-size:var(--fs-md); list-style:none; display:flex; align-items:center; gap:9px; background:var(--surface-2); }
 details.acc summary::-webkit-details-marker{ display:none; }
 details.acc summary .car{ margin-left:auto; transition:transform .15s; color:var(--ink-muted); }
 details.acc[open] summary .car{ transform:rotate(180deg); }
 .acc-body{ padding:13px; display:flex; flex-direction:column; gap:10px; }
-.tag{ display:inline-flex; align-items:center; gap:4px; background:var(--crit-soft); color:var(--crit); border-radius:999px; padding:4px 10px; font-size:.75rem; font-weight:700; border:1px solid var(--crit); }
+.tag{ display:inline-flex; align-items:center; gap:4px; background:var(--crit-soft); color:var(--crit); border-radius:999px; padding:4px 10px; font-size:var(--fs-xs); font-weight:700; border:1px solid var(--crit); }
 .tag.intol{ background:var(--warn-soft); color:var(--warn); border-color:var(--warn); }
 .tag-row{ display:flex; flex-wrap:wrap; gap:6px; }
 .chip-x{ background:none; border:none; color:inherit; cursor:pointer; font-weight:900; margin-left:2px; }
@@ -169,113 +187,114 @@ details.acc[open] summary .car{ transform:rotate(180deg); }
 .add-inline input{ flex:1; }
 .med-row{ display:flex; align-items:center; gap:8px; padding:8px 0; border-top:1px solid var(--border); }
 .med-row:first-child{ border-top:none; }
-.med-row .body{ flex:1; font-size:.83rem; }
-.dose-btn{ background:var(--accent); color:var(--ink); border:none; border-radius:8px; padding:8px 12px; min-height:40px; font-size:.75rem; font-weight:700; cursor:pointer; flex:none; }
+.med-row .body{ flex:1; font-size:var(--fs-sm); }
+.med-row.med-actions{ flex-wrap:wrap; row-gap:var(--space-2); } .med-row.med-actions .body{ flex:1 1 100%; } .med-row.med-actions .log-del{ margin-left:auto; }
+.dose-btn{ background:var(--accent); color:var(--ink); border:none; border-radius:var(--r-1); padding:8px 12px; min-height:40px; font-size:var(--fs-xs); font-weight:700; cursor:pointer; flex:none; }
 
-.critical-block{ background:var(--crit-soft); border:2px solid var(--crit); border-radius:14px; padding:14px; margin-bottom:12px; text-align:center; }
-.critical-block .bt{ font-family:'Baloo 2'; font-size:2.1rem; font-weight:700; color:var(--crit); line-height:1; }
-.critical-block .rh{ font-size:.78rem; color:var(--crit); font-weight:700; margin-top:2px; }
+.critical-block{ background:var(--crit-soft); border:2px solid var(--crit); border-radius:var(--r-4); padding:14px; margin-bottom:12px; text-align:center; }
+.critical-block .bt{ font-family:'Baloo 2'; font-size:var(--fs-3xl); font-weight:700; color:var(--crit); line-height:1; }
+.critical-block .rh{ font-size:var(--fs-xs); color:var(--crit); font-weight:700; margin-top:2px; }
 /* A aba SOS mantém um registo mais sóbrio — letra direta, sem o tom brincalhão do resto da app */
 .sos-serious h1, .sos-serious h2, .sos-serious h3, .sos-serious .display, .sos-serious .critical-block .bt{ font-family:'Fraunces',Georgia,serif; font-weight:600; }
 
 .vax-group{ border-top:1px solid var(--border); padding:9px 0; }
 .vax-group:first-child{ border-top:none; }
-.vax-group .vname{ font-weight:700; font-size:.85rem; margin-bottom:6px; }
-.vax-dose{ display:flex; align-items:center; gap:8px; padding:4px 0; font-size:.78rem; }
+.vax-group .vname{ font-weight:700; font-size:var(--fs-md); margin-bottom:6px; }
+.vax-dose{ display:flex; align-items:center; gap:8px; padding:4px 0; font-size:var(--fs-xs); }
 .vax-dose .lbl{ flex:1; color:var(--ink-muted); }
-.vax-badge{ font-size:.75rem; font-weight:800; padding:6px 12px; min-height:36px; border-radius:999px; text-transform:uppercase; letter-spacing:.02em; border:none; cursor:pointer; font-family:'IBM Plex Mono'; }
+.vax-badge{ font-size:var(--fs-xs); font-weight:800; padding:6px 12px; min-height:36px; border-radius:999px; text-transform:uppercase; letter-spacing:.02em; border:none; cursor:pointer; font-family:'IBM Plex Mono'; }
 .vax-badge.done{ background:var(--good-soft); color:var(--good); }
 .vax-badge.pending{ background:var(--warn-soft); color:var(--warn); }
 .vax-badge.soon{ background:var(--crit-soft); color:var(--crit); }
 
 .milestone-band{ border-top:1px solid var(--border); padding:10px 0; }
-.milestone-card{ border-radius:22px; padding:28px 22px; text-align:center; color:#3d3935; box-shadow:0 8px 24px -10px rgba(0,0,0,.25); }
-.milestone-card .mc-name{ font-family:'Baloo 2',Georgia,serif; font-weight:700; font-size:1.4rem; }
-.milestone-card .mc-week{ display:inline-block; margin:8px 0 14px; padding:5px 14px; border-radius:999px; background:rgba(0,0,0,.06); font-weight:700; font-size:.8rem; }
-.milestone-card .mc-text{ font-size:1.05rem; line-height:1.5; margin-bottom:16px; }
-.milestone-card .mc-brand{ font-size:.75rem; font-weight:700; color:#8a7a6e; letter-spacing:.03em; }
+.milestone-card{ border-radius:var(--r-5); padding:28px 22px; text-align:center; color:#3d3935; box-shadow:0 8px 24px -10px rgba(0,0,0,.25); }
+.milestone-card .mc-name{ font-family:'Baloo 2',Georgia,serif; font-weight:700; font-size:var(--fs-xl); }
+.milestone-card .mc-week{ display:inline-block; margin:8px 0 14px; padding:5px 14px; border-radius:999px; background:rgba(0,0,0,.06); font-weight:700; font-size:var(--fs-sm); }
+.milestone-card .mc-text{ font-size:var(--fs-lg); line-height:1.5; margin-bottom:16px; }
+.milestone-card .mc-brand{ font-size:var(--fs-xs); font-weight:700; color:#8a7a6e; letter-spacing:.03em; }
 .milestone-band:first-child{ border-top:none; }
-.milestone-band h3{ font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-muted); margin-bottom:6px; }
-.mi-row{ display:flex; align-items:center; gap:9px; padding:5px 0; font-size:.83rem; }
+.milestone-band h3{ font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.04em; color:var(--ink-muted); margin-bottom:6px; }
+.mi-row{ display:flex; align-items:center; gap:9px; padding:5px 0; font-size:var(--fs-sm); }
 .mi-row .dot{ width:9px; height:9px; border-radius:50%; flex:none; }
 .mi-row.done .dot{ background:var(--good); } .mi-row.pending .dot{ background:var(--warn); }
-.mi-row .d{ margin-left:auto; font-size:.75rem; color:var(--ink-faint); font-family:'IBM Plex Mono'; }
+.mi-row .d{ margin-left:auto; font-size:var(--fs-xs); color:var(--ink-faint); font-family:'IBM Plex Mono'; }
 
 .chart-wrap{ overflow-x:auto; } .chart-wrap svg{ font-family:'IBM Plex Mono',monospace; }
 .axis-label{ fill:var(--ink-faint); font-size:12px; }
-.legend{ display:flex; gap:14px; font-size:.75rem; color:var(--ink-muted); margin-top:6px; flex-wrap:wrap; }
+.legend{ display:flex; gap:14px; font-size:var(--fs-xs); color:var(--ink-muted); margin-top:6px; flex-wrap:wrap; }
 .legend span{ display:inline-flex; align-items:center; gap:5px; }
 .legend i{ width:12px; height:2.5px; display:inline-block; border-radius:2px; }
 
-.sos-card{ background:var(--crit-soft); border:2px solid var(--crit); border-radius:16px; padding:16px; margin-bottom:12px; }
-.sos-card h2{ color:var(--crit); font-size:1.05rem; }
-.sos-line{ display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-top:1px dashed rgba(147,51,43,.3); font-size:.83rem; }
+.sos-card{ background:var(--crit-soft); border:2px solid var(--crit); border-radius:var(--r-3); padding:16px; margin-bottom:12px; }
+.sos-card h2{ color:var(--crit); font-size:var(--fs-lg); }
+.sos-line{ display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-top:1px dashed rgba(147,51,43,.3); font-size:var(--fs-sm); }
 .sos-line:first-of-type{ border-top:none; }
 .sos-line b{ color:var(--ink); text-align:right; }
-.call-btn{ display:flex; align-items:center; gap:10px; padding:11px 13px; border-radius:12px; background:var(--surface); border:1px solid var(--border); text-decoration:none; color:var(--ink); margin-bottom:8px; box-shadow:var(--shadow); }
-.call-btn .ic{ width:32px; height:32px; border-radius:9px; background:var(--good-soft); color:var(--good); display:flex; align-items:center; justify-content:center; flex:none; }
-.call-btn .t1{ font-weight:700; font-size:.84rem; } .call-btn .t2{ font-size:.75rem; color:var(--ink-muted); font-family:'IBM Plex Mono'; }
+.call-btn{ display:flex; align-items:center; gap:10px; padding:11px 13px; border-radius:var(--r-2); background:var(--surface); border:1px solid var(--border); text-decoration:none; color:var(--ink); margin-bottom:8px; box-shadow:var(--shadow); }
+.call-btn .ic{ width:32px; height:32px; border-radius:var(--r-1); background:var(--good-soft); color:var(--good); display:flex; align-items:center; justify-content:center; flex:none; }
+.call-btn .t1{ font-weight:700; font-size:var(--fs-md); } .call-btn .t2{ font-size:var(--fs-xs); color:var(--ink-muted); font-family:'IBM Plex Mono'; }
 
 .theme-seg{ display:flex; gap:8px; }
-.theme-seg button{ flex:1; padding:10px; border-radius:10px; border:1px solid var(--border); background:var(--surface); color:var(--ink-muted); font-weight:700; font-size:.8rem; cursor:pointer; }
+.theme-seg button{ flex:1; padding:10px; border-radius:var(--r-2); border:1px solid var(--border); background:var(--surface); color:var(--ink-muted); font-weight:700; font-size:var(--fs-sm); cursor:pointer; }
 .theme-seg button.on{ background:var(--brand); color:var(--brand-ink); border-color:var(--brand); }
 
 .gallery{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
-.gallery .g-item{ position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden; background:var(--surface-2); }
+.gallery .g-item{ position:relative; aspect-ratio:1; border-radius:var(--r-2); overflow:hidden; background:var(--surface-2); }
 .gallery img{ width:100%; height:100%; object-fit:cover; }
-.gallery .g-del{ position:absolute; top:2px; right:2px; background:rgba(0,0,0,.55); color:#fff; border:none; border-radius:50%; width:30px; height:30px; font-size:.75rem; cursor:pointer; }
+.gallery .g-del{ position:absolute; top:2px; right:2px; background:rgba(0,0,0,.55); color:#fff; border:none; border-radius:50%; width:30px; height:30px; font-size:var(--fs-xs); cursor:pointer; }
 .photo-row{ display:flex; align-items:center; gap:12px; }
-.photo-box{ width:60px; height:60px; border-radius:15px; background:var(--surface-2); overflow:hidden; flex:none; display:flex; align-items:center; justify-content:center; color:var(--ink-faint); }
+.photo-box{ width:60px; height:60px; border-radius:var(--r-3); background:var(--surface-2); overflow:hidden; flex:none; display:flex; align-items:center; justify-content:center; color:var(--ink-faint); }
 .photo-box img{ width:100%; height:100%; object-fit:cover; }
-.file-btn{ font-size:.76rem; font-weight:700; color:var(--brand-text); background:none; border:1px dashed var(--brand); border-radius:9px; padding:8px 12px; cursor:pointer; }
+.file-btn{ font-size:var(--fs-xs); font-weight:700; color:var(--brand-text); background:none; border:1px dashed var(--brand); border-radius:var(--r-1); padding:8px 12px; cursor:pointer; }
 
-.sum-block{ margin-top:10px; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:11px 13px; }
-.sum-title{ display:flex; align-items:center; gap:7px; font-weight:800; font-size:.86rem; margin-bottom:6px; color:var(--ink); }
+.sum-block{ margin-top:10px; background:var(--bg); border:1px solid var(--border); border-radius:var(--r-2); padding:11px 13px; }
+.sum-title{ display:flex; align-items:center; gap:7px; font-weight:800; font-size:var(--fs-md); margin-bottom:6px; color:var(--ink); }
 .sum-title svg{ color:var(--brand-text); flex:none; }
-.sum-line{ font-size:.82rem; line-height:1.55; }
-.sum-line .muted{ font-size:.75rem; }
+.sum-line{ font-size:var(--fs-sm); line-height:1.55; }
+.sum-line .muted{ font-size:var(--fs-xs); }
 .week-nav{ display:flex; align-items:center; gap:8px; margin:6px 0 2px; }
-.week-nav .icon-btn{ font-size:1.2rem; font-weight:800; }
+.week-nav .icon-btn{ font-size:var(--fs-xl); font-weight:800; }
 .week-nav .icon-btn:disabled{ opacity:.35; cursor:default; }
-.week-nav-lbl{ flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; font-size:.86rem; line-height:1.3; }
-.week-nav-lbl .muted{ font-size:.7rem; }
-.field-err{ color:var(--crit); font-size:.75rem; font-weight:700; margin:4px 0 0; }
+.week-nav-lbl{ flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; font-size:var(--fs-md); line-height:1.3; }
+.week-nav-lbl .muted{ font-size:var(--fs-xs); }
+.field-err{ color:var(--crit); font-size:var(--fs-xs); font-weight:700; margin:4px 0 0; }
 input.input-err, select.input-err, textarea.input-err{ border-color:var(--crit); box-shadow:0 0 0 1px var(--crit); }
 .day-sec{ margin-bottom:10px; }
-.day-rec{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:9px 10px; margin-bottom:5px; border:1px solid var(--border); background:var(--surface-2); color:var(--ink); border-radius:10px; font-size:.82rem; cursor:pointer; font-family:inherit; }
+.day-rec{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:9px 10px; margin-bottom:5px; border:1px solid var(--border); background:var(--surface-2); color:var(--ink); border-radius:var(--r-2); font-size:var(--fs-sm); cursor:pointer; font-family:inherit; }
 .day-rec > span{ flex:1; }
 .day-rec svg{ color:var(--ink-faint); flex:none; }
-.rec-line{ display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-top:1px solid var(--border); font-size:.83rem; }
+.rec-line{ display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-top:1px solid var(--border); font-size:var(--fs-sm); }
 .rec-line:first-of-type{ border-top:none; }
 .rec-line b{ text-align:right; }
 .mood-row{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
-.mood-btn{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 2px; border:2px solid var(--surface-2); background:var(--surface); border-radius:14px; cursor:pointer; color:var(--ink-muted); min-height:64px; }
-.mood-btn .mood-emoji{ font-size:1.35rem; line-height:1; }
-.mood-btn .mood-lbl{ font-size:.75rem; font-weight:700; text-align:center; line-height:1.15; }
+.mood-btn{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 2px; border:2px solid var(--surface-2); background:var(--surface); border-radius:var(--r-3); cursor:pointer; color:var(--ink-muted); min-height:64px; }
+.mood-btn .mood-emoji{ font-size:var(--fs-xl); line-height:1; }
+.mood-btn .mood-lbl{ font-size:var(--fs-xs); font-weight:700; text-align:center; line-height:1.15; }
 .mood-btn.on{ border-color:var(--brand); background:var(--accent); color:var(--accent-ink); }
-.sum-cmp{ margin-top:6px; padding-top:6px; border-top:1px dashed var(--border); font-size:.75rem; color:var(--ink-muted); }
-.summary-box{ margin-top:10px; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:13px 14px; font-size:.83rem; white-space:pre-wrap; line-height:1.6; }
+.sum-cmp{ margin-top:6px; padding-top:6px; border-top:1px dashed var(--border); font-size:var(--fs-xs); color:var(--ink-muted); }
+.summary-box{ margin-top:10px; background:var(--bg); border:1px solid var(--border); border-radius:var(--r-2); padding:13px 14px; font-size:var(--fs-sm); white-space:pre-wrap; line-height:1.6; }
 
-nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); margin:0 10px calc(10px + env(safe-area-inset-bottom)); border-radius:22px; box-shadow:0 10px 26px -14px rgba(90,74,66,.35), 0 1px 2px rgba(90,74,66,.08); padding:6px 4px; overflow-x:auto; gap:2px; }
-.tab-btn{ flex:1 0 56px; display:flex; flex-direction:column; align-items:center; gap:2px; background:none; border:none; color:var(--ink-faint); cursor:pointer; padding:6px 4px; border-radius:14px;  min-height:48px;}
-.tab-btn.active{ color:var(--feed); background:var(--feed-soft); }
-.tab-btn .lbl{ font-size:.75rem; font-weight:700; white-space:nowrap; }
+nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); margin:0 10px calc(10px + env(safe-area-inset-bottom)); border-radius:var(--r-5); box-shadow:0 10px 26px -14px rgba(90,74,66,.35), 0 1px 2px rgba(90,74,66,.08); padding:6px 4px; overflow-x:auto; gap:2px; }
+.tab-btn{ flex:1 0 56px; display:flex; flex-direction:column; align-items:center; gap:2px; background:none; border:none; color:var(--ink-faint); cursor:pointer; padding:6px 4px; border-radius:var(--r-3);  min-height:48px;}
+.tab-btn.active{ color:var(--feed-text); background:var(--feed-soft); }
+.tab-btn .lbl{ font-size:var(--fs-xs); font-weight:700; white-space:nowrap; }
 
 .swatch-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:9px; }
-.swatch{ aspect-ratio:1; border-radius:11px; border:2px solid transparent; cursor:pointer; position:relative; display:flex; align-items:center; justify-content:center; }
+.swatch{ aspect-ratio:1; border-radius:var(--r-2); border:2px solid transparent; cursor:pointer; position:relative; display:flex; align-items:center; justify-content:center; }
 .swatch.on{ border-color:var(--ink); }
 .swatch.on::after{ content:"✓"; color:var(--ink); font-weight:900; }
-.icon-btn{ position:relative; width:40px; height:40px; border-radius:12px; border:none; background:var(--surface-2); color:var(--brand); display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; }
+.icon-btn{ position:relative; width:40px; height:40px; border-radius:var(--r-2); border:none; background:var(--surface-2); color:var(--brand); display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; }
 .topbar .icon-btn{ background:var(--header-chip-bg); color:var(--header-chip-ink); }
 .icon-btn.on{ background:var(--crit); border-color:var(--crit); color:#fff; animation:pulse 1.2s infinite; }
 @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.55;} }
 .sos-fab{ width:40px; height:40px; border-radius:50%; background:var(--crit); color:var(--on-crit); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; box-shadow:var(--shadow); }
 .voice-panel{ position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:flex-end; justify-content:center; z-index:50; }
 @media (min-width:540px){ .voice-panel{ align-items:center; } }
-.voice-card{ background:var(--surface); border-radius:18px 18px 0 0; padding:20px; max-width:460px; width:100%; text-align:center; }
+.voice-card{ background:var(--surface); border-radius:var(--r-4) 18px 0 0; padding:20px; max-width:460px; width:100%; text-align:center; }
 .voice-card.settings-card{ text-align:left; max-height:85vh; overflow-y:auto; }
 .mais-list{ display:flex; flex-direction:column; gap:6px; }
-.mais-item{ display:flex; align-items:center; gap:12px; width:100%; padding:12px 14px; border:2px solid var(--surface-2); background:var(--surface-2); border-radius:16px; color:var(--ink); font-weight:700; font-size:.88rem; cursor:pointer; text-align:left; }
+.mais-item{ display:flex; align-items:center; gap:12px; width:100%; padding:12px 14px; border:2px solid var(--surface-2); background:var(--surface-2); border-radius:var(--r-3); color:var(--ink); font-weight:700; font-size:var(--fs-md); cursor:pointer; text-align:left; }
 .mais-item .ic{ color:var(--feed); flex:none; display:flex; }
 .mais-item .lbl{ flex:1; }
 .mais-item svg:last-child{ color:var(--ink-faint); flex:none; }
@@ -285,24 +304,24 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 .phone.has-bg > main{ background:var(--bg-scrim); }
 .phone.has-bg > main > .card, .phone.has-bg > main > .alert, .phone.has-bg > main > .demo-banner{ box-shadow:0 2px 10px -4px rgba(0,0,0,.18), var(--shadow); }
 .phone.has-bg .topbar{ backdrop-filter:blur(4px); background:linear-gradient(160deg, var(--topbar-scrim-a), var(--topbar-scrim-b) 78%); }
-.bg-preview{ width:100%; height:90px; border-radius:12px; object-fit:cover; border:1px solid var(--border); margin-top:8px; }
-@media (min-width:540px){ .voice-card{ border-radius:18px; } }
-.voice-transcript{ min-height:44px; margin:14px 0; font-size:.95rem; color:var(--ink-muted); }
+.bg-preview{ width:100%; height:90px; border-radius:var(--r-2); object-fit:cover; border:1px solid var(--border); margin-top:8px; }
+@media (min-width:540px){ .voice-card{ border-radius:var(--r-4); } }
+.voice-transcript{ min-height:44px; margin:14px 0; font-size:var(--fs-base); color:var(--ink-muted); }
 .consulta-row{ border-top:1px solid var(--border); padding:10px 0; }
 .consulta-row:first-child{ border-top:none; }
-.consulta-row .cdate{ font-family:'IBM Plex Mono'; font-size:.75rem; color:var(--brand-text); font-weight:700; }
+.consulta-row .cdate{ font-family:'IBM Plex Mono'; font-size:var(--fs-xs); color:var(--brand-text); font-weight:700; }
 .counter-row{ display:flex; align-items:center; gap:10px; }
-.counter-btn{ width:44px; height:44px; border-radius:9px; border:1px solid var(--border); background:var(--surface); font-weight:900; cursor:pointer; color:var(--ink); }
+.counter-btn{ width:44px; height:44px; border-radius:var(--r-1); border:1px solid var(--border); background:var(--surface); font-weight:900; cursor:pointer; color:var(--ink); }
 .doc-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-.doc-item{ position:relative; border-radius:10px; overflow:hidden; background:var(--surface-2); aspect-ratio:3/4; display:flex; flex-direction:column; }
+.doc-item{ position:relative; border-radius:var(--r-2); overflow:hidden; background:var(--surface-2); aspect-ratio:3/4; display:flex; flex-direction:column; }
 .doc-item img{ width:100%; height:100%; object-fit:cover; flex:1; }
-.doc-item .doc-tag{ font-size:.6rem; padding:3px; text-align:center; background:var(--surface); color:var(--ink-muted); }
-.doc-item .g-del{ position:absolute; top:2px; right:2px; background:rgba(0,0,0,.55); color:#fff; border:none; border-radius:50%; width:30px; height:30px; font-size:.75rem; cursor:pointer; }
+.doc-item .doc-tag{ font-size:var(--fs-xs); padding:3px; text-align:center; background:var(--surface); color:var(--ink-muted); }
+.doc-item .g-del{ position:absolute; top:2px; right:2px; background:rgba(0,0,0,.55); color:#fff; border:none; border-radius:50%; width:30px; height:30px; font-size:var(--fs-xs); cursor:pointer; }
 
 .child-switch{ display:flex; gap:6px; padding:10px 14px 0; overflow-x:auto; }
-.child-chip{ flex:none; padding:8px 14px; min-height:40px; border-radius:999px; border:2px solid var(--surface-2); background:var(--surface); color:var(--ink-muted); font-size:.76rem; font-weight:700; cursor:pointer; white-space:nowrap; }
-.child-chip.on{ background:var(--feed); border-color:var(--feed); color:#fff; }
-.child-chip.add{ border-style:dashed; color:var(--feed); border-color:var(--feed); background:transparent; }
+.child-chip{ flex:none; padding:8px 14px; min-height:40px; border-radius:999px; border:2px solid var(--surface-2); background:var(--surface); color:var(--ink-muted); font-size:var(--fs-xs); font-weight:700; cursor:pointer; white-space:nowrap; }
+.child-chip.on{ background:var(--feed); border-color:var(--feed); color:var(--on-feed); }
+.child-chip.add{ border-style:dashed; color:var(--feed-text); border-color:var(--feed); background:transparent; }
 </style>
 </head>
 <body>
@@ -352,6 +371,13 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     calendar:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 9h16M8 3v4M16 3v4"/></svg>',
     mic:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg>',
     idcard:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M13 10h6M13 14h4M6 16.5c.5-1.5 2-2 2-2s1.5.5 2 2"/></svg>',
+    check:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    close:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    bell:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>',
+    edit:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>',
+    sound:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6l-5 4H4Z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11"/></svg>',
+    card:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+    undo:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>',
     cup:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h10l-1 12a4 4 0 0 1-4 4h0a4 4 0 0 1-4-4L6 3Z"/><path d="M17 6h1.5a2.5 2.5 0 0 1 0 5H17"/></svg>',
     more:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>',
     chevright:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
@@ -1347,8 +1373,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function showMaisMenu(secondary){
     showOverlay(`<div class="voice-panel" id="maisPanel"><div class="voice-card" role="dialog" aria-modal="true" aria-label="${t('mais')}" style="text-align:left; padding:14px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin:0 0 10px;">
-        <p style="font-weight:800; font-size:.95rem; margin:0;">${t('mais')}</p>
-        <button class="icon-btn" id="maisClose" type="button" aria-label="${tr('Fechar')}" title="${tr('Fechar')}">✕</button>
+        <p style="font-weight:800; font-size:var(--fs-base); margin:0;">${t('mais')}</p>
+        <button class="icon-btn" id="maisClose" type="button" aria-label="${tr('Fechar')}" title="${tr('Fechar')}">${ICONS.close}</button>
       </div>
       <div class="mais-list">${secondary.map(tb=>`<button class="mais-item${tb.id===activeTab?' active':''}" data-tab="${tb.id}" type="button">
           <span class="ic">${ICONS[tb.ic]}</span><span class="lbl">${t(tb.id)}</span>${ICONS.chevright}
@@ -1814,7 +1840,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <div class="gallery" id="gallery"></div>
       <input type="file" id="galleryInput" accept="image/*" style="display:none;">
       <button class="btn ghost wide" id="galleryBtn" type="button" style="margin-top:8px;">${tr('+ Adicionar foto à galeria')}</button>
-      <button class="btn wide" id="saveFotos" type="button" style="margin-top:10px;">💾 ${tr('Guardar')}</button>
+      <button class="btn wide" id="saveFotos" type="button" style="margin-top:10px;">${ICONS.check} ${tr('Guardar')}</button>
     </div>
 
     <details class="acc" open><summary>${ICONS.baby} ${tr('Dados básicos')} <span class="car">▾</span></summary>
@@ -1839,7 +1865,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
           <div style="flex:1;"><label>${tr('Altura (cm)')}</label><input type="text" inputmode="decimal" id="pNascAlt" value="${c.nascimento.altura}"></div>
           <div style="flex:1;"><label>${tr('Perím. cefálico (cm)')}</label><input type="text" inputmode="decimal" id="pNascPc" value="${c.nascimento.pc}"></div>
         </div>
-        <button class="btn wide" id="saveBasicos" type="button" style="margin-top:4px;">💾 ${tr('Guardar')}</button>
+        <button class="btn wide" id="saveBasicos" type="button" style="margin-top:4px;">${ICONS.check} ${tr('Guardar')}</button>
       </div>
     </details>
 
@@ -1853,7 +1879,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         <div style="flex:1;"><label>${tr('Tipo sanguíneo')}</label><input type="text" id="pBlood" value="${c.tipoSanguineo}"></div>
         <div style="flex:1;"><label>${tr('Fator Rh')}</label><input type="text" id="pRh" value="${c.fatorRh}"></div>
       </div>
-      <button class="btn wide" id="saveCriticos" type="button" style="margin-top:10px;">💾 ${tr('Guardar')}</button>
+      <button class="btn wide" id="saveCriticos" type="button" style="margin-top:10px;">${ICONS.check} ${tr('Guardar')}</button>
     </div>
 
     <details class="acc"><summary>${ICONS.pill} ${tr('Alergias a medicamentos')} <span class="car">▾</span></summary>
@@ -1863,7 +1889,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
           <input type="text" id="newAmNome" placeholder="${tr('Medicamento')}" style="flex:1 1 100%;">
           <input type="text" id="newAmReacao" placeholder="${tr('Reação')}" style="flex:1;">
           <input type="text" id="newAmAlt" placeholder="${tr('Alternativa')}" style="flex:1;">
-          <button class="btn" id="addAlergiaMed" type="button">💾 ${tr('Guardar')}</button>
+          <button class="btn" id="addAlergiaMed" type="button">${ICONS.check} ${tr('Guardar')}</button>
         </div>
       </div>
     </details>
@@ -1875,7 +1901,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
           <input type="text" id="newInNome" placeholder="${tr('Alimento/substância')}" style="flex:1 1 100%;">
           <input type="text" id="newInManif" placeholder="${tr('Manifestação')}" style="flex:1;">
           <input type="text" id="newInCons" placeholder="${tr('O que fazer')}" style="flex:1;">
-          <button class="btn" id="addIntol" type="button">💾 ${tr('Guardar')}</button>
+          <button class="btn" id="addIntol" type="button">${ICONS.check} ${tr('Guardar')}</button>
         </div>
       </div>
     </details>
@@ -1884,19 +1910,19 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <div class="acc-body">
         <div class="section-label">${tr('Condições crónicas')}</div>
         ${(c.condicoesCronicas||[]).map(a=>`<div class="med-row"><span class="body">${a.nome}${a.nota?(' — '+a.nota):''}</span><button class="log-del" data-rmCronica="${a.id}" type="button">${ICONS.trash}</button></div>`).join('') || `<span class="muted">${tr('Nenhuma registada.')}</span>`}
-        <div class="add-inline"><input type="text" id="newCronica" placeholder="${tr('Nome')}"><input type="text" id="newCronicaNota" placeholder="${tr('Nota')}"><button class="btn" id="addCronica" type="button">💾 ${tr('Guardar')}</button></div>
+        <div class="add-inline"><input type="text" id="newCronica" placeholder="${tr('Nome')}"><input type="text" id="newCronicaNota" placeholder="${tr('Nota')}"><button class="btn" id="addCronica" type="button">${ICONS.check} ${tr('Guardar')}</button></div>
         <div class="section-label" style="margin-top:8px;">${tr('Deficiências')}</div>
         ${(c.deficiencias||[]).map(a=>`<div class="med-row"><span class="body">${a.nome}${a.nota?(' — '+a.nota):''}</span><button class="log-del" data-rmDefic="${a.id}" type="button">${ICONS.trash}</button></div>`).join('') || `<span class="muted">${tr('Nenhuma registada.')}</span>`}
-        <div class="add-inline"><input type="text" id="newDefic" placeholder="${tr('Nome')}"><input type="text" id="newDeficNota" placeholder="${tr('Nota')}"><button class="btn" id="addDefic" type="button">💾 ${tr('Guardar')}</button></div>
+        <div class="add-inline"><input type="text" id="newDefic" placeholder="${tr('Nome')}"><input type="text" id="newDeficNota" placeholder="${tr('Nota')}"><button class="btn" id="addDefic" type="button">${ICONS.check} ${tr('Guardar')}</button></div>
       </div>
     </details>
 
     <details class="acc" id="accMed"><summary>${ICONS.pill} ${tr('Medicações & remédios tradicionais')} <span class="car">▾</span></summary>
       <div class="acc-body">
         <div class="section-label">${tr('Receitados')}</div>
-        ${c.medicacoes.filter(m=>m.tipo!=='tradicional').map(m=>`<div class="med-row"><span class="body"><b>${m.nome}</b> — ${m.dose} · ${medIntervalTxt(m.intervaloHoras,m.maxVezesDia)}${m.horario?(' · '+tr('horário')+' '+m.horario):''} ${m.notificacoes?'🔔':''}<br><span class="muted">${lx('Hoje','Aujourd\'hui','Today')}: <b>${dosesToday(m).length}${m.maxVezesDia?('/'+m.maxVezesDia):''}</b> ${lx('dose(s)','dose(s)','dose(s)')}</span></span>
-          <button class="dose-btn" data-giveDose="${m.id}" type="button">${tr('Dose')}</button>
-          <button class="dose-btn" data-medEdit="${m.id}" type="button">${lx('Editar','Modifier','Edit')}</button>
+        ${c.medicacoes.filter(m=>m.tipo!=='tradicional').map(m=>`<div class="med-row med-actions"><span class="body"><b>${m.nome}</b> — ${m.dose} · ${medIntervalTxt(m.intervaloHoras,m.maxVezesDia)}${m.horario?(' · '+tr('horário')+' '+m.horario):''} ${m.notificacoes?`<span class="inline-ic" title="${tr('Notificar')}">${ICONS.bell}<span class="sr-only">${tr('Notificar')}</span></span>`:''}<br><span class="muted">${lx('Hoje','Aujourd\'hui','Today')}: <b>${dosesToday(m).length}${m.maxVezesDia?('/'+m.maxVezesDia):''}</b> ${lx('dose(s)','dose(s)','dose(s)')}</span></span>
+          <button class="dose-btn give" data-giveDose="${m.id}" type="button">${ICONS.pill} ${tr('Dose')}</button>
+          <button class="dose-btn" data-medEdit="${m.id}" type="button">${ICONS.edit} ${lx('Editar','Modifier','Edit')}</button>
           <button class="log-del" data-rmMed="${m.id}" type="button">${ICONS.trash}</button></div>`).join('') || `<span class="muted">${tr('Sem medicação regular.')}</span>`}
         <div class="add-inline" style="flex-wrap:wrap;">
           <input type="text" id="newMedNome" placeholder="${tr('Nome')}" style="flex:1;">
@@ -1905,13 +1931,13 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
           <input type="number" id="newMedMax" min="1" max="24" placeholder="${lx('Máx. doses/dia (opcional)','Max. doses/jour (facultatif)','Max doses/day (optional)')}" style="flex:1 1 100%;">
           <input type="time" id="newMedHorario" style="flex:1;">
         </div>
-        <div class="add-inline"><label style="display:flex;align-items:center;gap:6px;font-size:.78rem;"><input type="checkbox" id="newMedNotif" checked style="width:auto;">${tr('Notificar')}</label><button class="btn" id="addMed" type="button">💾 ${tr('Guardar')}</button></div>
+        <div class="add-inline"><label style="display:flex;align-items:center;gap:6px;font-size:var(--fs-xs);"><input type="checkbox" id="newMedNotif" checked style="width:auto;">${tr('Notificar')}</label><button class="btn" id="addMed" type="button">${ICONS.check} ${tr('Guardar')}</button></div>
         <div id="doseWarning"></div>
         ${doseHistoryHtml()}
         ${doseCalcPeso ? `<div class="alert info" style="margin-top:4px;">${ICONS.note} ${doseRefTxt(doseCalcPeso)}</div>` : ''}
         <div class="section-label" style="margin-top:10px;">${tr('Remédios tradicionais')}</div>
         ${c.medicacoes.filter(m=>m.tipo==='tradicional').map(m=>`<div class="med-row"><span class="body"><b>${m.nome}</b> — ${m.dose}</span><button class="log-del" data-rmMed="${m.id}" type="button">${ICONS.trash}</button></div>`).join('') || `<span class="muted">${tr('Nenhum registado.')}</span>`}
-        <div class="add-inline"><input type="text" id="newTradNome" placeholder="${tr('Nome')}"><input type="text" id="newTradUso" placeholder="${tr('Uso/quando')}"><button class="btn" id="addTrad" type="button">💾 ${tr('Guardar')}</button></div>
+        <div class="add-inline"><input type="text" id="newTradNome" placeholder="${tr('Nome')}"><input type="text" id="newTradUso" placeholder="${tr('Uso/quando')}"><button class="btn" id="addTrad" type="button">${ICONS.check} ${tr('Guardar')}</button></div>
       </div>
     </details>
 
@@ -1924,7 +1950,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         </div>
         <div class="form-row"><div style="flex:1;"><label>${tr('Clínica/local')}</label><input type="text" id="pediLocal" value="${c.pediatra.local}"></div></div>
         <div class="form-row"><div style="flex:1;"><label>${tr('Morada')}</label><input type="text" id="pediMorada" value="${c.pediatra.morada||''}"></div></div>
-        <button class="btn wide" id="savePediatra" type="button">💾 ${tr('Guardar')}</button>
+        <button class="btn wide" id="savePediatra" type="button">${ICONS.check} ${tr('Guardar')}</button>
       </div>
     </details>
 
@@ -1935,7 +1961,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         <div class="form-row"><div style="flex:1;"><input type="text" id="hospMorada" placeholder="${tr('Morada')}" value="${c.hospitalReferencia.morada}"></div></div>
         <div class="section-label" style="margin-top:8px;">${tr('Contacto de emergência (amigo/familiar)')}</div>
         <div class="form-row"><div style="flex:1;"><input type="text" id="ceNome" placeholder="${tr('Nome')}" value="${c.contactoEmergencia.nome}"></div><div style="flex:1;"><input type="text" id="ceRel" placeholder="${tr('Relação')}" value="${c.contactoEmergencia.relacao}"></div><div style="flex:1;"><input type="text" id="ceTel" placeholder="${tr('Telefone')}" value="${c.contactoEmergencia.telefone}"></div></div>
-        <button class="btn wide" id="saveHospital" type="button">💾 ${tr('Guardar')}</button>
+        <button class="btn wide" id="saveHospital" type="button">${ICONS.check} ${tr('Guardar')}</button>
       </div>
     </details>
 
@@ -1949,14 +1975,14 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         <div class="form-row"><div style="flex:1;"><input type="text" id="paiNome" placeholder="${tr('Nome')}" value="${c.pai.nome}"></div><div style="flex:1;"><input type="text" id="paiTel" placeholder="${tr('Telefone')}" value="${c.pai.telefone}"></div></div>
         <div class="form-row"><div style="flex:1;"><input type="text" id="paiNac" placeholder="${tr('Nacionalidade')}" value="${c.pai.nacionalidade}"></div><div style="flex:1;"><input type="text" id="paiNat" placeholder="${tr('Naturalidade')}" value="${c.pai.naturalidade||''}"></div><div style="flex:1;"><input type="text" id="paiBlood" placeholder="${tr('Tipo sanguíneo')}" value="${c.pai.tipoSanguineo||''}"></div></div>
         <textarea id="paiAntec" placeholder="${tr('Antecedentes médicos')}">${c.pai.antecedentes||''}</textarea>
-        <button class="btn wide" id="saveFamilia" type="button">💾 ${tr('Guardar')}</button>
+        <button class="btn wide" id="saveFamilia" type="button">${ICONS.check} ${tr('Guardar')}</button>
       </div>
     </details>
 
     <details class="acc"><summary>${ICONS.tooth} ${tr('Dentição')} <span class="car">▾</span></summary>
       <div class="acc-body">
         ${(c.dentes||[]).map(d=>`<div class="med-row"><span class="body">${d.nome} — ${new Date(d.data+"T00:00:00").toLocaleDateString(localeTag())}</span><button class="log-del" data-rmDente="${d.id}" type="button">${ICONS.trash}</button></div>`).join('') || `<span class="muted">${tr('Sem dentes registados.')}</span>`}
-        <div class="add-inline"><input type="text" id="newDenteNome" placeholder="${tr('Nome do dente')}"><input type="date" id="newDenteData" value="${todayISO()}"><button class="btn" id="addDente" type="button">💾 ${tr('Guardar')}</button></div>
+        <div class="add-inline"><input type="text" id="newDenteNome" placeholder="${tr('Nome do dente')}"><input type="date" id="newDenteData" value="${todayISO()}"><button class="btn" id="addDente" type="button">${ICONS.check} ${tr('Guardar')}</button></div>
       </div>
     </details>
 
@@ -1966,7 +1992,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         <div class="doc-grid" id="docGrid"></div>
         <input type="file" id="docInput" accept="image/*" style="display:none;">
         <div class="add-inline"><input type="text" id="docTipo" placeholder="${tr('Tipo de documento')}" style="flex:1;"><button class="btn" id="docBtn" type="button">${tr('+ Foto')}</button></div>
-        <button class="btn wide" id="saveDocumentos" type="button" style="margin-top:10px;">💾 ${tr('Guardar')}</button>
+        <button class="btn wide" id="saveDocumentos" type="button" style="margin-top:10px;">${ICONS.check} ${tr('Guardar')}</button>
       </div>
     </details>
 
@@ -1996,28 +2022,28 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         </div>
         <div class="add-inline" style="flex-wrap:wrap;margin-top:6px;">
           <input type="text" id="newIntroNota" placeholder="${tr('Nota (opcional)')}" style="flex:1 1 100%;">
-          <button class="btn" id="addIntro" type="button">💾 ${tr('Guardar')}</button>
+          <button class="btn" id="addIntro" type="button">${ICONS.check} ${tr('Guardar')}</button>
         </div>
         <div class="section-label" style="margin-top:8px;">${tr('Hidratação hoje')}</div>
         <div class="counter-row"><button class="counter-btn" id="hidrSub" type="button">-50ml</button><span id="hidrTotal">0ml</span><button class="counter-btn" id="hidrAdd" type="button">+50ml</button></div>
-        <button class="btn wide" id="saveAlimentacao" type="button" style="margin-top:10px;">💾 ${tr('Guardar')}</button>
+        <button class="btn wide" id="saveAlimentacao" type="button" style="margin-top:10px;">${ICONS.check} ${tr('Guardar')}</button>
       </div>
     </details>
 
     <details class="acc"><summary>${ICONS.drop} ${tr('Transição para o penico')} <span class="car">▾</span></summary>
       <div class="acc-body">
-        <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:.84rem;"><input type="checkbox" id="penIniciado" ${c.penico.iniciado?'checked':''} style="width:auto;"> ${tr('Já começámos')}</label>
+        <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:var(--fs-md);"><input type="checkbox" id="penIniciado" ${c.penico.iniciado?'checked':''} style="width:auto;"> ${tr('Já começámos')}</label>
         <div class="form-row"><div style="flex:1;"><label>${tr('Data de início')}</label><input type="date" id="penData" value="${c.penico.dataInicio}"></div></div>
         <div class="counter-row"><span>${tr('Sucessos:')} <b id="penSuc">${c.penico.sucessos}</b></span><button class="counter-btn" data-pen="sucessos" type="button">+1</button>
           <span style="margin-left:12px;">${tr('Acidentes:')} <b id="penAcc">${c.penico.acidentes}</b></span><button class="counter-btn" data-pen="acidentes" type="button">+1</button></div>
         <textarea id="penNotas" placeholder="${tr('Progresso/notas')}">${c.penico.notas}</textarea>
-        <button class="btn wide" id="savePenico" type="button">💾 ${tr('Guardar')}</button>
+        <button class="btn wide" id="savePenico" type="button">${ICONS.check} ${tr('Guardar')}</button>
       </div>
     </details>
 
     <details class="acc"><summary>${ICONS.note} ${tr('Notas gerais')} <span class="car">▾</span></summary>
       <div class="acc-body"><textarea id="pNotas" placeholder="${tr('Observações, rotinas…')}">${c.notas}</textarea>
-        <button class="btn wide" id="saveNotas" type="button">💾 ${tr('Guardar')}</button>
+        <button class="btn wide" id="saveNotas" type="button">${ICONS.check} ${tr('Guardar')}</button>
       </div>
     </details>`;
 
@@ -2029,7 +2055,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       const orig = btn.innerHTML;
       btn.addEventListener('click', ()=>{
         const ok = save();
-        btn.textContent = ok ? '✓ '+tr('Guardado!') : '❌ '+tr('Não foi possível guardar');
+        btn.innerHTML = ok ? ICONS.check+' '+tr('Guardado!') : ICONS.sos+' '+tr('Não foi possível guardar');
         setTimeout(()=>{ btn.innerHTML = orig; }, 1500);
       });
     }
@@ -2183,7 +2209,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const f=ts=>new Date(ts).toLocaleDateString(localeTag(),{weekday:'short',day:'numeric',month:'short'})+' · '+hhmm(ts);
     return `<div class="section-label" style="margin-top:10px;">${lx('Doses registadas (últimos 7 dias)','Doses enregistrées (7 derniers jours)','Logged doses (last 7 days)')}</div>
       ${list.length ? list.map(d=>`<div class="med-row"><span class="body"><b>${d.nome}</b>${d.dose?(' — '+d.dose):''}<br><span class="muted">${f(d.ts)}${d.acimaDoMax?' · '+lx('acima do máximo','au-dessus du maximum','above maximum'):''}${d.antesDoIntervalo?' · '+lx('antes do intervalo','avant l\'intervalle','before interval'):''}</span></span>
-        <button class="dose-btn" data-doseEdit="${d.id}" type="button" aria-label="${lx('Corrigir hora','Corriger l\'heure','Fix time')}">✏️</button>
+        <button class="dose-btn" data-doseEdit="${d.id}" type="button" aria-label="${lx('Corrigir hora','Corriger l\'heure','Fix time')}">${ICONS.edit}</button>
         <button class="log-del" data-doseDel="${d.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join('') : `<span class="muted">${lx('Nenhuma dose registada.','Aucune dose enregistrée.','No doses logged.')}</span>`}`;
   }
   function showDoseEditor(id){
@@ -2224,7 +2250,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <div class="form-row"><div style="flex:1;"><label for="meInt">${tr('Intervalo (h)')}</label><input type="number" id="meInt" value="${esc(m.intervaloHoras)}"></div>
         <div style="flex:1;"><label for="meMax">${lx('Máx. doses/dia','Max. doses/jour','Max doses/day')}</label><input type="number" id="meMax" min="1" max="24" value="${esc(m.maxVezesDia||'')}"></div></div>
       <div class="form-row"><div style="flex:1;"><label for="meHor">${tr('horário')}</label><input type="time" id="meHor" value="${esc(m.horario)}"></div></div>
-      <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:.83rem;margin-top:6px;"><input type="checkbox" id="meNotif" ${m.notificacoes?'checked':''} style="width:auto;"> ${tr('Notificar')}</label>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:var(--fs-sm);margin-top:6px;"><input type="checkbox" id="meNotif" ${m.notificacoes?'checked':''} style="width:auto;"> ${tr('Notificar')}</label>
       <button class="btn wide" id="meSave" type="button" style="margin-top:12px;">${tr('Guardar alterações')}</button>
       <button class="btn ghost wide" id="meCancel" type="button" style="margin-top:8px;">${tr('Cancelar')}</button>
     </div></div>`);
@@ -2334,13 +2360,13 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 
   function renderGallery(){
     const el = document.getElementById('gallery'); if(!el) return;
-    el.innerHTML = S.crianca.fotos.map(f=>`<div class="g-item"><img src="${f.src}"><button class="g-del" data-rmPhoto="${f.id}" type="button" aria-label="${tr('Apagar foto')}">✕</button></div>`).join('') || `<span class="muted" style="grid-column:1/-1;">${tr('Sem fotos na galeria.')}</span>`;
+    el.innerHTML = S.crianca.fotos.map(f=>`<div class="g-item"><img src="${f.src}"><button class="g-del" data-rmPhoto="${f.id}" type="button" aria-label="${tr('Apagar foto')}">${ICONS.close}</button></div>`).join('') || `<span class="muted" style="grid-column:1/-1;">${tr('Sem fotos na galeria.')}</span>`;
     el.querySelectorAll('[data-rmPhoto]').forEach(b=>b.addEventListener('click', ()=>{ showConfirm(tr('Apagar esta foto?'), ()=>{ S.crianca.fotos=S.crianca.fotos.filter(f=>f.id!==b.dataset.rmphoto); save(); renderGallery(); }); }));
   }
   function renderDocGrid(){
     const el = document.getElementById('docGrid'); if(!el) return;
     const c=S.crianca;
-    el.innerHTML = (c.documentos||[]).map(d=>`<div class="doc-item"><img src="${d.src}"><div class="doc-tag">${d.tipo}</div><button class="g-del" data-rmDoc="${d.id}" type="button">✕</button></div>`).join('') || `<span class="muted" style="grid-column:1/-1;">${tr('Sem documentos guardados.')}</span>`;
+    el.innerHTML = (c.documentos||[]).map(d=>`<div class="doc-item"><img src="${d.src}"><div class="doc-tag">${d.tipo}</div><button class="g-del" data-rmDoc="${d.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.close}</button></div>`).join('') || `<span class="muted" style="grid-column:1/-1;">${tr('Sem documentos guardados.')}</span>`;
     el.querySelectorAll('[data-rmDoc]').forEach(b=>b.addEventListener('click', ()=>{ c.documentos=c.documentos.filter(d=>d.id!==b.dataset.rmdoc); save(); renderDocGrid(); }));
   }
   function hidrTotalToday(c){
@@ -2549,7 +2575,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const [lo,hi]=sleepTargetH(months);
     const hoursToday = todayMins/60;
     const status = hoursToday>=lo ? (hoursToday<=hi+2?'good':'good') : (hoursToday>=lo-2?'warn':'crit');
-    const statusLabel = status==='good'?'🟢 '+tr('OK'):status==='warn'?'🟡 '+tr('BAIXO'):'🔴 '+tr('CRÍTICO');
+    const statusLabel = `<span class="status-dot ${status}" aria-hidden="true"></span>`+(status==='good'?tr('OK'):status==='warn'?tr('BAIXO'):tr('CRÍTICO'));
     const withQual = S.sono.filter(l=>typeof l.qualidade==='number' && l.qualidade>0);
     const avgQual = withQual.length ? (withQual.reduce((s,l)=>s+l.qualidade,0)/withQual.length).toFixed(1) : '—';
     const days=last7();
@@ -2594,7 +2620,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <div class="form-row" style="flex-direction:column;"><label>${tr('Período')} ${lx('(opcional)','(facultatif)','(optional)')} <span class="muted" id="sPeriodoHint" style="font-weight:600;"></span></label><div class="seg" id="sPeriodo"><button data-v="noite" class="${editing&&editing.periodo==='noite'?'on':''}">${tr('Noite')}</button><button data-v="sesta" class="${editing&&editing.periodo==='sesta'?'on':''}">${tr('Sesta')}</button></div></div>
       <div class="form-row" style="flex-direction:column;"><label>${tr('Posição')} ${lx('(opcional)','(facultatif)','(optional)')}</label><div class="seg" id="sPos"><button data-v="costas" class="${editing&&editing.posicao==='costas'?'on':''}">${tr('Costas')}</button><button data-v="lado" class="${editing&&editing.posicao==='lado'?'on':''}">${tr('Lado')}</button><button data-v="barriga" class="${editing&&editing.posicao==='barriga'?'on':''}">${tr('Barriga')}</button></div></div>
       <div class="form-row"><div style="flex:1;"><label>${tr('Data')}</label><input type="date" id="sData" value="${localISO(editing?editing.inicio:Date.now())}"></div><div style="flex:1;"><label>${tr('Adormeceu')}</label><input type="time" id="sIni" value="${iniVal}"></div></div>
-      ${(!isSleeping&&!editing) ? `<label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:.82rem;"><input type="checkbox" id="sAindaDorme" style="width:auto;"> ${tr('Ainda está a dormir — registar só a hora que adormeceu')}</label>` : ''}
+      ${(!isSleeping&&!editing) ? `<label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:var(--fs-sm);"><input type="checkbox" id="sAindaDorme" style="width:auto;"> ${tr('Ainda está a dormir — registar só a hora que adormeceu')}</label>` : ''}
       <div id="sFimBlock">
         <div class="form-row"><div style="flex:1;"><label>${tr('Acordou')}</label><input type="time" id="sFim" value="${fimVal}"></div></div>
         <div class="form-row"><div style="flex:1;"><label>${tr('Qualidade (1–10)')}</label><input type="number" id="sQual" min="1" max="10" placeholder="${lx('ex.','ex.','e.g.')} 7" value="${editing&&editing.qualidade!=null?editing.qualidade:''}"></div><div style="flex:1;"><label>${tr('Interrupções')}</label><input type="number" id="sInter" min="0" placeholder="${lx('ex.','ex.','e.g.')} 0" value="${editing&&editing.interrupcoes?editing.interrupcoes:''}"></div></div>
@@ -2763,7 +2789,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         <button class="btn wide" id="mSave" type="button">${tr('Guardar alterações')}</button>`
       : `<div class="rec-line"><span>${tr('Data')}</span><b>${rec.date ? new Date(rec.date+'T12:00:00').toLocaleDateString(localeTag()) : '—'}</b></div>
         <div class="rec-line"><span>${tr(M.lbl)}</span><b>${rec.valor} ${M.unit}</b></div>
-        <div class="btn-row" style="margin-top:14px;"><button class="btn wide" id="mEdit" type="button">✏️ ${lx('Editar','Modifier','Edit')}</button><button class="btn crit wide" id="mDel" type="button">${tr('Apagar')}</button></div>`}
+        <div class="btn-row" style="margin-top:14px;"><button class="btn secondary wide" id="mEdit" type="button">${ICONS.edit} ${lx('Editar','Modifier','Edit')}</button><button class="btn crit wide" id="mDel" type="button">${tr('Apagar')}</button></div>`}
       <button class="btn ghost wide" id="mClose" type="button" style="margin-top:8px;">${editing?tr('Cancelar'):tr('Fechar')}</button>
     </div></div>`);
     const panel=document.getElementById('measPanel');
@@ -2797,7 +2823,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         const key = band.band+"|"+item;
         const done = S.desenvolvimento.done[key];
         totalItems++; if(done) totalDone++; else allDone=false;
-        return `<div class="mi-row ${done?'done':'pending'}"><span class="dot"></span><span>${tr(item)}</span>${done?`<span class="d">${done}</span>`:`<span class="d">${tr('esperado')}</span>`}${done?`<button class="log-del" data-card-mi="${key}" type="button" style="margin-left:4px;" title="${tr('Ver cartão')}">🎴</button>`:''}<button class="log-del" data-toggle-mi="${key}" type="button" style="margin-left:4px;">${done?'↺':'✓'}</button></div>`;
+        return `<div class="mi-row ${done?'done':'pending'}"><span class="dot"></span><span>${tr(item)}</span>${done?`<span class="d">${done}</span>`:`<span class="d">${tr('esperado')}</span>`}${done?`<button class="log-del" data-card-mi="${key}" type="button" style="margin-left:4px;" title="${tr('Ver cartão')}" aria-label="${tr('Ver cartão')}">${ICONS.card}</button>`:''}<button class="log-del" data-toggle-mi="${key}" type="button" style="margin-left:4px;" aria-label="${done?lx('Desmarcar marco','Décocher l\'étape','Unmark milestone'):lx('Marcar como alcançado','Marquer comme atteint','Mark as reached')}" title="${done?lx('Desmarcar marco','Décocher l\'étape','Unmark milestone'):lx('Marcar como alcançado','Marquer comme atteint','Mark as reached')}">${done?ICONS.undo:ICONS.check}</button></div>`;
       }).join('');
       return `<div class="milestone-band"><h3>${tr(band.band)}</h3>${rows}</div>`;
     }).join('');
@@ -2829,7 +2855,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         if(!rec.done) complete=false;
         const extra = rec.done
           ? `<div class="form-row" style="margin-top:4px;"><div style="flex:1;"><input type="text" data-vaxPais="${key}" placeholder="${tr('País')}" value="${rec.pais||''}"></div><div style="flex:1;"><input type="text" data-vaxReacao="${key}" placeholder="${tr('Reação')}" value="${rec.reacao||''}"></div></div>`
-          : `<div class="form-row" style="margin-top:4px;"><div style="flex:1;"><label style="font-size:.75rem;">${tr('Data agendada')}</label><input type="date" data-vaxData="${key}" value="${rec.proximaData||''}"></div></div>`;
+          : `<div class="form-row" style="margin-top:4px;"><div style="flex:1;"><label style="font-size:var(--fs-xs);">${tr('Data agendada')}</label><input type="date" data-vaxData="${key}" value="${rec.proximaData||''}"></div></div>`;
         return `<div class="vax-dose" style="flex-direction:column;align-items:stretch;">
           <div style="display:flex;align-items:center;gap:8px;"><span class="lbl">${tr(label)}</span><button class="vax-badge ${rec.done?'done':'pending'}" data-vax="${key}">${rec.done? rec.done : tr('pendente')}</button></div>
           ${extra}
@@ -2842,7 +2868,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     document.getElementById('main').innerHTML = `
       <div class="alert ${complete?'good':'warn'}">${ICONS.syringe} ${complete?completeTxt:tr('Há doses pendentes — verifica o calendário abaixo.')}</div>
       <div class="card">${groups}
-        <button class="btn wide" id="saveVacinas" type="button" style="margin-top:10px;">💾 ${tr('Guardar')}</button>
+        <button class="btn wide" id="saveVacinas" type="button" style="margin-top:10px;">${ICONS.check} ${tr('Guardar')}</button>
       </div>
       <p class="muted" style="text-align:center;">${tr('Calendário Bélgica (Wallonie) + Luxemburgo. Confirma sempre datas exatas com o/a pediatra.')}</p>`;
     document.querySelectorAll('[data-vax]').forEach(b=>b.addEventListener('click', ()=>{
@@ -2856,8 +2882,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     saveVacBtn.addEventListener('click', ()=>{
       const ok = save();
       if(ok) playChime();
-      saveVacBtn.textContent = ok ? '✓ '+tr('Guardado!') : '❌ '+tr('Não foi possível guardar');
-      setTimeout(()=>{ saveVacBtn.innerHTML = '💾 '+tr('Guardar'); }, 1500);
+      saveVacBtn.innerHTML = ok ? ICONS.check+' '+tr('Guardado!') : ICONS.sos+' '+tr('Não foi possível guardar');
+      setTimeout(()=>{ saveVacBtn.innerHTML = ICONS.check+' '+tr('Guardar'); }, 1500);
     });
   }
 
@@ -2877,7 +2903,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <div class="form-row"><div style="flex:1;"><label>${tr('Local')}</label><input type="text" id="csLocal" placeholder="${tr('Clínica / hospital')}"></div></div>
       <textarea id="csResumo" placeholder="${tr('Resumo da consulta (preencher depois)')}"></textarea>
       <textarea id="csExames" placeholder="${tr('Exames pedidos/realizados (opcional)')}"></textarea>
-      <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:.82rem;"><input type="checkbox" id="csNotif" checked style="width:auto;"> ${tr('Notificar-me perto da data')}</label>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:var(--fs-sm);"><input type="checkbox" id="csNotif" checked style="width:auto;"> ${tr('Notificar-me perto da data')}</label>
       <button class="btn wide" id="csSave" type="button">${tr('Guardar consulta')}</button>
     </div>
     <div class="card"><div class="section-label">${tr('Próximas')}</div>
@@ -2897,7 +2923,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   }
   function consultaRow(cs){
     return `<div class="consulta-row"><div class="cdate">${new Date(cs.data+"T00:00:00").toLocaleDateString(localeTag())} ${cs.hora||''}</div>
-      <div style="font-weight:700;font-size:.86rem;">${cs.especialista}${cs.local?(' · '+cs.local):''}</div>
+      <div style="font-weight:700;font-size:var(--fs-md);">${cs.especialista}${cs.local?(' · '+cs.local):''}</div>
       ${cs.resumo?`<div class="meta muted">${cs.resumo}</div>`:''}
       ${cs.exames?`<div class="meta muted">${tr('Exames:')} ${cs.exames}</div>`:''}
       <button class="log-del" data-rmConsulta="${cs.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.trash} ${tr('remover')}</button>
@@ -3122,7 +3148,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       </div>
       <div class="sum-title" style="margin-top:12px;"><span>${lx('Nota da semana','Note de la semaine','Note of the week')}</span></div>
       <textarea id="weekNote" placeholder="${lx('Alguma coisa que queres recordar desta semana?','Quelque chose que tu veux retenir de cette semaine ?','Anything you want to remember about this week?')}">${r.nota ? r.nota.replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''}</textarea>
-      <p class="muted" id="weekNoteStatus" style="margin:4px 0 0;min-height:1em;font-size:.75rem;"></p>
+      <p class="muted" id="weekNoteStatus" style="margin:4px 0 0;min-height:1em;font-size:var(--fs-xs);"></p>
     </div>`;
   }
   function wireWeeklyReflection(){
@@ -3136,7 +3162,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const ta=document.getElementById('weekNote'); if(!ta) return;
     const st=document.getElementById('weekNoteStatus');
     let tmr=null;
-    const commit=()=>{ const v=ta.value.trim(); setWeekReflection({nota: v ? v : null}, key); if(st){ st.textContent = v ? '✓ '+tr('Guardado!') : ''; } };
+    const commit=()=>{ const v=ta.value.trim(); setWeekReflection({nota: v ? v : null}, key); if(st){ st.innerHTML = v ? ICONS.check+' '+tr('Guardado!') : ''; } };
     ta.addEventListener('input', ()=>{ clearTimeout(tmr); tmr=setTimeout(commit, 600); });
     ta.addEventListener('blur', ()=>{ clearTimeout(tmr); commit(); });
   }
@@ -3301,7 +3327,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     showOverlay(`<div class="voice-panel"><div class="voice-card settings-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <h2 style="margin:0;">${ICONS.gear} ${tr('Definições')}</h2>
-        <button class="icon-btn" id="closeSettings" type="button">✕</button>
+        <button class="icon-btn" id="closeSettings" type="button" aria-label="${tr('Fechar')}" title="${tr('Fechar')}">${ICONS.close}</button>
       </div>
       ${renderFooterSettings()}
     </div></div>`);
@@ -3335,8 +3361,8 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       </div>
     </div>
     <div class="card"><div class="section-label">${tr('Som')}</div>
-      <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:.82rem;"><input type="checkbox" id="soundToggle" ${S.settings.sound!==false?'checked':''} style="width:auto;"> ${tr('Tocar som ao registar dados')}</label>
-      <button class="btn ghost wide" id="testSound" type="button" style="margin-top:8px;">🔊 ${tr('Ouvir som')}</button>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:var(--fs-sm);"><input type="checkbox" id="soundToggle" ${S.settings.sound!==false?'checked':''} style="width:auto;"> ${tr('Tocar som ao registar dados')}</label>
+      <button class="btn ghost wide" id="testSound" type="button" style="margin-top:8px;">${ICONS.sound} ${tr('Ouvir som')}</button>
     </div>
     <div class="card"><div class="section-label">${tr('Sincronização entre pais')}</div>
       <p class="muted">${syncStatusLabel()}${dbSyncState==='synced'?' — '+tr('usa o menu de partilha desta página para dar acesso de edição ao outro pai/mãe, ou só de visualização ao médico.'):''}</p>
@@ -3586,7 +3612,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <p class="muted" style="margin:0 0 10px;">${(d=>d.charAt(0).toUpperCase()+d.slice(1))(new Date(l[K.tsKey]).toLocaleDateString(localeTag(),{weekday:'long',day:'numeric',month:'long'}))} · ${hhmm(l[K.tsKey])}</p>
       ${recordDetailRows(kind,l).map(([k,v])=>`<div class="rec-line"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}
       <div class="btn-row" style="margin-top:14px;">
-        <button class="btn wide" id="recEdit" type="button">✏️ ${lx('Editar','Modifier','Edit')}</button>
+        <button class="btn secondary wide" id="recEdit" type="button">${ICONS.edit} ${lx('Editar','Modifier','Edit')}</button>
         <button class="btn crit wide" id="recDel" type="button">${tr('Apagar')}</button>
       </div>
       <button class="btn ghost wide" id="recClose" type="button" style="margin-top:8px;">${back ? lx('Voltar ao dia','Retour au jour','Back to day') : tr('Fechar')}</button>

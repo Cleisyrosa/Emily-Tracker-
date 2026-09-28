@@ -288,13 +288,17 @@ details.acc[open] summary .car{ transform:rotate(180deg); }
 .legend i.lg-dot{ width:9px; height:9px; border-radius:50%; } .legend i.lg-diamond{ width:8px; height:8px; border-radius:1px; transform:rotate(45deg); margin:0 1px; }
 /* F5 — Home: estado do dia (cartões com a mesma altura; atenção no próprio cartão, sem novas cores) */
 .home-status{ margin-bottom:var(--space-3); }   /* cada linha tem cartões da mesma altura; forçar todas as linhas iguais empurrava as ações para fora do 1.º ecrã */
-.stat-foot{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; margin-top:auto; padding-top:2px; }
+.stat-foot{ display:flex; flex-direction:column; align-items:flex-start; gap:4px; }   /* contagem de hoje logo abaixo do texto; o selo, se existir, numa linha própria */
 .stat.stat-warn{ border-color:color-mix(in srgb, var(--warn) 55%, var(--surface-2)); }
 .stat.stat-action{ border-color:var(--warn); }
 .stat-flag{ display:inline-flex; align-items:center; gap:5px; padding:1px 8px; border-radius:999px; font-size:var(--fs-xs); font-weight:700; background:var(--warn-soft); color:var(--ink); }
 .stat-flag::before{ content:""; width:7px; height:7px; border-radius:50%; background:var(--warn); flex:none; }
 .stat .sub.stat-today{ color:var(--ink); font-weight:600; }
 .home-sec{ margin-top:var(--space-2); }
+.alert.alert-compact{ padding:7px 12px; font-size:var(--fs-xs); font-weight:500; border-radius:var(--r-2); gap:6px; } .alert.alert-compact svg{ width:15px; height:15px; margin-top:1px; }
+/* horas da linha do tempo em HTML (tamanho fixo, não crescem com a largura) */
+.tl-hours{ position:relative; height:16px; margin-top:2px; font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:var(--fs-xs); color:var(--ink-faint); }
+.tl-hours span{ position:absolute; top:0; transform:translateX(-50%); white-space:nowrap; } .tl-hours span:first-child{ transform:none; } .tl-hours span:last-child{ transform:translateX(-100%); }
 .tl-sleep{ opacity:var(--tl-sleep-op,.35); }
 
 .sos-card{ background:var(--crit-soft); border:2px solid var(--crit); border-radius:var(--r-3); padding:16px; margin-bottom:12px; }
@@ -1934,7 +1938,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const [t0] = todayRange();
     // F5: pontos maiores e com contorno (ficam legíveis por cima da faixa de sono, que é só contexto de fundo);
     // medicação em losango para se distinguir das fraldas sem nova cor; horas ≥ 12 px.
-    const w=600,h=96, cy=39; const evs=[];
+    const w=600,h=66, cy=39; const evs=[];
     S.mamadas.filter(l=>inRange(l.ts,t0,t0+86400000)).forEach(l=>evs.push({x:l.ts,type:'feed'}));
     S.fraldas.filter(l=>inRange(l.ts,t0,t0+86400000)).forEach(l=>evs.push({x:l.ts,type:'diaper'}));
     S.doses.filter(l=>inRange(l.ts,t0,t0+86400000)).forEach(l=>evs.push({x:l.ts,type:'med'}));
@@ -1950,13 +1954,13 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         ? `<rect x="${(x-7.5).toFixed(1)}" y="${cy-7.5}" width="15" height="15" rx="2" transform="rotate(45 ${x} ${cy})" fill="${colors.med}" stroke="var(--surface)" stroke-width="2.5"/>`
         : `<circle cx="${x}" cy="${cy}" r="8.5" fill="${colors[e.type]}" stroke="var(--surface)" stroke-width="2.5"/>`; };
     const dots = evs.filter(e=>e.type!=='med').map(mark).join('') + evs.filter(e=>e.type==='med').map(mark).join('');
-    const ticks = [0,6,12,18,24].map(hh=>`<text class="axis-label" style="font-size:24px" x="${(12+hh/24*(w-24)).toFixed(1)}" y="88" text-anchor="${hh===0?'start':hh===24?'end':'middle'}">${hh}h</text>`).join('');
+    const hours = `<div class="tl-hours" aria-hidden="true">${[0,6,12,18,24].map(hh=>`<span style="left:${((12+hh/24*(w-24))/w*100).toFixed(2)}%">${hh}h</span>`).join('')}</div>`;
     const nF=evs.filter(e=>e.type==='feed').length, nD=evs.filter(e=>e.type==='diaper').length, nM=evs.filter(e=>e.type==='med').length;
     const desc = lx('Linha do tempo de hoje: ',"Chronologie d'aujourd'hui : ","Today's timeline: ")+[pl(nF,'refeição','refeições','repas','repas','feed','feeds'), pl(nD,'fralda','fraldas','couche','couches','diaper','diapers'), pl(nM,'dose','doses','dose','doses','dose','doses'), pl(sleeps.length,'período de sono','períodos de sono','période de sommeil','périodes de sommeil','sleep period','sleep periods')].join(', ')+'.';
     return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="${desc}" style="display:block;">
       <line x1="12" y1="${cy}" x2="${w-12}" y2="${cy}" stroke="var(--border)" stroke-width="2"/>
-      ${bands}${dots}${ticks}
-    </svg>
+      ${bands}${dots}
+    </svg>${hours}
     <div class="legend" aria-hidden="true"><span><i class="lg-dot" style="background:var(--feed)"></i>${tr('refeição')}</span><span><i class="lg-dot" style="background:var(--diaper)"></i>${tr('fralda')}</span><span><i class="lg-diamond" style="background:var(--med)"></i>${tr('medicação')}</span><span><i style="background:var(--sleepc)"></i>${tr('sono')}</span></div>`;
   }
 
@@ -2002,7 +2006,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         <button type="button" class="qa-tile" data-quick="med"><div class="ic med">${ICONS.pill}</div><span class="lbl" lang="${(S.settings&&S.settings.lang)||'pt'}">${tr('Medicação')}</span></button>
       </div>
     </div>
-    ${wetStatus ? `<div class="alert ${wetStatus}">${ICONS.drop} ${wetDiaperMsg(xixiToday)}</div>` : ''}
+    ${wetStatus ? `<div class="alert alert-compact ${wetStatus}">${ICONS.drop} <span>${wetDiaperMsg(xixiToday)}</span></div>` : ''}
 
     <div class="card"><div class="section-label">${tr('Linha do tempo · hoje')}</div><div class="timeline-wrap">${timelineSvg()}</div></div>
     <div id="homeReminders"></div>`;

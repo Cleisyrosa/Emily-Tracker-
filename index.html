@@ -2280,9 +2280,20 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       el.addEventListener('input', commit);
       el.addEventListener('change', commit);
     };
-    bind('pNome',c,'nome',renderHeader); bind('pDob',c,'dataNascimento',renderHeader); bind('pSexo',c,'sexo');
+    bind('pNome',c,'nome',renderHeader); bind('pSexo',c,'sexo');
     bind('pLocal',c,'localNascimento'); bind('pNac',c,'nacionalidade');
     bind('pDocId',c,'documentoId'); bind('pSaude',c,'sistemaSaude'); bind('pMorada',c,'moradaAtual');
+    // Data de nascimento: mesma regra "não pode ser no futuro" do resto da app. Vazia é permitida (opcional);
+    // data futura mostra erro junto ao campo (showFieldErrors) e NÃO é gravada — mantém o valor anterior.
+    const bindDob=(id,obj,field,after)=>{
+      const el=document.getElementById(id); if(!el) return;
+      const commit=()=>{ const p=el.parentElement; p.querySelectorAll('.field-err').forEach(e=>e.remove()); el.classList.remove('input-err');
+        const v=el.value;
+        if(v && v>todayISO()){ showFieldErrors([[id, msgFuturo()]]); return; }
+        obj[field]=v; save(); if(after) after(); };
+      el.addEventListener('input', commit); el.addEventListener('change', commit);
+    };
+    bindDob('pDob',c,'dataNascimento',renderHeader);
     // Campos numéricos do perfil: vazio ou número > 0 (vírgula/ponto). Valor inválido mostra erro e NÃO é gravado.
     const bindNum=(id,obj,field)=>{
       const el=document.getElementById(id); if(!el) return;
@@ -2292,7 +2303,20 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         obj[field]=el.value.trim(); save(); };
       el.addEventListener('change', commit); el.addEventListener('blur', commit);
     };
-    bindNum('pNascPeso',c.nascimento,'peso'); bindNum('pNascAlt',c.nascimento,'altura'); bindNum('pNascPc',c.nascimento,'pc');
+    // Medições ao nascer (peso/altura/PC): mesmas regras da Evolução — measureError (limite duro), measureUnusual +
+    // confirmUnusual (valor invulgar mas possível). Ao cancelar a confirmação, o valor escrito fica no campo, só não é gravado.
+    const bindBirthMeasure=(id,obj,field,metric)=>{
+      const el=document.getElementById(id); if(!el) return;
+      const commit=()=>{ const p=el.parentElement; p.querySelectorAll('.field-err').forEach(e=>e.remove()); el.classList.remove('input-err');
+        const v=readNum(id);
+        const err=measureError(metric,v);
+        if(err){ showFieldErrors([[id, err]]); return; }
+        const doSave=()=>{ obj[field]=v==null?'':el.value.trim(); save(); };
+        const warn=measureUnusual(metric,v);
+        if(warn) confirmUnusual([warn], doSave); else doSave(); };
+      el.addEventListener('change', commit);
+    };
+    bindBirthMeasure('pNascPeso',c.nascimento,'peso','peso'); bindBirthMeasure('pNascAlt',c.nascimento,'altura','altura'); bindBirthMeasure('pNascPc',c.nascimento,'pc','pc');
     bind('pBlood',c,'tipoSanguineo',()=>{ document.getElementById('bloodBig').textContent=c.tipoSanguineo; renderHeader(); });
     bind('pRh',c,'fatorRh',()=>{ document.querySelector('.rh').textContent='Fator Rh: '+c.fatorRh; });
     bind('pediNome',c.pediatra,'nome'); bind('pediTel',c.pediatra,'telefone'); bind('pediEmail',c.pediatra,'email'); bind('pediLocal',c.pediatra,'local'); bind('pediMorada',c.pediatra,'morada');
@@ -2305,26 +2329,34 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     document.getElementById('alimTipo').addEventListener('change', e=>{ c.alimentacao.tipo=e.target.value; save(); });
 
     document.getElementById('addCronica').addEventListener('click', ()=>{
-      const nome=document.getElementById('newCronica').value.trim(); if(!nome) return;
+      clearFieldErrors(document.getElementById('main'));
+      const nome=document.getElementById('newCronica').value.trim();
+      if(!showFieldErrors(nome ? [] : [['newCronica', lx('Indica o nome da condição crónica.','Indique le nom de la maladie chronique.','Enter the name of the chronic condition.')]])) return;
       c.condicoesCronicas=c.condicoesCronicas||[]; c.condicoesCronicas.push({id:uid(), nome, nota:document.getElementById('newCronicaNota').value.trim()});
       save(); renderPerfil();
     });
     document.querySelectorAll('[data-rmCronica]').forEach(b=>b.addEventListener('click', ()=>{ const it=(c.condicoesCronicas||[]).find(a=>a.id===b.dataset.rmcronica); if(!it) return;
       showConfirm(lx(`Apagar a condição crónica «${it.nome}»? Deixa de aparecer no Perfil e na ficha de emergência.`,`Supprimer la maladie chronique « ${it.nome} » ? Elle n'apparaîtra plus dans le Profil ni dans la fiche d'urgence.`,`Delete the chronic condition "${it.nome}"? It will no longer appear in Profile or on the emergency sheet.`), ()=>{ c.condicoesCronicas=c.condicoesCronicas.filter(a=>a.id!==b.dataset.rmcronica); save(); renderPerfil(); }); }));
     document.getElementById('addDefic').addEventListener('click', ()=>{
-      const nome=document.getElementById('newDefic').value.trim(); if(!nome) return;
+      clearFieldErrors(document.getElementById('main'));
+      const nome=document.getElementById('newDefic').value.trim();
+      if(!showFieldErrors(nome ? [] : [['newDefic', lx('Indica o nome da deficiência.','Indique le nom du handicap.','Enter the name of the disability.')]])) return;
       c.deficiencias=c.deficiencias||[]; c.deficiencias.push({id:uid(), nome, nota:document.getElementById('newDeficNota').value.trim()});
       save(); renderPerfil();
     });
     document.querySelectorAll('[data-rmDefic]').forEach(b=>b.addEventListener('click', ()=>{ const it=(c.deficiencias||[]).find(a=>a.id===b.dataset.rmdefic); if(!it) return;
       showConfirm(lx(`Apagar «${it.nome}»? Deixa de aparecer no Perfil e na ficha de emergência.`,`Supprimer « ${it.nome} » ? Cela n'apparaîtra plus dans le Profil ni dans la fiche d'urgence.`,`Delete "${it.nome}"? It will no longer appear in Profile or on the emergency sheet.`), ()=>{ c.deficiencias=c.deficiencias.filter(a=>a.id!==b.dataset.rmdefic); save(); renderPerfil(); }); }));
     document.getElementById('addTrad').addEventListener('click', ()=>{
-      const nome=document.getElementById('newTradNome').value.trim(); if(!nome) return;
+      clearFieldErrors(document.getElementById('main'));
+      const nome=document.getElementById('newTradNome').value.trim();
+      if(!showFieldErrors(nome ? [] : [['newTradNome', lx('Indica o nome do remédio.','Indique le nom du remède.','Enter the remedy name.')]])) return;
       c.medicacoes.push({id:uid(), nome, dose:document.getElementById('newTradUso').value.trim(), intervaloHoras:24, maxVezesDia:1, horario:'', notificacoes:false, tipo:'tradicional'});
       save(); renderPerfil();
     });
     document.getElementById('addDente').addEventListener('click', ()=>{
-      const nome=document.getElementById('newDenteNome').value.trim(); if(!nome) return;
+      clearFieldErrors(document.getElementById('main'));
+      const nome=document.getElementById('newDenteNome').value.trim();
+      if(!showFieldErrors(nome ? [] : [['newDenteNome', lx('Indica o nome do dente.','Indique le nom de la dent.','Enter the tooth name.')]])) return;
       c.dentes=c.dentes||[]; c.dentes.push({id:uid(), nome, data:document.getElementById('newDenteData').value||todayISO()});
       save(); playChime(); renderPerfil();
     });
@@ -2333,7 +2365,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const introSeg = document.getElementById('introReacaoSeg');
     if(introSeg) introSeg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ introSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); introReacao=b.dataset.v; }));
     document.getElementById('addIntro').addEventListener('click', ()=>{
-      const alimento=document.getElementById('newIntroAlimento').value.trim(); if(!alimento) return;
+      clearFieldErrors(document.getElementById('main'));
+      const alimento=document.getElementById('newIntroAlimento').value.trim();
+      if(!showFieldErrors(alimento ? [] : [['newIntroAlimento', lx('Indica o alimento.','Indique l\'aliment.','Enter the food.')]])) return;
       c.alimentacao.introducao=c.alimentacao.introducao||[];
       c.alimentacao.introducao.push({id:uid(), alimento, date:document.getElementById('newIntroData').value||todayISO(), reacao:introReacao, nota:document.getElementById('newIntroNota').value.trim()});
       save(); playChime(); renderPerfil();
@@ -2378,14 +2412,18 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     });
 
     document.getElementById('addAlergiaMed').addEventListener('click', ()=>{
-      const nome=document.getElementById('newAmNome').value.trim(); if(!nome) return;
+      clearFieldErrors(document.getElementById('main'));
+      const nome=document.getElementById('newAmNome').value.trim();
+      if(!showFieldErrors(nome ? [] : [['newAmNome', lx('Indica o nome do medicamento.','Indique le nom du médicament.','Enter the medicine name.')]])) return;
       c.alergiasMed.push({id:uid(), nome, reacao:document.getElementById('newAmReacao').value.trim(), gravidade:'Moderada', alternativa:document.getElementById('newAmAlt').value.trim(), status:'ATIVA'});
       save(); renderPerfil();
     });
     document.querySelectorAll('[data-rmAlergiaMed]').forEach(b=>b.addEventListener('click', ()=>{ const it=(c.alergiasMed||[]).find(a=>a.id===b.dataset.rmalergiamed); if(!it) return;
       showConfirm(lx(`Apagar a alergia a «${it.nome}»? Deixa de ser verificada ao registar doses e sai da ficha de emergência.`,`Supprimer l'allergie à « ${it.nome} » ? Elle ne sera plus vérifiée lors de l'enregistrement des doses et disparaîtra de la fiche d'urgence.`,`Delete the allergy to "${it.nome}"? It will no longer be checked when logging doses and will be removed from the emergency sheet.`), ()=>{ c.alergiasMed=c.alergiasMed.filter(a=>a.id!==b.dataset.rmalergiamed); save(); renderPerfil(); }); }));
     document.getElementById('addIntol').addEventListener('click', ()=>{
-      const nome=document.getElementById('newInNome').value.trim(); if(!nome) return;
+      clearFieldErrors(document.getElementById('main'));
+      const nome=document.getElementById('newInNome').value.trim();
+      if(!showFieldErrors(nome ? [] : [['newInNome', lx('Indica o alimento ou substância.','Indique l\'aliment ou la substance.','Enter the food or substance.')]])) return;
       c.intolerancias.push({id:uid(), nome, manifestacao:document.getElementById('newInManif').value.trim(), gravidade:'Moderada', consequencia:document.getElementById('newInCons').value.trim(), status:'ATIVA'});
       save(); renderPerfil();
     });
@@ -3276,9 +3314,12 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <div class="card">${bands}</div>`;
     document.querySelectorAll('[data-toggle-mi]').forEach(b=>b.addEventListener('click', ()=>{
       const key=b.dataset.toggleMi;
-      S.desenvolvimento.done[key] = S.desenvolvimento.done[key] ? null : todayISO();
-      if(!S.desenvolvimento.done[key]) delete S.desenvolvimento.done[key];
-      save(); renderDesenv();
+      if(S.desenvolvimento.done[key]){ delete S.desenvolvimento.done[key]; save(); renderDesenv(); return; }   // desmarcar
+      // marcar: pergunta a data real em que o marco foi alcançado (hoje pré-selecionado, mas pode ser uma data passada)
+      const item = key.split('|').slice(1).join('|');
+      showDateConfirm(lx(`Quando foi alcançado — ${tr(item)}?`,`Quand a été atteint — ${tr(item)} ?`,`When was it reached — ${tr(item)}?`), (date)=>{
+        S.desenvolvimento.done[key] = date; save(); renderDesenv();
+      });
     }));
     document.querySelectorAll('[data-card-mi]').forEach(b=>b.addEventListener('click', (ev)=>{
       ev.stopPropagation();
@@ -3331,10 +3372,16 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <p class="muted" style="text-align:center;">${tr('Calendário Bélgica (Wallonie) + Luxemburgo. Confirma sempre datas exatas com o/a pediatra.')}</p>`;
     document.querySelectorAll('[data-vax]').forEach(b=>b.addEventListener('click', ()=>{
       const key=b.dataset.vax, rec=vaxRec(key);
-      if(!rec.done){ rec.done = todayISO(); save(); playChime(); renderVacinas(); renderReminders(); return; }   // marcar: data de hoje, que fica registada
-      // desmarcar: confirmação (a data de administração é removida; país e reação ficam guardados)
       const [vid, di] = [key.slice(0,key.lastIndexOf('-')), +key.slice(key.lastIndexOf('-')+1)];
       const v = VAX.find(x=>x.id===vid); const nome = v ? tr(v.nome)+' — '+tr(v.doses[di]) : key;
+      if(!rec.done){
+        // marcar: pergunta a data real de administração (hoje pré-selecionado, mas pode ser uma data passada)
+        showDateConfirm(lx(`Quando foi administrada — ${nome}?`,`Quand a été administré — ${nome} ?`,`When was it given — ${nome}?`), (date)=>{
+          rec.done = date; save(); playChime(); renderVacinas(); renderReminders();
+        });
+        return;
+      }
+      // desmarcar: confirmação (a data de administração é removida; país e reação ficam guardados)
       const when = new Date(rec.done+'T12:00:00').toLocaleDateString(localeTag());
       showConfirm(lx(`Remover o registo de administração de ${nome} (${when})? A data de administração é apagada. O país e a reação, se preenchidos, ficam guardados.`,
         `Retirer l'enregistrement d'administration de ${nome} (${when}) ? La date d'administration est supprimée. Le pays et la réaction, s'ils sont remplis, restent enregistrés.`,
@@ -3379,21 +3426,51 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       ${past.length? past.map(consultaRow).join('') : `<div class="empty">${tr('Sem consultas anteriores.')}</div>`}
     </div>`;
     document.getElementById('csSave').addEventListener('click', ()=>{
-      const esp=document.getElementById('csEsp').value.trim(); if(!esp) return;
+      clearFieldErrors(document.getElementById('main'));
+      const esp=document.getElementById('csEsp').value.trim();
+      if(!showFieldErrors(esp ? [] : [['csEsp', lx('Indica o especialista.','Indique le spécialiste.','Enter the specialist.')]])) return;
       c.consultas = c.consultas || [];
       c.consultas.push({id:uid(), data:document.getElementById('csData').value, hora:document.getElementById('csHora').value, especialista:esp,
         local:document.getElementById('csLocal').value.trim(), resumo:document.getElementById('csResumo').value.trim(), exames:document.getElementById('csExames').value.trim(), notificar:document.getElementById('csNotif').checked});
       save(); playChime(); renderConsultas(); renderReminders();
     });
     document.querySelectorAll('[data-rmConsulta]').forEach(b=>b.addEventListener('click', ()=>{ showConfirm(tr('Apagar esta consulta?'), ()=>{ c.consultas=c.consultas.filter(x=>x.id!==b.dataset.rmconsulta); save(); renderConsultas(); }); }));
+    document.querySelectorAll('[data-editConsulta]').forEach(b=>b.addEventListener('click', ()=>showConsultaEditor(b.dataset.editconsulta)));
   }
   function consultaRow(cs){
     return `<div class="consulta-row"><div class="cdate">${new Date(cs.data+"T00:00:00").toLocaleDateString(localeTag())} ${cs.hora||''}</div>
       <div style="font-weight:700;font-size:var(--fs-md);">${cs.especialista}${cs.local?(' · '+cs.local):''}</div>
       ${cs.resumo?`<div class="meta muted">${cs.resumo}</div>`:''}
       ${cs.exames?`<div class="meta muted">${tr('Exames:')} ${cs.exames}</div>`:''}
+      <button class="log-del" data-editConsulta="${cs.id}" type="button" aria-label="${lx('Editar','Modifier','Edit')}">${ICONS.edit} ${lx('editar','modifier','edit')}</button>
       <button class="log-del" data-rmConsulta="${cs.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.trash} ${tr('remover')}</button>
     </div>`;
+  }
+  // Editar uma consulta já guardada: overlay com os mesmos campos do formulário de criação, tal como showMedEditor/showDoseEditor.
+  function showConsultaEditor(id){
+    const c=S.crianca; const cs=(c.consultas||[]).find(x=>x.id===id); if(!cs) return;
+    showOverlay(`<div class="voice-panel" id="csEditPanel"><div class="voice-card" role="dialog" aria-modal="true" aria-labelledby="csEditTitle" style="text-align:left;max-height:85vh;overflow-y:auto;">
+      <h2 id="csEditTitle" style="margin:0 0 10px;">${lx('Editar consulta','Modifier la consultation','Edit appointment')}</h2>
+      <div class="form-row"><div style="flex:1;"><label>${tr('Data')}</label><input type="date" id="ceData" value="${fv(cs.data)||todayISO()}"></div><div style="flex:1;"><label>${tr('Hora')}</label><input type="time" id="ceHora" value="${fv(cs.hora)||'09:00'}"></div></div>
+      <div class="form-row"><div style="flex:1;"><label>${tr('Especialista')}</label><input type="text" id="ceEsp" value="${fv(cs.especialista)}"></div></div>
+      <div class="form-row"><div style="flex:1;"><label>${tr('Local')}</label><input type="text" id="ceLocal" value="${fv(cs.local)}"></div></div>
+      <textarea id="ceResumo" placeholder="${tr('Resumo da consulta (preencher depois)')}">${fv(cs.resumo)}</textarea>
+      <textarea id="ceExames" placeholder="${tr('Exames pedidos/realizados (opcional)')}">${fv(cs.exames)}</textarea>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:var(--fs-sm);margin-top:6px;"><input type="checkbox" id="ceNotif" ${cs.notificar!==false?'checked':''} style="width:auto;"> ${tr('Notificar-me perto da data')}</label>
+      <button class="btn wide" id="ceSave" type="button" style="margin-top:12px;">${tr('Guardar alterações')}</button>
+      <button class="btn ghost wide" id="ceCancel" type="button" style="margin-top:8px;">${tr('Cancelar')}</button>
+    </div></div>`);
+    const panel=document.getElementById('csEditPanel');
+    /* toque fora: regra comum em overlayBackdropAllowed() */
+    document.getElementById('ceCancel').addEventListener('click', closeOverlay);
+    document.getElementById('ceSave').addEventListener('click', ()=>{
+      clearFieldErrors(panel);
+      const esp=document.getElementById('ceEsp').value.trim();
+      if(!showFieldErrors(esp ? [] : [['ceEsp', lx('Indica o especialista.','Indique le spécialiste.','Enter the specialist.')]])) return;
+      Object.assign(cs, { data:document.getElementById('ceData').value, hora:document.getElementById('ceHora').value, especialista:esp,
+        local:document.getElementById('ceLocal').value.trim(), resumo:document.getElementById('ceResumo').value.trim(), exames:document.getElementById('ceExames').value.trim(), notificar:document.getElementById('ceNotif').checked });
+      save(); closeOverlay(); renderConsultas(); renderReminders();
+    });
   }
 
   /* ============ RESUMO ============ */
@@ -4026,6 +4103,28 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   }
   const numTxt = v => String(v).replace('.', lx(',',',','.'));
   const msgFuturo = () => lx('A data/hora não pode ser no futuro.','La date/heure ne peut pas être dans le futur.','Date/time cannot be in the future.');
+  // Pequeno diálogo para indicar QUANDO algo aconteceu de facto (vacina administrada, marco alcançado): hoje pré-selecionado,
+  // mas editável para uma data passada. Não pode ser futura — mesma regra/validação do resto da app.
+  function showDateConfirm(title, onConfirm){
+    showOverlay(`<div class="voice-panel" id="dateConfirmPanel"><div class="voice-card" style="text-align:left;">
+      <h2 style="margin:0 0 10px;">${title}</h2>
+      <div class="form-row"><div style="flex:1;"><label>${tr('Data')}</label><input type="date" id="dcDate" value="${todayISO()}"></div></div>
+      <button class="btn wide" id="dcOk" type="button">${tr('Confirmar')}</button>
+      <button class="btn ghost wide" id="dcCancel" type="button" style="margin-top:8px;">${tr('Cancelar')}</button>
+    </div></div>`);
+    const panel=document.getElementById('dateConfirmPanel');
+    /* toque fora: regra comum em overlayBackdropAllowed() */
+    document.getElementById('dcCancel').addEventListener('click', closeOverlay);
+    document.getElementById('dcOk').addEventListener('click', ()=>{
+      clearFieldErrors(panel);
+      const v=document.getElementById('dcDate').value;
+      const errs=[];
+      if(!v) errs.push(['dcDate', lx('Indica a data.','Indique la date.','Enter the date.')]);
+      else if(v>todayISO()) errs.push(['dcDate', msgFuturo()]);
+      if(!showFieldErrors(errs)) return;
+      closeOverlay(); onConfirm(v);
+    });
+  }
 
   /* ============ ver detalhes → ✏️ editar / apagar (reutiliza os formulários de edição existentes) ============ */
   function localISO(ts){ const d=new Date(ts); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }

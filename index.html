@@ -924,8 +924,10 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const demoFound = purgeDemoData(c);
     if(demoFound.length) demoCleanupLog.push(...demoFound);
     if(!c.id) c.id=uid();
-    if(!c.nome) c.nome='Bebé';
-    if(!c.dataNascimento) c.dataNascimento=todayISO();
+    // Nome e data de nascimento ficam mesmo vazios até a utilizadora os preencher — tal como o Sexo.
+    // Não inventar "Bebé" nem a data de hoje: isso pareceria um dado real e propagar-se-ia à idade em todo o lado.
+    if(c.nome==null) c.nome='';
+    if(c.dataNascimento==null) c.dataNascimento='';
     return c;
   }
   function migrateToMultiChild(state){
@@ -1472,11 +1474,18 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
           const items=secondary.filter(tb=>g.ids.includes(tb.id)); if(!items.length) return '';
           return `<p class="mais-group">${lx(g.pt,g.fr,g.en)}</p>`+items.map(tb=>`<button class="mais-item${tb.id===activeTab?' active':''}" data-tab="${tb.id}" type="button">
           <span class="ic">${ICONS[tb.ic]}</span><span class="lbl">${t(tb.id)}</span>${ICONS.chevright}
-        </button>`).join(''); }).join('')}</div>
+        </button>`).join(''); }).join('')}
+        <p class="mais-group">${lx('Definições','Réglages','Settings')}</p>
+        <button class="mais-item" id="maisSettings" type="button">
+          <span class="ic">${ICONS.gear}</span><span class="lbl">${tr('Definições')}</span>${ICONS.chevright}
+        </button>
+      </div>
     </div></div>`);
-    document.querySelectorAll('.mais-item').forEach(b=>b.addEventListener('click', ()=>{
+    document.querySelectorAll('.mais-item[data-tab]').forEach(b=>b.addEventListener('click', ()=>{
       activeTab=b.dataset.tab; openForm=null; editId=null; closeOverlay(); render();
     }));
+    // Definições é um overlay, não uma página — abre-o em vez de mudar de separador.
+    document.getElementById('maisSettings').addEventListener('click', ()=>{ closeOverlay(); renderSettingsOverlay(); });
     // Sair sem escolher nada: tocar no fundo escuro (fora do cartão) ou no ✕.
     const panel=document.getElementById('maisPanel');
     /* toque fora: regra comum */
@@ -1621,13 +1630,12 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function hashStr(s){ let h=0; for(let i=0;i<s.length;i++){ h=(h*31 + s.charCodeAt(i))|0; } return Math.abs(h); }
   function milestoneCardData(item, doneDateStr){
     const c = S.crianca;
-    const dob = new Date(c.dataNascimento+"T00:00:00");
     const at = doneDateStr ? new Date(doneDateStr+"T00:00:00") : new Date();
-    const weeks = Math.max(0, Math.round((at-dob)/(7*86400000)));
+    const weeks = c.dataNascimento ? Math.max(0, Math.round((at-new Date(c.dataNascimento+"T00:00:00"))/(7*86400000))) : null;
     const lang=(S.settings&&S.settings.lang)||'pt';
-    const weekLbl = lang==='fr' ? `semaine ${weeks}` : lang==='en' ? `week ${weeks}` : `semana ${weeks}`;
+    const weekLbl = weeks==null ? '' : (lang==='fr' ? `semaine ${weeks}` : lang==='en' ? `week ${weeks}` : `semana ${weeks}`);
     const [g1,g2] = MILESTONE_GRADIENTS[hashStr(item)%MILESTONE_GRADIENTS.length];
-    return { nome:c.nome, weekLbl, text:tr(item), g1, g2 };
+    return { nome:c.nome||lx('Bebé','Bébé','Baby'), weekLbl, text:tr(item), g1, g2 };
   }
   function showMilestoneCard(item, doneDateStr){
     const d = milestoneCardData(item, doneDateStr);
@@ -3370,7 +3378,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const lang=(S.settings&&S.settings.lang)||'pt';
     const completeTxt = lang==='fr' ? `À jour — tous les vaccins pour ${months} mois sont complets.` : lang==='en' ? `Up to date — all vaccines for ${months} months are complete.` : `Em dia — todas as vacinas para os ${months} meses estão completas.`;
     document.getElementById('main').innerHTML = `${pageTitle(lx('Vacinas','Vaccins','Vaccines'))}
-      <div class="alert ${complete?'good':dueCount?'warn':months==null?'info':'good'}">${ICONS.syringe} ${complete?completeTxt:dueCount?vaxDueTxt(dueCount):vaxOkTxt(months,nextDue)}</div>
+      <div class="alert ${complete?'good':dueCount?'info':months==null?'info':'good'}">${ICONS.syringe} ${complete?completeTxt:dueCount?vaxDueTxt(dueCount):vaxOkTxt(months,nextDue)}</div>
       <div class="card">${groups}
         <button class="btn wide" id="saveVacinas" type="button" style="margin-top:10px;">${ICONS.check} ${tr('Guardar')}</button>
       </div>
@@ -3605,12 +3613,19 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const Z=cur.sleep, PZ=prev.sleep;
     if(Z.n){
       const kinds = parts([{n:Z.nights, txt:pl(Z.nights,'noite','noites','nuit','nuits','night','nights')},{n:Z.naps, txt:pl(Z.naps,'sesta','sestas','sieste','siestes','nap','naps')},{n:Z.noPeriod, txt:Z.noPeriod+' '+lx('sem período indicado','sans période indiquée','with no period given')}]);
-      const lines=[`<b>${Z.n}</b> ${lx(Z.n===1?'período de sono registado':'períodos de sono registados',Z.n===1?'période de sommeil enregistrée':'périodes de sommeil enregistrées',Z.n===1?'sleep period logged':'sleep periods logged')}`+(kinds?` <span class="muted">(${kinds})</span>`:''),
-        `<b>${durStr(Z.min)}</b> ${lx('de sono registado','de sommeil enregistré','of sleep logged')}`,
-        `<b>~${durStr(Z.perDay)}/${dia}</b> ${avgNote(Z.days)}`,
-        daysLine(Z.days)];
+      // Sono "válido" para mostrar como total/média: arredonda a pelo menos 1 min. Um registo de 0 (ou <30s,
+      // que arredondaria a "0min") existe e continua contado acima e em "dias com registos", mas não vira uma média fictícia.
+      const validSleep = Math.round(Z.min) > 0;
+      const lines=[`<b>${Z.n}</b> ${lx(Z.n===1?'período de sono registado':'períodos de sono registados',Z.n===1?'période de sommeil enregistrée':'périodes de sommeil enregistrées',Z.n===1?'sleep period logged':'sleep periods logged')}`+(kinds?` <span class="muted">(${kinds})</span>`:'')];
+      if(validSleep){
+        lines.push(`<b>${durStr(Z.min)}</b> ${lx('de sono registado','de sommeil enregistré','of sleep logged')}`);
+        lines.push(`<b>~${durStr(Z.perDay)}/${dia}</b> ${avgNote(Z.days)}`);
+      } else {
+        lines.push(`<span class="muted">${lx('Sem duração de sono válida neste período.','Aucune durée de sommeil valide sur cette période.','No valid sleep duration in this period.')}</span>`);
+      }
+      lines.push(daysLine(Z.days));
       let cmp='';
-      if(canCmp(Z.days,PZ.days)) cmp=`${prevLbl}: ~${durStr(PZ.perDay)}/${dia} (${PZ.days}/${days}) — ${lx('diferença','différence','difference')}: ${signed(Z.perDay-PZ.perDay,v=>durStr(v))}/${dia}`;
+      if(validSleep && canCmp(Z.days,PZ.days)) cmp=`${prevLbl}: ~${durStr(PZ.perDay)}/${dia} (${PZ.days}/${days}) — ${lx('diferença','différence','difference')}: ${signed(Z.perDay-PZ.perDay,v=>durStr(v))}/${dia}`;
       out.push({ic:ICONS.moon, title:lx('Sono','Sommeil','Sleep'), lines, cmp});
     }
     const F=cur.diaper, PF=prev.diaper;
@@ -3654,7 +3669,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const items=[];
     const cur=periodSummary(7,0), prev=periodSummary(7,7);
     const dia=lx('dia','jour','day');
-    if(cur.sleep.perDay!=null){
+    if(cur.sleep.perDay!=null && Math.round(cur.sleep.min)>0){   // sem duração válida não se mostra "~0min/dia"
       let txt = lx('Sono','Sommeil','Sleep')+`: ~${durStr(cur.sleep.perDay)}/${dia} (${pl(cur.sleep.days,'dia com registos','dias com registos','jour avec enregistrements','jours avec enregistrements','day with records','days with records')} ${lx('nos últimos 7 dias','sur les 7 derniers jours','in the last 7 days')})`;
       if(prev.sleep.perDay!=null && cur.sleep.days>=3 && prev.sleep.days>=3){
         const diffPct=Math.round(((cur.sleep.perDay-prev.sleep.perDay)/prev.sleep.perDay)*100);
@@ -3800,7 +3815,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     ${pageTitle(lx('Ficha de emergência','Fiche d\'urgence','Emergency sheet'))}
     <div class="card" style="text-align:center;">
       <div class="photo-box" style="width:80px;height:80px;border-radius:50%;margin:0 auto 8px;">${c.foto?`<img src="${c.foto}">`:ICONS.baby}</div>
-      <h2>${c.nome}</h2><p class="muted">${ageInfo(c.dataNascimento).label} · ${tr('nascida')} ${new Date(c.dataNascimento+"T00:00:00").toLocaleDateString(localeTag())}</p>
+      <h2>${c.nome || lx('Sem nome','Sans nom','No name')}</h2><p class="muted">${c.dataNascimento ? (ageInfo(c.dataNascimento).label+' · '+tr('nascida')+' '+new Date(c.dataNascimento+"T00:00:00").toLocaleDateString(localeTag())) : lx('Data de nascimento não indicada','Date de naissance non indiquée','Date of birth not set')}</p>
     </div>
     <div class="critical-block"><div class="bt">${c.tipoSanguineo||'—'}</div><div class="rh">${tr('Fator Rh:')} ${c.fatorRh||'—'}</div></div>
 
@@ -3850,9 +3865,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
           allerg:'Alergias', none:'nenhuma', intol:'Intolerâncias', chronic:'Condições crónicas', disab:'Deficiências', meds:'Medicação',
           pedi:'Pediatra', mae:'Mãe', pai:'Pai', emerg:'Contacto emergência', hosp:'Hospital de referência', sos112:'Emergência'};
       const doc=new jsPDF();
-      doc.setFontSize(16); doc.text(L.title+' — '+c.nome, 14, 18);
+      doc.setFontSize(16); doc.text(L.title+' — '+(c.nome||lx('Sem nome','Sans nom','No name')), 14, 18);
       doc.setFontSize(11);
-      const text = `${L.age}: ${ageInfo(c.dataNascimento).label}\n${L.blood}: ${c.tipoSanguineo} (Rh ${c.fatorRh})\n${L.doc}: ${c.documentoId||'—'}  ${L.health}: ${c.sistemaSaude||'—'}\n${L.addr}: ${c.moradaAtual||'—'}\n\n`+
+      const text = `${L.age}: ${c.dataNascimento?ageInfo(c.dataNascimento).label:'—'}\n${L.blood}: ${c.tipoSanguineo} (Rh ${c.fatorRh})\n${L.doc}: ${c.documentoId||'—'}  ${L.health}: ${c.sistemaSaude||'—'}\n${L.addr}: ${c.moradaAtual||'—'}\n\n`+
         `${L.allerg}: ${c.alergiasMed.map(a=>a.nome+' -> '+a.alternativa).join('; ')||L.none}\n`+
         `${L.intol}: ${c.intolerancias.map(a=>a.nome).join('; ')||L.none}\n`+
         `${L.chronic}: ${(c.condicoesCronicas||[]).map(a=>a.nome).join('; ')||L.none}\n`+

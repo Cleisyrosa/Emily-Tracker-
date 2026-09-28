@@ -1979,7 +1979,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const feedsToday=S.mamadas.filter(l=>inRange(l.ts,t0,t1)).length;
     const diapersToday=S.fraldas.filter(l=>inRange(l.ts,t0,t1));
     const xixiToday=diapersToday.filter(d=>d.tipo==='xixi').length, cocoToday=diapersToday.filter(d=>d.tipo==='coco').length;
-    const sleepMinsToday=S.sono.filter(l=>inRange(l.inicio,t0,t1)||inRange(l.fim,t0,t1)).reduce((s,l)=>s+(l.duracaoMin||0),0);
+    // Alinhado com o separador Sono e o Resumo (overlapMinutes, F6/F9): só conta, de cada sessão, os minutos que
+    // caem mesmo dentro de hoje — uma sessão que atravessa a meia-noite já não soma a duração inteira a "hoje".
+    const sleepMinsToday=S.sono.filter(l=>l.inicio<t1 && l.fim>t0).reduce((s,l)=>s+overlapMinutes(l.inicio,l.fim,t0,t1),0);
     const peso = latestMeasure('peso') ? latestMeasure('peso').valor : null;
 
     let html='';

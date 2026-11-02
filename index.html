@@ -1797,10 +1797,9 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
   }
 
   let recognition=null, listening=false, voiceTarget=null;
-  const mainVoice=document.getElementById('main');
-  if(mainVoice) mainVoice.addEventListener('focusin', e=>{
+  document.addEventListener('focusin', e=>{
     const t=e.target;
-    if(t && t.matches && t.matches('textarea,select,input:not([type=button]):not([type=submit]):not([type=reset]):not([type=checkbox]):not([type=radio]):not([type=file])')) voiceTarget=t;
+    if(t && t.matches && t.matches('textarea,select,button[data-v],input:not([type=button]):not([type=submit]):not([type=reset]):not([type=file])')) voiceTarget=t;
   });
   function startVoice(){
     const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1846,17 +1845,63 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
         const spoken=norm(value);
         const option=[...target.options].find(o=>o.value && (norm(o.textContent)===spoken || norm(o.textContent).includes(spoken) || spoken.includes(norm(o.textContent))));
         if(option){ target.value=option.value; inserted=true; }
+      } else if(target.matches && target.matches('button[data-v]')){
+        const group=target.closest('.seg');
+        const spoken=norm(value);
+        const option=group && [...group.querySelectorAll('button[data-v]')].find(x=>norm(x.textContent).includes(spoken) || spoken.includes(norm(x.textContent)) || norm(x.dataset.v)===spoken);
+        if(option){ option.click(); inserted=true; }
+      } else if(target.tagName==='INPUT' && (target.type==='checkbox' || target.type==='radio')){
+        const spoken=norm(value);
+        if(target.type==='checkbox'){
+          if(/\b(sim|marcar|ativar|yes|checked|oui)\b/.test(spoken)){ target.checked=true; inserted=true; }
+          else if(/\b(nao|não|desmarcar|desativar|no|unchecked|non)\b/.test(spoken)){ target.checked=false; inserted=true; }
+        } else {
+          const group=[...document.querySelectorAll('input[type=radio]')].filter(x=>x.name===target.name);
+          const option=group.find(x=>{
+            const label=x.labels && [...x.labels].map(l=>norm(l.textContent)).join(' ');
+            return label && (label.includes(spoken) || spoken.includes(label));
+          });
+          if(option){ option.checked=true; inserted=true; }
+        }
       } else if(target.tagName==='TEXTAREA' || target.tagName==='INPUT'){
         let insert=value;
         if(target.type==='number'){
           const m=value.match(/-?\d+(?:[.,]\d+)?/);
           if(m) insert=m[0].replace(',','.');
           else insert='';
+        } else if(target.type==='date'){
+          const normalized=norm(value);
+          let ymd=(normalized.match(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/)||[]).slice(1);
+          if(!ymd.length){
+            const dmy=normalized.match(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})\b/);
+            if(dmy) ymd=[dmy[3],dmy[2],dmy[1]];
+          }
+          if(!ymd.length){
+            const months={janeiro:1,janvier:1,january:1,fevereiro:2,fevrier:2,february:2,marco:3,mars:3,march:3,abril:4,avril:4,april:4,maio:5,mai:5,may:5,junho:6,juin:6,june:6,julho:7,juillet:7,july:7,agosto:8,aout:8,august:8,setembro:9,septembre:9,september:9,outubro:10,octobre:10,october:10,novembro:11,novembre:11,november:11,dezembro:12,decembre:12,december:12};
+            const m=normalized.match(/\b(\d{1,2})\s+(?:de\s+)?([a-z]+)\s+(?:de\s+)?(\d{4})\b/);
+            if(m && months[m[2]]) ymd=[m[3],months[m[2]],m[1]];
+            else {
+              const en=normalized.match(/\b([a-z]+)\s+(\d{1,2})\s*,?\s*(\d{4})\b/);
+              if(en && months[en[1]]) ymd=[en[3],months[en[1]],en[2]];
+            }
+          }
+          if(ymd.length===3){
+            const yyyy=+ymd[0], mm=+ymd[1], dd=+ymd[2], date=new Date(Date.UTC(yyyy,mm-1,dd));
+            if(date.getUTCFullYear()===yyyy && date.getUTCMonth()===mm-1 && date.getUTCDate()===dd) insert=yyyy+'-'+String(mm).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
+            else insert='';
+          } else insert='';
+        } else if(target.type==='time'){
+          const normalized=norm(value);
+          const m=normalized.match(/\b(\d{1,2})\s*[:h]\s*(\d{2})\b/)||normalized.match(/\b(\d{1,2})\s*(?:horas?|heures?|hours?)\s*(?:(?:e|et|and)\s*)?(\d{1,2})?\b/);
+          if(m){ const hh=+m[1], mm=+(m[2]||0); insert=hh<24 && mm<60 ? String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0') : ''; } else insert='';
         }
         if(insert){
-          const start=typeof target.selectionStart==='number' ? target.selectionStart : target.value.length;
-          const end=typeof target.selectionEnd==='number' ? target.selectionEnd : target.value.length;
-          target.value=target.value.slice(0,start)+insert+target.value.slice(end);
+          if(target.type==='checkbox' || target.type==='radio') { target.checked=true; }
+          else {
+            const start=typeof target.selectionStart==='number' ? target.selectionStart : target.value.length;
+            const end=typeof target.selectionEnd==='number' ? target.selectionEnd : target.value.length;
+            target.value=target.value.slice(0,start)+insert+target.value.slice(end);
+          }
           inserted=true;
         }
       }

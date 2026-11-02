@@ -883,7 +883,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       pai:{nome:'',nacionalidade:'',naturalidade:'',tipoSanguineo:'',antecedentes:'',telefone:''},
       contactoEmergencia:{nome:'',relacao:'',telefone:''},
       hospitalReferencia:{nome:'',morada:'',telefone:''},
-      alimentacao:{tipo:'Misto',formula:'',quantidadeRefeicao:'',dataInicioSolidos:'',introducao:[],refeicoes:[],lembretesAgua:{ativado:false,confirmadoPediatra:false,inicio:'09:00',fim:'19:00',intervaloMin:120,ultimoAlerta:0}},
+      alimentacao:{tipo:'Misto',formula:'',quantidadeRefeicao:'',dataInicioSolidos:'',introducao:[],refeicoes:[],lembretesAgua:{ativado:false,confirmadoPediatra:false,inicio:'09:00',fim:'19:00',intervaloMin:120,ultimoAlerta:0},lembretesAlimentos:[]},
       penico:{iniciado:false,dataInicio:'',sucessos:0,acidentes:0,notas:'',registos:[]},
       documentoId:'', sistemaSaude:'', moradaAtual:'', notas:'',
       alergiasMed:[], intolerancias:[], medicacoes:[], foto:'',
@@ -906,6 +906,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     ['naturalidade','tipoSanguineo','antecedentes'].forEach(k=>{ if(c.mae[k]==null) c.mae[k]=''; if(c.pai[k]==null) c.pai[k]=''; });
     if(c.alimentacao.introducao==null) c.alimentacao.introducao=[];
     if(c.alimentacao.refeicoes==null) c.alimentacao.refeicoes=[];
+    if(c.alimentacao.lembretesAlimentos==null) c.alimentacao.lembretesAlimentos=[];
     if(c.alimentacao.lembretesAgua==null) c.alimentacao.lembretesAgua={ativado:false,confirmadoPediatra:false,inicio:'09:00',fim:'19:00',intervaloMin:120,ultimoAlerta:0};
     else c.alimentacao.lembretesAgua=Object.assign({ativado:false,confirmadoPediatra:false,inicio:'09:00',fim:'19:00',intervaloMin:120,ultimoAlerta:0},c.alimentacao.lembretesAgua);
     if(c.alimentacao.dataInicioSolidos==null) c.alimentacao.dataInicioSolidos='';
@@ -1871,6 +1872,10 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         if(!water.ultimoAlerta||Date.now()-water.ultimoAlerta>=interval*60000){ water.ultimoAlerta=Date.now(); save(); }
       }
     }
+    (c.alimentacao&&c.alimentacao.lembretesAlimentos||[]).filter(r=>!r.concluido&&Number.isFinite(new Date(`${r.data}T${r.hora||'09:00'}`).getTime())&&Date.now()>=new Date(`${r.data}T${r.hora||'09:00'}`).getTime()).forEach(r=>{
+      const name=safeText(r.alimento||'');
+      msgs.push(ICONS.calendar+' '+(lang==='fr'?`Rappel prévu : vérifier si c’est le bon moment pour proposer ${name}, selon les conseils du pédiatre. (${r.hora||''})`:lang==='en'?`Planned reminder: check whether now is the right time to offer ${name}, following the pediatrician’s guidance. (${r.hora||''})`:`Lembrete planeado: confirma se é o momento indicado para oferecer ${name}, conforme a orientação da pediatra. (${r.hora||''})`));
+    });
     const daysSinceBk = lastBk ? (Date.now()-lastBk)/86400000 : Infinity;
     if(daysSinceBk>=14){
       let txt;
@@ -2699,6 +2704,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const meals=(a.refeicoes||[]).filter(x=>x.data===foodHistoryDay).sort((x,y)=>y.ts-x.ts);
     const waters=(c.hidratacao||[]).filter(x=>x.ml>0&&inRange(x.ts,...todayRange())).sort((x,y)=>y.ts-x.ts);
     const introRecords=(a.introducao||[]).slice().sort((x,y)=>String(y.date||'').localeCompare(String(x.date||'')));
+    const plannedFoodReminders=(a.lembretesAlimentos||[]).slice().sort((x,y)=>new Date(`${x.data}T${x.hora||'00:00'}`)-new Date(`${y.data}T${y.hora||'00:00'}`));
     const ageMonths=c.dataNascimento?ageInfo(c.dataNascimento).months:null;
     const foodPhase=ageMonths==null||ageMonths===5?'inicio':ageMonths<5?'antes':ageMonths<8?'6a7':ageMonths<12?'8a11':'12mais';
     const phaseLabels={inicio:lx('Início · cerca de 5–6 meses','Début · vers 5–6 mois','Starting · around 5–6 months'),'6a7':lx('6–7 meses','6–7 mois','6–7 months'),'8a11':lx('8–11 meses','8–11 mois','8–11 months'),'12mais':lx('12 meses ou mais','12 mois et plus','12 months and older'),antes:lx('Antes da introdução alimentar','Avant la diversification alimentaire','Before complementary feeding')};
@@ -2746,6 +2752,13 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         <input id="foodIntroNote" type="text" placeholder="${lx('Nota (forma de preparação ou reação)','Note (préparation ou réaction)','Note (preparation or reaction)')}">
         <button class="btn wide" id="saveFoodIntro" type="button">${ICONS.check} ${lx('Guardar introdução','Enregistrer l’introduction','Save food introduction')}</button>
         ${introRecords.length?introRecords.slice(0,12).map(f=>`<div class="med-row"><span class="body"><b>${safeText(f.alimento)}</b> · ${safeText(f.date)}${f.grupo?` · ${safeText(f.grupo)}`:''}<br>${safeText(f.reacao||'')}${f.nota?`<br><span class="muted">${safeText(f.nota)}</span>`:''}</span><button class="log-del" type="button" data-rmFoodIntro="${f.id}" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join(''):`<p class="muted">${lx('Ainda sem alimentos registados nesta lista.','Aucun aliment noté dans cette liste.','No foods logged in this list yet.')}</p>`}
+        <div class="section-label" style="margin-top:16px;">${lx('Lembretes de introdução','Rappels d’introduction','Food introduction reminders')}</div>
+        <p class="muted">${lx('Escolhe tu a data e a hora de acordo com o plano da pediatra. O lembrete só pergunta se é o momento indicado; não decide quando oferecer o alimento. Aparece com a app aberta (ou quando a reabrires depois da hora).','Choisis la date et l’heure selon le plan du pédiatre. Le rappel demande seulement si le moment convient ; il ne décide pas quand proposer l’aliment. Il apparaît lorsque l’application est ouverte (ou à sa réouverture après l’heure prévue).','Choose the date and time according to the pediatrician’s plan. The reminder only asks whether it is the right time; it does not decide when to offer the food. It appears while the app is open (or when you reopen it after the scheduled time).')}</p>
+        <div class="form-row"><div style="flex:1;"><label>${lx('Alimento','Aliment','Food')}</label><input id="foodReminderName" type="text" placeholder="${lx('ex.: pera, ovo, amêndoa','ex. : poire, œuf, amande','e.g. pear, egg, almond')}"></div></div>
+        <div class="form-row"><div style="flex:1;"><label>${lx('Grupo','Groupe','Group')}</label><select id="foodReminderGroup"><option>${lx('Fruta','Fruit','Fruit')}</option><option>${lx('Carne/peixe/ovo/leguminosa','Viande/poisson/œuf/légumineuse','Meat/fish/egg/legumes')}</option><option>${lx('Alergénio','Allergène','Allergen')}</option><option>${lx('Outro','Autre','Other')}</option></select></div></div>
+        <div class="form-row"><div style="flex:1;"><label>${lx('Data do lembrete','Date du rappel','Reminder date')}</label><input id="foodReminderDate" type="date" value="${todayISO()}"></div><div style="flex:1;"><label>${lx('Hora','Heure','Time')}</label><input id="foodReminderTime" type="time"></div></div>
+        <button class="btn wide" id="addFoodReminder" type="button">${ICONS.bell} ${lx('Criar lembrete','Créer un rappel','Create reminder')}</button>
+        ${plannedFoodReminders.length?plannedFoodReminders.map(r=>`<div class="med-row"><span class="body"><b>${safeText(r.alimento)}</b> · ${safeText(r.grupo)}<br>${safeText(r.data)} · ${safeText(r.hora)} · ${r.concluido?lx('Concluído','Terminé','Completed'):lx('Pendente','En attente','Pending')}</span><span style="display:flex;gap:6px;">${r.concluido?'':`<button class="dose-btn" type="button" data-doneFoodReminder="${r.id}">${lx('Concluir','Terminer','Done')}</button>`}<button class="log-del" type="button" data-rmFoodReminder="${r.id}" aria-label="${tr('Apagar')}">${ICONS.trash}</button></span></div>`).join(''):`<p class="muted">${lx('Ainda não há lembretes planeados.','Aucun rappel planifié.','No reminders planned yet.')}</p>`}
         <p class="muted" style="margin-top:10px;"><a href="https://www.kindengezin.be/nl/thema/voeding/vaste-voeding/starten-met-vaste-voeding" target="_blank" rel="noopener noreferrer">Kind en Gezin · ${lx('começar e alergénios','début et allergènes','starting and allergens')}</a><br><a href="https://www.kindengezin.be/nl/thema/voeding/vaste-voeding/fruit" target="_blank" rel="noopener noreferrer">Kind en Gezin · ${lx('frutas e segurança','fruits et sécurité','fruit and safety')}</a><br><a href="https://www.nhs.uk/best-start-in-life/baby/weaning/safe-weaning/food-allergies/" target="_blank" rel="noopener noreferrer">NHS · ${lx('alergénios e reações','allergènes et réactions','allergens and reactions')}</a></p>
       </div>
       <div class="card"><div class="section-label">${lx('Lembretes para oferecer água','Rappels pour proposer de l’eau','Water offer reminders')}</div>
@@ -2776,9 +2789,18 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     document.getElementById('saveFoodIntro').addEventListener('click',()=>{
       const nome=document.getElementById('foodIntroName').value.trim(),date=document.getElementById('foodIntroDate').value;
       const errs=[];if(!nome)errs.push(['foodIntroName',lx('Indica o alimento.','Indique l’aliment.','Enter the food.')]);if(!date)errs.push(['foodIntroDate',lx('Indica a data.','Indique la date.','Enter the date.')]);else if(date>todayISO())errs.push(['foodIntroDate',msgFuturo()]);if(!showFieldErrors(errs))return;
-      a.introducao=a.introducao||[];a.introducao.unshift({id:uid(),alimento:nome,date,grupo:document.getElementById('foodIntroGroup').selectedOptions[0].textContent,reacao:document.getElementById('foodIntroReaction').value,nota:document.getElementById('foodIntroNote').value.trim()});save();playChime();renderAlimentacao();
+      a.introducao=a.introducao||[];a.introducao.unshift({id:uid(),alimento:nome,date,grupo:document.getElementById('foodIntroGroup').selectedOptions[0].textContent,reacao:document.getElementById('foodIntroReaction').value,nota:document.getElementById('foodIntroNote').value.trim()});
+      (a.lembretesAlimentos||[]).forEach(r=>{if(!r.concluido&&String(r.alimento||'').trim().toLocaleLowerCase()===nome.toLocaleLowerCase())r.concluido=true;});save();playChime();renderAlimentacao();renderReminders();
     });
     document.querySelectorAll('[data-rmFoodIntro]').forEach(b=>b.addEventListener('click',()=>showConfirm(lx('Apagar este alimento da lista de introdução?','Supprimer cet aliment du journal d’introduction ?','Delete this food from the introduction log?'),()=>{a.introducao=a.introducao.filter(f=>f.id!==b.dataset.rmfoodintro);save();renderAlimentacao();})));
+    document.getElementById('addFoodReminder').addEventListener('click',()=>{
+      const alimento=document.getElementById('foodReminderName').value.trim(),data=document.getElementById('foodReminderDate').value,hora=document.getElementById('foodReminderTime').value;
+      const errs=[];if(!alimento)errs.push(['foodReminderName',lx('Indica o alimento.','Indique l’aliment.','Enter the food.')]);if(!data)errs.push(['foodReminderDate',lx('Escolhe uma data.','Choisis une date.','Choose a date.')]);if(!hora)errs.push(['foodReminderTime',lx('Escolhe uma hora.','Choisis une heure.','Choose a time.')]);
+      const at=data&&hora?new Date(`${data}T${hora}`).getTime():NaN;if(Number.isFinite(at)&&at<Date.now()-60000)errs.push(['foodReminderDate',lx('Escolhe uma data e hora atuais ou futuras.','Choisis une date et une heure actuelle ou future.','Choose a current or future date and time.')]);if(!showFieldErrors(errs))return;
+      a.lembretesAlimentos=a.lembretesAlimentos||[];a.lembretesAlimentos.push({id:uid(),alimento,grupo:document.getElementById('foodReminderGroup').value,data,hora,concluido:false});save();renderAlimentacao();renderReminders();
+    });
+    document.querySelectorAll('[data-doneFoodReminder]').forEach(b=>b.addEventListener('click',()=>{const reminder=(a.lembretesAlimentos||[]).find(r=>r.id===b.dataset.donefoodreminder);if(reminder)reminder.concluido=true;save();renderAlimentacao();renderReminders();}));
+    document.querySelectorAll('[data-rmFoodReminder]').forEach(b=>b.addEventListener('click',()=>showConfirm(lx('Apagar este lembrete?','Supprimer ce rappel ?','Delete this reminder?'),()=>{a.lembretesAlimentos=a.lembretesAlimentos.filter(r=>r.id!==b.dataset.rmfoodreminder);save();renderAlimentacao();renderReminders();})));
     document.getElementById('addWater').addEventListener('click',()=>{
       const n=Number(document.getElementById('waterMl').value);
       if(!Number.isFinite(n)||n<1||n>500){showAlert(lx('Indica um valor entre 1 e 500 ml.','Indique une valeur entre 1 et 500 ml.','Enter a value between 1 and 500 ml.'));return;}

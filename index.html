@@ -568,6 +568,8 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
     "Começar do zero":{fr:"Repartir de zéro",en:"Start fresh"},
     "Já passaram mais de 4h desde a última refeição registada.":{fr:"Plus de 4h se sont écoulées depuis le dernier repas enregistré.",en:"It's been over 4h since the last logged feeding."},
     "Última refeição":{fr:"Dernier repas",en:"Last feeding"},
+    "Última mamada":{fr:"Dernière tétée",en:"Last milk feed"},
+    "Última alimentação":{fr:"Dernière alimentation",en:"Latest food"},
     "Última fralda":{fr:"Dernière couche",en:"Last diaper"},
     "A dormir há":{fr:"Endormi(e) depuis",en:"Asleep for"},
     "Sono hoje":{fr:"Sommeil aujourd'hui",en:"Sleep today"},
@@ -2121,6 +2123,8 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
   function renderInicio(){
     const [t0,t1]=todayRange();
     const feed=lastOf(S.mamadas), diaper=lastOf(S.fraldas);
+    const foodRecords=(S.crianca.alimentacao&&S.crianca.alimentacao.refeicoes)||[];
+    const lastFood=foodRecords.slice().sort((a,b)=>(b.ts||0)-(a.ts||0))[0]||null;
     const isSleeping=!!S.running.sleepStart;
     const lastSleep=lastSleepOf(S.sono);
     const feedsToday=S.mamadas.filter(l=>inRange(l.ts,t0,t1)).length;
@@ -2129,12 +2133,11 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
     // Alinhado com o separador Sono e o Resumo (overlapMinutes, F6/F9): só conta, de cada sessão, os minutos que
     // caem mesmo dentro de hoje — uma sessão que atravessa a meia-noite já não soma a duração inteira a "hoje".
     const sleepMinsToday=S.sono.filter(l=>l.inicio<t1 && l.fim>t0).reduce((s,l)=>s+overlapMinutes(l.inicio,l.fim,t0,t1),0);
-    const peso = latestMeasure('peso') ? latestMeasure('peso').valor : null;
 
     let html='';
     const notice = S.settings.demoCleanupNotice;
     if(notice && notice.length) html += `<div class="demo-banner" style="flex-wrap:wrap;">${ICONS.note} <span style="flex:1;min-width:200px;">${demoCleanupText(notice)}</span> <button id="dismissDemoNotice" type="button">${tr('OK')}</button></div>`;
-    if(!S.mamadas.length && !S.fraldas.length && !S.sono.length && !isSleeping){
+    if(!S.mamadas.length && !S.fraldas.length && !S.sono.length && !isSleeping && !lastFood){
       html += `<div class="card"><div class="section-label">${lx('Ainda sem registos','Pas encore d\'enregistrements','No records yet')}</div>
         <p class="muted" style="margin:0;">${lx('Usa as ações rápidas abaixo para registar. Os resumos e gráficos só usam o que registares.','Utilise les actions rapides ci-dessous. Les résumés et graphiques n\'utilisent que ce que tu enregistres.','Use the quick actions below. Summaries and charts only use what you log.')}</p>
         ${exampleHint(tr('Biberão')+' · '+tr('Bebido')+' 140ml · 14:30')}
@@ -2148,10 +2151,10 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
     const flag = (st, txt) => st ? `<span class="stat-flag">${txt}</span>` : '';
     const cls = st => 'stat' + (st==='warn' ? ' stat-warn' : st==='action' ? ' stat-action' : '');
     html += `<div class="grid2 home-status">
-      <div class="${cls(feedGap)}"><div class="ic feed">${ICONS.bottle}</div><div class="lbl">${tr('Última refeição')}</div><div class="val">${feed?agoStr(feed.ts):'—'}</div><div class="sub">${feed?feedLabel(feed):tr('sem registos')}</div>${(S.mamadas.length||feedGap)?`<div class="stat-foot">${S.mamadas.length?`<span class="sub stat-today">${lx(`${feedsToday} hoje`,`${feedsToday} aujourd'hui`,`${feedsToday} today`)}</span>`:''}${flag(feedGap, lx('A observar','À surveiller','Keep an eye'))}</div>`:''}</div>
+      <div class="${cls(feedGap)}"><div class="ic feed">${ICONS.bottle}</div><div class="lbl">${tr('Última mamada')}</div><div class="val">${feed?agoStr(feed.ts):'—'}</div><div class="sub">${feed?feedLabel(feed):tr('sem registos')}</div>${(S.mamadas.length||feedGap)?`<div class="stat-foot">${S.mamadas.length?`<span class="sub stat-today">${lx(`${feedsToday} hoje`,`${feedsToday} aujourd'hui`,`${feedsToday} today`)}</span>`:''}${flag(feedGap, lx('A observar','À surveiller','Keep an eye'))}</div>`:''}</div>
       <div class="${cls(wetStatus)}"><div class="ic diaper">${ICONS.drop}</div><div class="lbl">${tr('Última fralda')}</div><div class="val">${diaper?agoStr(diaper.ts):'—'}</div><div class="sub">${diaper?diaperLabel(diaper):tr('sem registos')}</div>${(S.fraldas.length||wetStatus)?`<div class="stat-foot">${S.fraldas.length?`<span class="sub stat-today">${lx(`${xixiToday} xixi · ${cocoToday} cocó hoje`,`${xixiToday} pipi · ${cocoToday} caca aujourd'hui`,`${xixiToday} wet · ${cocoToday} dirty today`)}</span>`:''}${flag(wetStatus, lx('A observar','À surveiller','Keep an eye'))}</div>`:''}</div>
       <div class="stat"><div class="ic sleepc">${ICONS.moon}</div><div class="lbl">${isSleeping?tr('A dormir há'):tr('Sono hoje')}</div><div class="val">${isSleeping? durStr((Date.now()-S.running.sleepStart)/60000) : durStr(sleepMinsToday)}</div><div class="sub">${isSleeping?tr('em curso'):(lastSleep?(tr('último:')+' '+agoStr(lastSleep.fim)):tr('sem registos'))}</div></div>
-      <div class="stat stat-link" role="button" tabindex="0" data-go="evolucao"><div class="ic growth">${ICONS.chart}</div><div class="lbl">${tr('Peso atual')}</div><div class="val">${peso?fmtNum(peso,3)+' kg':'—'}</div><div class="sub">${tr('ver em Evolução')}</div></div>
+      <div class="stat stat-link" role="button" tabindex="0" data-go="alimentacao"><div class="ic food">${ICONS.food}</div><div class="lbl">${tr('Última alimentação')}</div><div class="val">${lastFood?new Date(lastFood.ts).toLocaleTimeString(localeTag(),{hour:'2-digit',minute:'2-digit'}):'—'}</div><div class="sub">${lastFood?safeText(lastFood.alimentos):tr('sem registos')}</div></div>
     </div>
 
     <div class="card"><div class="section-label">${tr('Ações rápidas')}</div>

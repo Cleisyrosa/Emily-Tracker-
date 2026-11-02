@@ -522,6 +522,9 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
     "Adicionar":{fr:"Ajouter",en:"Add"}, "+ Criança":{fr:"+ Enfant",en:"+ Child"},
     "Registar por voz":{fr:"Enregistrer par voix",en:"Log by voice"}, "Emergência":{fr:"Urgence",en:"Emergency"},
     "A ouvir…":{fr:"Écoute…",en:"Listening…"},
+    "Ditar para o campo selecionado.":{fr:"Dicter dans le champ sélectionné.",en:"Dictate into the selected field."},
+    "Texto inserido no campo. Revê e guarda o formulário.":{fr:"Texte inséré. Vérifie et enregistre le formulaire.",en:"Text added to the field. Review and save the form."},
+    "Não encontrei um número ou uma opção correspondente.":{fr:"Je n'ai pas trouvé de nombre ou d'option correspondante.",en:"I couldn't match a number or option."},
     "Diz, por exemplo: \"mamada biberão 120 mililitros\", \"fralda xixi\", \"começou a dormir\", \"acordou\".":
       {fr:"Dis par exemple : « biberon 120 millilitres », « couche pipi », « a commencé à dormir », « s'est réveillé ».",
        en:"Say, for example: \"bottle feed 120 milliliters\", \"wet diaper\", \"started sleeping\", \"woke up\"."},
@@ -1793,19 +1796,24 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
     }
   }
 
-  let recognition=null, listening=false;
+  let recognition=null, listening=false, voiceTarget=null;
+  const mainVoice=document.getElementById('main');
+  if(mainVoice) mainVoice.addEventListener('focusin', e=>{
+    const t=e.target;
+    if(t && t.matches && t.matches('textarea,select,input:not([type=button]):not([type=submit]):not([type=reset]):not([type=checkbox]):not([type=radio]):not([type=file])')) voiceTarget=t;
+  });
   function startVoice(){
     const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if(!Rec) return;
     showOverlay(`<div class="voice-panel"><div class="voice-card">
       <h2>${ICONS.mic} ${tr('A ouvir…')}</h2>
-      <p class="muted">${tr('Diz, por exemplo: "mamada biberão 120 mililitros", "fralda xixi", "começou a dormir", "acordou".')}</p>
+      <p class="muted">${voiceTarget && voiceTarget.isConnected ? tr('Ditar para o campo selecionado.') : tr('Diz, por exemplo: "mamada biberão 120 mililitros", "fralda xixi", "começou a dormir", "acordou".')}</p>
       <div class="voice-transcript" id="vTranscript">…</div>
       <button class="btn ghost wide" id="vCancel" type="button">${tr('Cancelar')}</button>
     </div></div>`);
     document.getElementById('vCancel').addEventListener('click', stopVoice);
     recognition = new Rec();
-    recognition.lang = 'pt-PT'; recognition.continuous=false; recognition.interimResults=true;
+    recognition.lang = (S.settings && S.settings.lang)==='fr' ? 'fr-FR' : (S.settings && S.settings.lang)==='en' ? 'en-US' : 'pt-PT'; recognition.continuous=false; recognition.interimResults=true;
     recognition.onresult = e=>{
       let text=''; for(let i=0;i<e.results.length;i++) text += e.results[i][0].transcript;
       const el=document.getElementById('vTranscript'); if(el) el.textContent = text;
@@ -1829,6 +1837,44 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
     const num = (low.match(/\d+/)||[])[0];
     let toast='';
     const c = S.crianca;
+    const target=voiceTarget;
+    if(target && target.isConnected){
+      const value=text.trim();
+      const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+      let inserted=false;
+      if(target.tagName==='SELECT'){
+        const spoken=norm(value);
+        const option=[...target.options].find(o=>o.value && (norm(o.textContent)===spoken || norm(o.textContent).includes(spoken) || spoken.includes(norm(o.textContent))));
+        if(option){ target.value=option.value; inserted=true; }
+      } else if(target.tagName==='TEXTAREA' || target.tagName==='INPUT'){
+        let insert=value;
+        if(target.type==='number'){
+          const m=value.match(/-?\d+(?:[.,]\d+)?/);
+          if(m) insert=m[0].replace(',','.');
+          else insert='';
+        }
+        if(insert){
+          const start=typeof target.selectionStart==='number' ? target.selectionStart : target.value.length;
+          const end=typeof target.selectionEnd==='number' ? target.selectionEnd : target.value.length;
+          target.value=target.value.slice(0,start)+insert+target.value.slice(end);
+          inserted=true;
+        }
+      }
+      if(inserted){
+        target.dispatchEvent(new Event('input',{bubbles:true}));
+        target.dispatchEvent(new Event('change',{bubbles:true}));
+        voiceTarget=null;
+        stopVoice();
+        showOverlay(`<div class="voice-panel"><div class="voice-card"><p>${tr('Texto inserido no campo. Revê e guarda o formulário.')}</p><button class="btn wide" id="vOk" type="button" data-dismiss>OK</button></div></div>`);
+        document.getElementById('vOk').addEventListener('click', closeOverlay);
+        return;
+      }
+      voiceTarget=target;
+      stopVoice();
+      showOverlay(`<div class="voice-panel"><div class="voice-card"><p>${tr('Não encontrei um número ou uma opção correspondente.')}</p><button class="btn wide" id="vOk" type="button" data-dismiss>OK</button></div></div>`);
+      document.getElementById('vOk').addEventListener('click', closeOverlay);
+      return;
+    }
     if(low.includes('mamada')||low.includes('biberão')||low.includes('biberao')||low.includes('peito')){
       let entry = {id:uid(), ts:Date.now(), qualidade:null, obs:''};
       if(low.includes('esquerd')){ entry.tipo='peito-esq'; entry.duracaoMin = num?+num:null; }

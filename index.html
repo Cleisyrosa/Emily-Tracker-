@@ -71,7 +71,7 @@
 }
 *{box-sizing:border-box;}
 html,body{background:var(--bg);}
-body{ color:var(--ink); font-family:'Mulish',system-ui,-apple-system,sans-serif; -webkit-tap-highlight-color:transparent; }
+body{ margin:0; color:var(--ink); font-family:'Mulish',system-ui,-apple-system,sans-serif; -webkit-tap-highlight-color:transparent; }
 h1,h2,h3,.display{ font-family:'Baloo 2','Fraunces',Georgia,serif; font-weight:700; text-wrap:balance; color:var(--ink); margin:0; }
 .mono{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; }
 button{ font-family:inherit; } input,select,textarea{ font-family:inherit; }
@@ -83,8 +83,8 @@ button:disabled, .btn:disabled{ opacity:.45; cursor:not-allowed; }
 svg{ display:block; }
 a{ color:inherit; }
 
-.phone{ max-width:480px; margin:0 auto; min-height:100vh; background:var(--bg); display:flex; flex-direction:column; }
-@media (min-width:540px){ body{ padding:22px 12px; } .phone{ min-height:calc(100vh - 44px); border-radius:var(--r-6); box-shadow:var(--shadow); border:1px solid var(--border); overflow:hidden; } }
+.phone{ max-width:480px; width:100%; height:100vh; height:100dvh; min-height:0; margin:0 auto; background:var(--bg); display:flex; flex-direction:column; }
+@media (min-width:540px){ body{ padding:22px 12px; } .phone{ height:calc(100vh - 44px); height:calc(100dvh - 44px); min-height:0; border-radius:var(--r-6); box-shadow:var(--shadow); border:1px solid var(--border); overflow:hidden; } }
 
 .topbar{ position:relative; display:flex; align-items:center; gap:var(--space-2); padding:16px 14px 18px; background:var(--header-bg); border-radius:0 0 26px 26px; overflow:hidden; }
 .topbar .confetti{ position:absolute; pointer-events:none; opacity:.8; }
@@ -107,7 +107,7 @@ a{ color:inherit; }
   .topbar .blood-chip{ grid-column:3 / span 3; grid-row:2; justify-self:end; }
 }
 
-main{ flex:1; overflow-y:auto; padding:14px 14px 84px; }
+main{ flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:14px 14px 24px; }
 @keyframes fadeIn{ from{ opacity:.5; transform:translateY(5px); } to{ opacity:1; transform:translateY(0); } }
 main.fade-in{ animation:fadeIn .22s ease; }
 @media (prefers-reduced-motion:reduce){ main.fade-in{ animation:none; } }
@@ -351,7 +351,7 @@ input.input-err, select.input-err, textarea.input-err{ border-color:var(--crit);
 .sum-cmp{ margin-top:6px; padding-top:6px; border-top:1px dashed var(--border); font-size:var(--fs-xs); color:var(--ink-muted); }
 .summary-box{ margin-top:10px; background:var(--bg); border:1px solid var(--border); border-radius:var(--r-2); padding:13px 14px; font-size:var(--fs-sm); white-space:pre-wrap; line-height:1.6; }
 
-nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); margin:0 10px calc(10px + env(safe-area-inset-bottom)); border-radius:var(--r-5); box-shadow:0 10px 26px -14px rgba(90,74,66,.35), 0 1px 2px rgba(90,74,66,.08); padding:6px 4px; overflow-x:auto; gap:2px; }
+nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface); margin:0 10px calc(10px + env(safe-area-inset-bottom)); border-radius:var(--r-5); box-shadow:0 10px 26px -14px rgba(90,74,66,.35), 0 1px 2px rgba(90,74,66,.08); padding:6px 4px; overflow-x:auto; gap:2px; }
 .tab-btn{ flex:1 0 56px; display:flex; flex-direction:column; align-items:center; gap:2px; background:none; border:none; color:var(--ink-faint); cursor:pointer; padding:6px 4px; border-radius:var(--r-3);  min-height:48px;}
 .tab-btn.active{ color:var(--accent-ink); background:var(--accent-soft); }
 .tab-btn .lbl{ font-size:var(--fs-xs); font-weight:700; white-space:nowrap; }
@@ -522,6 +522,9 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     "Adicionar":{fr:"Ajouter",en:"Add"}, "+ Criança":{fr:"+ Enfant",en:"+ Child"},
     "Registar por voz":{fr:"Enregistrer par voix",en:"Log by voice"}, "Emergência":{fr:"Urgence",en:"Emergency"},
     "A ouvir…":{fr:"Écoute…",en:"Listening…"},
+    "Ditar para o campo selecionado.":{fr:"Dicter dans le champ sélectionné.",en:"Dictate into the selected field."},
+    "Texto inserido no campo. Revê e guarda o formulário.":{fr:"Texte inséré. Vérifie et enregistre le formulaire.",en:"Text added to the field. Review and save the form."},
+    "Não encontrei um número ou uma opção correspondente.":{fr:"Je n'ai pas trouvé de nombre ou d'option correspondante.",en:"I couldn't match a number or option."},
     "Diz, por exemplo: \"mamada biberão 120 mililitros\", \"fralda xixi\", \"começou a dormir\", \"acordou\".":
       {fr:"Dis par exemple : « biberon 120 millilitres », « couche pipi », « a commencé à dormir », « s'est réveillé ».",
        en:"Say, for example: \"bottle feed 120 milliliters\", \"wet diaper\", \"started sleeping\", \"woke up\"."},
@@ -1793,19 +1796,23 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     }
   }
 
-  let recognition=null, listening=false;
+  let recognition=null, listening=false, voiceTarget=null;
+  document.addEventListener('focusin', e=>{
+    const t=e.target;
+    if(t && t.matches && t.matches('textarea,select,button[data-v],input:not([type=button]):not([type=submit]):not([type=reset]):not([type=file])')) voiceTarget=t;
+  });
   function startVoice(){
     const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if(!Rec) return;
     showOverlay(`<div class="voice-panel"><div class="voice-card">
       <h2>${ICONS.mic} ${tr('A ouvir…')}</h2>
-      <p class="muted">${tr('Diz, por exemplo: "mamada biberão 120 mililitros", "fralda xixi", "começou a dormir", "acordou".')}</p>
+      <p class="muted">${voiceTarget && voiceTarget.isConnected ? tr('Ditar para o campo selecionado.') : tr('Diz, por exemplo: "mamada biberão 120 mililitros", "fralda xixi", "começou a dormir", "acordou".')}</p>
       <div class="voice-transcript" id="vTranscript">…</div>
       <button class="btn ghost wide" id="vCancel" type="button">${tr('Cancelar')}</button>
     </div></div>`);
     document.getElementById('vCancel').addEventListener('click', stopVoice);
     recognition = new Rec();
-    recognition.lang = 'pt-PT'; recognition.continuous=false; recognition.interimResults=true;
+    recognition.lang = (S.settings && S.settings.lang)==='fr' ? 'fr-FR' : (S.settings && S.settings.lang)==='en' ? 'en-US' : 'pt-PT'; recognition.continuous=false; recognition.interimResults=true;
     recognition.onresult = e=>{
       let text=''; for(let i=0;i<e.results.length;i++) text += e.results[i][0].transcript;
       const el=document.getElementById('vTranscript'); if(el) el.textContent = text;
@@ -1829,6 +1836,90 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const num = (low.match(/\d+/)||[])[0];
     let toast='';
     const c = S.crianca;
+    const target=voiceTarget;
+    if(target && target.isConnected){
+      const value=text.trim();
+      const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+      let inserted=false;
+      if(target.tagName==='SELECT'){
+        const spoken=norm(value);
+        const option=[...target.options].find(o=>o.value && (norm(o.textContent)===spoken || norm(o.textContent).includes(spoken) || spoken.includes(norm(o.textContent))));
+        if(option){ target.value=option.value; inserted=true; }
+      } else if(target.matches && target.matches('button[data-v]')){
+        const group=target.closest('.seg');
+        const spoken=norm(value);
+        const option=group && [...group.querySelectorAll('button[data-v]')].find(x=>norm(x.textContent).includes(spoken) || spoken.includes(norm(x.textContent)) || norm(x.dataset.v)===spoken);
+        if(option){ option.click(); inserted=true; }
+      } else if(target.tagName==='INPUT' && (target.type==='checkbox' || target.type==='radio')){
+        const spoken=norm(value);
+        if(target.type==='checkbox'){
+          if(/\b(sim|marcar|ativar|yes|checked|oui)\b/.test(spoken)){ target.checked=true; inserted=true; }
+          else if(/\b(nao|não|desmarcar|desativar|no|unchecked|non)\b/.test(spoken)){ target.checked=false; inserted=true; }
+        } else {
+          const group=[...document.querySelectorAll('input[type=radio]')].filter(x=>x.name===target.name);
+          const option=group.find(x=>{
+            const label=x.labels && [...x.labels].map(l=>norm(l.textContent)).join(' ');
+            return label && (label.includes(spoken) || spoken.includes(label));
+          });
+          if(option){ option.checked=true; inserted=true; }
+        }
+      } else if(target.tagName==='TEXTAREA' || target.tagName==='INPUT'){
+        let insert=value;
+        if(target.type==='number'){
+          const m=value.match(/-?\d+(?:[.,]\d+)?/);
+          if(m) insert=m[0].replace(',','.');
+          else insert='';
+        } else if(target.type==='date'){
+          const normalized=norm(value);
+          let ymd=(normalized.match(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/)||[]).slice(1);
+          if(!ymd.length){
+            const dmy=normalized.match(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})\b/);
+            if(dmy) ymd=[dmy[3],dmy[2],dmy[1]];
+          }
+          if(!ymd.length){
+            const months={janeiro:1,janvier:1,january:1,fevereiro:2,fevrier:2,february:2,marco:3,mars:3,march:3,abril:4,avril:4,april:4,maio:5,mai:5,may:5,junho:6,juin:6,june:6,julho:7,juillet:7,july:7,agosto:8,aout:8,august:8,setembro:9,septembre:9,september:9,outubro:10,octobre:10,october:10,novembro:11,novembre:11,november:11,dezembro:12,decembre:12,december:12};
+            const m=normalized.match(/\b(\d{1,2})\s+(?:de\s+)?([a-z]+)\s+(?:de\s+)?(\d{4})\b/);
+            if(m && months[m[2]]) ymd=[m[3],months[m[2]],m[1]];
+            else {
+              const en=normalized.match(/\b([a-z]+)\s+(\d{1,2})\s*,?\s*(\d{4})\b/);
+              if(en && months[en[1]]) ymd=[en[3],months[en[1]],en[2]];
+            }
+          }
+          if(ymd.length===3){
+            const yyyy=+ymd[0], mm=+ymd[1], dd=+ymd[2], date=new Date(Date.UTC(yyyy,mm-1,dd));
+            if(date.getUTCFullYear()===yyyy && date.getUTCMonth()===mm-1 && date.getUTCDate()===dd) insert=yyyy+'-'+String(mm).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
+            else insert='';
+          } else insert='';
+        } else if(target.type==='time'){
+          const normalized=norm(value);
+          const m=normalized.match(/\b(\d{1,2})\s*[:h]\s*(\d{2})\b/)||normalized.match(/\b(\d{1,2})\s*(?:horas?|heures?|hours?)\s*(?:(?:e|et|and)\s*)?(\d{1,2})?\b/);
+          if(m){ const hh=+m[1], mm=+(m[2]||0); insert=hh<24 && mm<60 ? String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0') : ''; } else insert='';
+        }
+        if(insert){
+          if(target.type==='checkbox' || target.type==='radio') { target.checked=true; }
+          else {
+            const start=typeof target.selectionStart==='number' ? target.selectionStart : target.value.length;
+            const end=typeof target.selectionEnd==='number' ? target.selectionEnd : target.value.length;
+            target.value=target.value.slice(0,start)+insert+target.value.slice(end);
+          }
+          inserted=true;
+        }
+      }
+      if(inserted){
+        target.dispatchEvent(new Event('input',{bubbles:true}));
+        target.dispatchEvent(new Event('change',{bubbles:true}));
+        voiceTarget=null;
+        stopVoice();
+        showOverlay(`<div class="voice-panel"><div class="voice-card"><p>${tr('Texto inserido no campo. Revê e guarda o formulário.')}</p><button class="btn wide" id="vOk" type="button" data-dismiss>OK</button></div></div>`);
+        document.getElementById('vOk').addEventListener('click', closeOverlay);
+        return;
+      }
+      voiceTarget=target;
+      stopVoice();
+      showOverlay(`<div class="voice-panel"><div class="voice-card"><p>${tr('Não encontrei um número ou uma opção correspondente.')}</p><button class="btn wide" id="vOk" type="button" data-dismiss>OK</button></div></div>`);
+      document.getElementById('vOk').addEventListener('click', closeOverlay);
+      return;
+    }
     if(low.includes('mamada')||low.includes('biberão')||low.includes('biberao')||low.includes('peito')){
       let entry = {id:uid(), ts:Date.now(), qualidade:null, obs:''};
       if(low.includes('esquerd')){ entry.tipo='peito-esq'; entry.duracaoMin = num?+num:null; }

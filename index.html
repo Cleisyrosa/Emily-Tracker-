@@ -483,11 +483,11 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   ];
 
   const LANGS = {
-    pt:{ home:"Início", inicio:"Início", perfil:"Perfil", mamadas:"Mamadas", fraldas:"Fraldas", sono:"Sono", evolucao:"Evolução", desenv:"Desenv.", vacinas:"Vacinas", consultas:"Consultas", resumo:"Resumo", sos:"SOS", mais:"Mais",
+    pt:{ home:"Início", inicio:"Início", perfil:"Perfil", alimentacao:"Alimentação", mamadas:"Mamadas", fraldas:"Fraldas", sono:"Sono", evolucao:"Evolução", desenv:"Desenv.", vacinas:"Vacinas", consultas:"Consultas", resumo:"Resumo", sos:"SOS", mais:"Mais",
       hoje:"Hoje", acoesRapidas:"Ações rápidas", registos:"Registos", semana:"Semana", tipoSang:"tipo sang." },
-    fr:{ home:"Accueil", inicio:"Accueil", perfil:"Profil", mamadas:"Repas", fraldas:"Couches", sono:"Sommeil", evolucao:"Croissance", desenv:"Dévelop.", vacinas:"Vaccins", consultas:"Consultations", resumo:"Résumé", sos:"SOS", mais:"Plus",
+    fr:{ home:"Accueil", inicio:"Accueil", perfil:"Profil", alimentacao:"Alimentation", mamadas:"Repas", fraldas:"Couches", sono:"Sommeil", evolucao:"Croissance", desenv:"Dévelop.", vacinas:"Vaccins", consultas:"Consultations", resumo:"Résumé", sos:"SOS", mais:"Plus",
       hoje:"Aujourd'hui", acoesRapidas:"Actions rapides", registos:"Historique", semana:"Semaine", tipoSang:"groupe sang." },
-    en:{ home:"Home", inicio:"Home", perfil:"Profile", mamadas:"Feeds", fraldas:"Diapers", sono:"Sleep", evolucao:"Growth", desenv:"Milestones", vacinas:"Vaccines", consultas:"Appointments", resumo:"Summary", sos:"SOS", mais:"More",
+    en:{ home:"Home", inicio:"Home", perfil:"Profile", alimentacao:"Food", mamadas:"Feeds", fraldas:"Diapers", sono:"Sleep", evolucao:"Growth", desenv:"Milestones", vacinas:"Vaccines", consultas:"Appointments", resumo:"Summary", sos:"SOS", mais:"More",
       hoje:"Today", acoesRapidas:"Quick actions", registos:"Log", semana:"Week", tipoSang:"blood type" },
   };
   function t(key){ const lang=(S.settings&&S.settings.lang)||'pt'; return (LANGS[lang]&&LANGS[lang][key]) || LANGS.pt[key] || key; }
@@ -876,14 +876,14 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function blankChildFields(){
     return {
       nascimento:{peso:'',altura:'',pc:''},
-      condicoesCronicas:[], deficiencias:[], documentos:[], fotos:[], dentes:[], hidratacao:[], consultas:[],
+      condicoesCronicas:[], deficiencias:[], documentos:[], fotos:[], dentes:[], higieneBucal:[], hidratacao:[], consultas:[],
       pediatra:{nome:'',telefone:'',email:'',local:'',morada:''},
       mae:{nome:'',nacionalidade:'',naturalidade:'',tipoSanguineo:'',antecedentes:'',telefone:''},
       pai:{nome:'',nacionalidade:'',naturalidade:'',tipoSanguineo:'',antecedentes:'',telefone:''},
       contactoEmergencia:{nome:'',relacao:'',telefone:''},
       hospitalReferencia:{nome:'',morada:'',telefone:''},
-      alimentacao:{tipo:'Misto',formula:'',quantidadeRefeicao:'',dataInicioSolidos:'',introducao:[]},
-      penico:{iniciado:false,dataInicio:'',sucessos:0,acidentes:0,notas:''},
+      alimentacao:{tipo:'Misto',formula:'',quantidadeRefeicao:'',dataInicioSolidos:'',introducao:[],refeicoes:[],lembretesAgua:{ativado:false,confirmadoPediatra:false,inicio:'09:00',fim:'19:00',intervaloMin:120,ultimoAlerta:0}},
+      penico:{iniciado:false,dataInicio:'',sucessos:0,acidentes:0,notas:'',registos:[]},
       documentoId:'', sistemaSaude:'', moradaAtual:'', notas:'',
       alergiasMed:[], intolerancias:[], medicacoes:[], foto:'',
       tipoSanguineo:'', fatorRh:'', localNascimento:'', nacionalidade:'', sexo:'F',
@@ -892,7 +892,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function hydrateChild(partial){
     const b = blankChildFields();
     const c = Object.assign({}, partial||{});
-    ['nascimento','condicoesCronicas','deficiencias','documentos','fotos','dentes','hidratacao','consultas','pediatra','mae','pai','contactoEmergencia','hospitalReferencia','alimentacao','penico','alergiasMed','intolerancias','medicacoes'].forEach(k=>{
+    ['nascimento','condicoesCronicas','deficiencias','documentos','fotos','dentes','higieneBucal','hidratacao','consultas','pediatra','mae','pai','contactoEmergencia','hospitalReferencia','alimentacao','penico','alergiasMed','intolerancias','medicacoes'].forEach(k=>{
       if(c[k]==null) c[k]=b[k];
     });
     if(c.documentoId==null) c.documentoId='';
@@ -904,7 +904,11 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     if(c.fatorRh==null) c.fatorRh='';
     ['naturalidade','tipoSanguineo','antecedentes'].forEach(k=>{ if(c.mae[k]==null) c.mae[k]=''; if(c.pai[k]==null) c.pai[k]=''; });
     if(c.alimentacao.introducao==null) c.alimentacao.introducao=[];
+    if(c.alimentacao.refeicoes==null) c.alimentacao.refeicoes=[];
+    if(c.alimentacao.lembretesAgua==null) c.alimentacao.lembretesAgua={ativado:false,confirmadoPediatra:false,inicio:'09:00',fim:'19:00',intervaloMin:120,ultimoAlerta:0};
+    else c.alimentacao.lembretesAgua=Object.assign({ativado:false,confirmadoPediatra:false,inicio:'09:00',fim:'19:00',intervaloMin:120,ultimoAlerta:0},c.alimentacao.lembretesAgua);
     if(c.alimentacao.dataInicioSolidos==null) c.alimentacao.dataInicioSolidos='';
+    if(c.penico.registos==null) c.penico.registos=[];
     if(c.pediatra.morada==null) c.pediatra.morada='';
     c.medicacoes = (c.medicacoes||[]).map(m=>({horario:'',notificacoes:true,tipo:'receitado',...m}));
     c.medicacoes.forEach(m=>{ if(!m.id) m.id=uid(); });   // cada medicamento tem um id estável
@@ -1424,14 +1428,6 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     if(lang==='en') return `min. ${h}h (max ${max}x/day)`;
     return `mín. ${h}h (máx ${max}x/dia)`;
   }
-  function doseRefTxt(kg){
-    const lang=(S.settings&&S.settings.lang)||'pt';
-    const pLo=(kg*10).toFixed(0), pHi=(kg*15).toFixed(0), iLo=(kg*5).toFixed(0), iHi=(kg*10).toFixed(0);
-    if(lang==='fr') return `Référence (poids ${fmtNum(kg,3)} kg) — Paracétamol : ${pLo}–${pHi}mg/dose · Ibuprofène : ${iLo}–${iHi}mg/dose. Confirme toujours avec le/la pédiatre avant d'administrer.`;
-    if(lang==='en') return `Reference (weight ${fmtNum(kg,3)} kg) — Paracetamol: ${pLo}–${pHi}mg/dose · Ibuprofen: ${iLo}–${iHi}mg/dose. Always confirm with the pediatrician before giving.`;
-    return `Referência (peso ${fmtNum(kg,3)} kg) — Paracetamol: ${pLo}–${pHi}mg/dose · Ibuprofeno: ${iLo}–${iHi}mg/dose. Confirma sempre com o/a pediatra antes de administrar.`;
-  }
-
   const TABS = [
     {id:"inicio", label:"Início", ic:"home"},
     {id:"perfil", label:"Perfil", ic:"baby"},
@@ -1443,9 +1439,10 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     {id:"vacinas", label:"Vacinas", ic:"syringe"},
     {id:"consultas", label:"Consultas", ic:"calendar"},
     {id:"resumo", label:"Resumo", ic:"note"},
+    {id:"alimentacao", label:"Alimentação", ic:"bottle"},
     {id:"sos", label:"SOS", ic:"sos"},
   ];
-  let activeTab="inicio", openForm=null, editId=null;
+  let activeTab="inicio", openForm=null, editId=null, foodHistoryDay=todayISO();
 
   const PRIMARY_TAB_IDS = ["inicio","mamadas","fraldas","sono"];
   function renderTabbar(){
@@ -1460,7 +1457,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     if(maisBtn) maisBtn.addEventListener('click', ()=>showMaisMenu(secondary));
   }
   const MAIS_GROUPS = [
-    {pt:'Rotina', fr:'Routine', en:'Routine', ids:['perfil','evolucao','desenv','resumo']},
+    {pt:'Rotina', fr:'Routine', en:'Routine', ids:['alimentacao','perfil','evolucao','desenv','resumo']},
     {pt:'Saúde / acompanhamento', fr:'Santé / suivi', en:'Health / follow-up', ids:['vacinas','consultas']},
     {pt:'Emergência', fr:'Urgence', en:'Emergency', ids:['sos']},
   ];
@@ -1861,6 +1858,18 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const c=S.crianca; const msgs=[];
     const lang=(S.settings&&S.settings.lang)||'pt';
     const lastBk = S.settings && S.settings.lastBackupAt;
+    const water=c.alimentacao&&c.alimentacao.lembretesAgua;
+    if(water&&water.ativado&&water.confirmadoPediatra){
+      const now=new Date(), parse=x=>{const p=String(x||'').split(':').map(Number);return (p[0]||0)*60+(p[1]||0);};
+      const minutes=now.getHours()*60+now.getMinutes(), start=parse(water.inicio), end=parse(water.fim), interval=Math.max(30,Number(water.intervaloMin)||120);
+      const lastWater=(c.hidratacao||[]).filter(h=>h.ml>0).reduce((max,h)=>Math.max(max,h.ts||0),0);
+      const lastAction=Math.max(lastWater,water.ultimoAlerta||0), dueAfter=lastAction?lastAction+interval*60000:now.setHours(0,0,0,0)+start*60000;
+      if(minutes>=start&&minutes<=end&&Date.now()>=dueAfter){
+        const lang=(S.settings&&S.settings.lang)||'pt';
+        msgs.push(ICONS.drop+' '+(lang==='fr'?'Propose quelques gorgées d’eau, selon les conseils du pédiatre.':lang==='en'?'Offer a few sips of water, following the pediatrician’s guidance.':'Oferece alguns goles de água, seguindo a orientação da pediatra.'));
+        if(!water.ultimoAlerta||Date.now()-water.ultimoAlerta>=interval*60000){ water.ultimoAlerta=Date.now(); save(); }
+      }
+    }
     const daysSinceBk = lastBk ? (Date.now()-lastBk)/86400000 : Infinity;
     if(daysSinceBk>=14){
       let txt;
@@ -2054,7 +2063,6 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     const c=S.crianca;
     // Ao redesenhar o Perfil (depois de acrescentar/editar/remover), os acordeões que estavam abertos continuam abertos.
     const prevAcc = document.querySelector('#main details.acc') ? [...document.querySelectorAll('#main details.acc')].map(d=>d.open) : null;
-    const doseCalcPeso = latestMeasure('peso') ? latestMeasure('peso').valor : null;
     let html = `${pageTitle(lx('Perfil','Profil','Profile'))}<div class="card"><div class="photo-row">
         <div class="photo-box" id="photoBox">${c.foto?`<img src="${c.foto}">`:ICONS.camera}</div>
         <div style="flex:1;"><input type="file" id="photoInput" accept="image/*" style="display:none;"><button class="file-btn" id="photoBtn" type="button">${tr('Mudar foto principal')}</button></div>
@@ -2143,13 +2151,14 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     <details class="acc" id="accMed"><summary>${ICONS.pill} ${tr('Medicações & remédios tradicionais')} <span class="car">▾</span></summary>
       <div class="acc-body">
         <div class="section-label">${tr('Receitados')}</div>
-        ${c.medicacoes.filter(m=>m.tipo!=='tradicional').map(m=>`<div class="med-row med-actions"><span class="body"><b>${m.nome}</b> — ${m.dose} · ${medIntervalTxt(m.intervaloHoras,m.maxVezesDia)}${m.horario?(' · '+tr('horário')+' '+m.horario):''} ${m.notificacoes?`<span class="inline-ic" title="${tr('Notificar')}">${ICONS.bell}<span class="sr-only">${tr('Notificar')}</span></span>`:''}<br><span class="muted">${lx('Hoje','Aujourd\'hui','Today')}: <b>${dosesToday(m).length}${m.maxVezesDia?('/'+m.maxVezesDia):''}</b> ${((m.maxVezesDia||dosesToday(m).length)===1)?'dose':'doses'}</span></span>
+        ${c.medicacoes.filter(m=>m.tipo!=='tradicional').map(m=>`<div class="med-row med-actions"><span class="body"><b>${m.nome}</b>${m.categoria==='vitamina'?` <span class="muted">· ${lx('vitamina/suplemento','vitamine/complément','vitamin/supplement')}</span>`:''} — ${m.dose} · ${medIntervalTxt(m.intervaloHoras,m.maxVezesDia)}${m.horario?(' · '+tr('horário')+' '+m.horario):''} ${m.notificacoes?`<span class="inline-ic" title="${tr('Notificar')}">${ICONS.bell}<span class="sr-only">${tr('Notificar')}</span></span>`:''}<br><span class="muted">${lx('Hoje','Aujourd\'hui','Today')}: <b>${dosesToday(m).length}${m.maxVezesDia?('/'+m.maxVezesDia):''}</b> ${((m.maxVezesDia||dosesToday(m).length)===1)?'dose':'doses'}</span></span>
           <button class="dose-btn give" data-giveDose="${m.id}" type="button">${ICONS.pill} ${tr('Dose')}</button>
           <button class="dose-btn" data-medEdit="${m.id}" type="button">${ICONS.edit} ${lx('Editar','Modifier','Edit')}</button>
           <button class="log-del" data-rmMed="${m.id}" type="button">${ICONS.trash}</button></div>`).join('') || `<span class="muted">${tr('Sem medicação regular.')}</span>`}
         <div class="add-inline" style="flex-wrap:wrap;">
           <input type="text" id="newMedNome" placeholder="${tr('Nome')}" style="flex:1;">
           <input type="text" id="newMedDose" placeholder="${tr('Dose')}" style="flex:1;">
+          <select id="newMedCategoria" style="flex:1;"><option value="medicacao">${lx('Medicação','Médicament','Medicine')}</option><option value="vitamina">${lx('Vitamina/suplemento','Vitamine/complément','Vitamin/supplement')}</option></select>
           <input type="number" id="newMedInt" placeholder="${tr('Intervalo (h)')}" style="flex:1;">
           <input type="number" id="newMedMax" min="1" max="24" placeholder="${lx('Máx. doses/dia (opcional)','Max. doses/jour (facultatif)','Max doses/day (optional)')}" style="flex:1 1 100%;">
           <input type="time" id="newMedHorario" style="flex:1;">
@@ -2157,7 +2166,6 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
         <div class="add-inline"><label style="display:flex;align-items:center;gap:6px;font-size:var(--fs-xs);"><input type="checkbox" id="newMedNotif" checked style="width:auto;">${tr('Notificar')}</label><button class="btn" id="addMed" type="button">${ICONS.check} ${tr('Guardar')}</button></div>
         <div id="doseWarning"></div>
         ${doseHistoryHtml()}
-        ${doseCalcPeso ? `<div class="alert info" style="margin-top:4px;">${ICONS.note} ${doseRefTxt(doseCalcPeso)}</div>` : ''}
         <div class="section-label" style="margin-top:10px;">${tr('Remédios tradicionais')}</div>
         ${c.medicacoes.filter(m=>m.tipo==='tradicional').map(m=>`<div class="med-row"><span class="body"><b>${m.nome}</b> — ${m.dose}</span><button class="log-del" data-rmMed="${m.id}" type="button">${ICONS.trash}</button></div>`).join('') || `<span class="muted">${tr('Nenhum registado.')}</span>`}
         <div class="add-inline"><input type="text" id="newTradNome" placeholder="${tr('Nome')}"><input type="text" id="newTradUso" placeholder="${tr('Uso/quando')}"><button class="btn" id="addTrad" type="button">${ICONS.check} ${tr('Guardar')}</button></div>
@@ -2206,6 +2214,12 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       <div class="acc-body">
         ${(c.dentes||[]).map(d=>`<div class="med-row"><span class="body">${d.nome} — ${new Date(d.data+"T00:00:00").toLocaleDateString(localeTag())}</span><button class="log-del" data-rmDente="${d.id}" type="button">${ICONS.trash}</button></div>`).join('') || `<span class="muted">${tr('Sem dentes registados.')}</span>`}
         <div class="add-inline"><input type="text" id="newDenteNome" placeholder="${tr('Nome do dente')}"><input type="date" id="newDenteData" value="${todayISO()}"><button class="btn" id="addDente" type="button">${ICONS.check} ${tr('Guardar')}</button></div>
+        <div class="section-label" style="margin-top:14px;">${lx('Higiene oral','Hygiène buccale','Oral care')}</div>
+        <p class="muted">${lx('Diário simples para acompanhar os cuidados recomendados para esta fase.','Journal simple pour suivre les soins conseillés à cette étape.','A simple log for the oral care recommended at this stage.')}</p>
+        <div class="form-row"><div style="flex:1;"><label>${lx('Cuidado','Soin','Care')}</label><select id="oralCareType"><option>${lx('Limpeza da boca/gengivas','Nettoyage de la bouche/des gencives','Mouth/gum cleaning')}</option><option>${lx('Escovagem dos dentes','Brossage des dents','Tooth brushing')}</option><option>${lx('Observação','Observation','Observation')}</option></select></div><div style="flex:1;"><label>${lx('Hora','Heure','Time')}</label><input type="time" id="oralCareTime" value="${new Date().toTimeString().slice(0,5)}"></div></div>
+        <input type="text" id="oralCareNote" placeholder="${lx('Nota (opcional)','Note (facultatif)','Note (optional)')}">
+        <button class="btn wide" id="addOralCare" type="button">${ICONS.check} ${lx('Registar cuidado','Noter le soin','Log oral care')}</button>
+        ${(c.higieneBucal||[]).slice().sort((x,y)=>y.ts-x.ts).slice(0,8).map(h=>`<div class="med-row"><span class="body">${new Date(h.ts).toLocaleDateString(localeTag())} · ${new Date(h.ts).toLocaleTimeString(localeTag(),{hour:'2-digit',minute:'2-digit'})} · ${safeText(h.tipo)}${h.nota?`<br><span class="muted">${safeText(h.nota)}</span>`:''}</span><button class="log-del" data-rmOral="${h.id}" type="button">${ICONS.trash}</button></div>`).join('') || `<span class="muted">${lx('Ainda sem registos de higiene oral.','Aucun soin buccal enregistré.','No oral care logged yet.')}</span>`}
       </div>
     </details>
 
@@ -2255,10 +2269,14 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
 
     <details class="acc"><summary>${ICONS.drop} ${tr('Transição para o penico')} <span class="car">▾</span></summary>
       <div class="acc-body">
-        <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:var(--fs-md);"><input type="checkbox" id="penIniciado" ${c.penico.iniciado?'checked':''} style="width:auto;"> ${tr('Já começámos')}</label>
+        <p class="muted">${lx('Sem metas ou pressão: regista apenas quando esta etapa fizer sentido para a Emily e para a família.','Sans objectif ni pression : notez seulement lorsque cette étape convient à Emily et à la famille.','No targets or pressure: log only when this stage makes sense for Emily and your family.')}</p>
+        <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:var(--fs-md);"><input type="checkbox" id="penIniciado" ${c.penico.iniciado?'checked':''} style="width:auto;"> ${lx('Estamos a acompanhar esta etapa','Nous suivons cette étape','We are tracking this stage')}</label>
         <div class="form-row"><div style="flex:1;"><label>${tr('Data de início')}</label><input type="date" id="penData" value="${fv(c.penico.dataInicio)}"></div></div>
-        <div class="counter-row"><span>${tr('Sucessos:')} <b id="penSuc">${c.penico.sucessos}</b></span><button class="counter-btn" data-pen="sucessos" type="button">+1</button>
-          <span style="margin-left:12px;">${tr('Acidentes:')} <b id="penAcc">${c.penico.acidentes}</b></span><button class="counter-btn" data-pen="acidentes" type="button">+1</button></div>
+        <div class="counter-row"><span>${tr('Sucessos:')} <b id="penSuc">${c.penico.sucessos}</b></span><span style="margin-left:12px;">${tr('Acidentes:')} <b id="penAcc">${c.penico.acidentes}</b></span></div>
+        <div class="form-row"><div style="flex:1;"><label>${lx('Episódio','Épisode','Event')}</label><select id="penEventType"><option value="tentativa">${lx('Tentativa','Essai','Try')}</option><option value="xixi">${lx('Xixi no penico','Pipi au pot','Pee in potty')}</option><option value="coco">${lx('Cocó no penico','Caca au pot','Poop in potty')}</option><option value="acidente">${lx('Acidente','Accident','Accident')}</option></select></div><div style="flex:1;"><label>${lx('Hora','Heure','Time')}</label><input type="time" id="penEventTime" value="${new Date().toTimeString().slice(0,5)}"></div></div>
+        <input type="text" id="penEventNote" placeholder="${lx('Nota (opcional)','Note (facultatif)','Note (optional)')}">
+        <button class="btn wide" id="addPenEvent" type="button">${ICONS.check} ${lx('Registar episódio','Noter un épisode','Log event')}</button>
+        ${(c.penico.registos||[]).slice().sort((x,y)=>y.ts-x.ts).slice(0,10).map(p=>`<div class="med-row"><span class="body">${new Date(p.ts).toLocaleDateString(localeTag())} · ${new Date(p.ts).toLocaleTimeString(localeTag(),{hour:'2-digit',minute:'2-digit'})} · ${safeText(p.tipo)}${p.nota?`<br><span class="muted">${safeText(p.nota)}</span>`:''}</span><button class="log-del" data-rmPenEvent="${p.id}" type="button">${ICONS.trash}</button></div>`).join('') || `<span class="muted">${lx('Sem episódios registados.','Aucun épisode enregistré.','No events logged.')}</span>`}
         <textarea id="penNotas" placeholder="${tr('Progresso/notas')}">${fv(c.penico.notas)}</textarea>
         <button class="btn wide" id="savePenico" type="button">${ICONS.check} ${tr('Guardar')}</button>
       </div>
@@ -2372,6 +2390,11 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       save(); playChime(); renderPerfil();
     });
     document.querySelectorAll('[data-rmDente]').forEach(b=>b.addEventListener('click', ()=>{ c.dentes=c.dentes.filter(d=>d.id!==b.dataset.rmdente); save(); renderPerfil(); }));
+    document.getElementById('addOralCare').addEventListener('click',()=>{
+      c.higieneBucal=c.higieneBucal||[];const time=document.getElementById('oralCareTime').value||new Date().toTimeString().slice(0,5);const ts=new Date(`${todayISO()}T${time}`).getTime();
+      c.higieneBucal.unshift({id:uid(),ts,tipo:document.getElementById('oralCareType').value,nota:document.getElementById('oralCareNote').value.trim()});save();renderPerfil();
+    });
+    document.querySelectorAll('[data-rmOral]').forEach(b=>b.addEventListener('click',()=>showConfirm(lx('Apagar este registo de higiene oral?','Supprimer ce soin buccal ?','Delete this oral care entry?'),()=>{c.higieneBucal=c.higieneBucal.filter(h=>h.id!==b.dataset.rmoral);save();renderPerfil();})));
     let introReacao = 'Adorou';
     const introSeg = document.getElementById('introReacaoSeg');
     if(introSeg) introSeg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ introSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); introReacao=b.dataset.v; }));
@@ -2396,6 +2419,14 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     });
     document.getElementById('hidrTotal').textContent = hidrTotalToday(c)+'ml';
     document.getElementById('penIniciado').addEventListener('change', e=>{ c.penico.iniciado=e.target.checked; save(); });
+    document.getElementById('addPenEvent').addEventListener('click',()=>{
+      c.penico.registos=c.penico.registos||[];const time=document.getElementById('penEventTime').value||new Date().toTimeString().slice(0,5);const ts=new Date(`${todayISO()}T${time}`).getTime(),tipo=document.getElementById('penEventType').value;
+      c.penico.registos.unshift({id:uid(),ts,tipo,nota:document.getElementById('penEventNote').value.trim()});
+      if(tipo==='xixi'||tipo==='coco')c.penico.sucessos=(c.penico.sucessos||0)+1;
+      if(tipo==='acidente')c.penico.acidentes=(c.penico.acidentes||0)+1;
+      save();renderPerfil();
+    });
+    document.querySelectorAll('[data-rmPenEvent]').forEach(b=>b.addEventListener('click',()=>showConfirm(lx('Apagar este episódio?','Supprimer cet épisode ?','Delete this event?'),()=>{const i=c.penico.registos.findIndex(p=>p.id===b.dataset.rmpenevent);if(i>-1){const p=c.penico.registos[i];if(p.tipo==='xixi'||p.tipo==='coco')c.penico.sucessos=Math.max(0,c.penico.sucessos-1);if(p.tipo==='acidente')c.penico.acidentes=Math.max(0,c.penico.acidentes-1);c.penico.registos.splice(i,1);}save();renderPerfil();})));
     document.querySelectorAll('[data-pen]').forEach(b=>b.addEventListener('click', ()=>{
       const f=b.dataset.pen; c.penico[f]=(c.penico[f]||0)+1; save();
       document.getElementById(f==='sucessos'?'penSuc':'penAcc').textContent = c.penico[f];
@@ -2446,7 +2477,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
       const errs=medFormErrors(nome, readNum('newMedInt'), readNum('newMedMax'), 'newMedNome', 'newMedInt', 'newMedMax');
       if(!showFieldErrors(errs)) return;
       const mx=readNum('newMedMax');
-      c.medicacoes.push({id:uid(), nome, dose:document.getElementById('newMedDose').value.trim(), intervaloHoras:readNum('newMedInt'), maxVezesDia:mx,
+      c.medicacoes.push({id:uid(), nome, dose:document.getElementById('newMedDose').value.trim(), categoria:document.getElementById('newMedCategoria').value, intervaloHoras:readNum('newMedInt'), maxVezesDia:mx,
         horario:document.getElementById('newMedHorario').value, notificacoes:document.getElementById('newMedNotif').checked, tipo:'receitado'});
       save(); rerenderMeds();
     });
@@ -2616,7 +2647,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function showQuickMedication(){
     const meds=(S.crianca.medicacoes||[]).filter(m=>m.tipo!=='tradicional');
     const rows = meds.map(m=>{ const n=dosesToday(m).length, last=dosesOf(m).sort((a,b)=>b.ts-a.ts)[0];
-      return `<div class="qm-row"><div class="body"><b>${m.nome}</b>${m.dose?(' — '+m.dose):''}<br><span class="muted">${lx('Hoje','Aujourd\'hui','Today')}: ${n}${m.maxVezesDia?('/'+m.maxVezesDia):''} · ${lx('última','dernière','last')}: ${last?hhmm(last.ts)+' ('+agoStr(last.ts)+')':'—'}</span></div>
+      return `<div class="qm-row"><div class="body"><b>${m.nome}</b>${m.categoria==='vitamina'?` <span class="muted">· ${lx('vitamina/suplemento','vitamine/complément','vitamin/supplement')}</span>`:''}${m.dose?(' — '+m.dose):''}<br><span class="muted">${lx('Hoje','Aujourd\'hui','Today')}: ${n}${m.maxVezesDia?('/'+m.maxVezesDia):''} · ${lx('última','dernière','last')}: ${last?hhmm(last.ts)+' ('+agoStr(last.ts)+')':'—'}</span></div>
         <button class="dose-btn give" data-qmDose="${m.id}" type="button">${ICONS.pill} ${tr('Dose')}</button></div>`; }).join('');
     showOverlay(`<div class="voice-panel" id="qmPanel"><div class="voice-card" role="dialog" aria-modal="true" aria-labelledby="qmTitle" style="text-align:left;max-height:85vh;overflow-y:auto;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin:0 0 8px;">
@@ -2662,6 +2693,71 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     el.innerHTML = S.crianca.fotos.map(f=>`<div class="g-item"><img src="${f.src}"><button class="g-del" data-rmPhoto="${f.id}" type="button" aria-label="${tr('Apagar foto')}">${ICONS.close}</button></div>`).join('') || `<span class="muted" style="grid-column:1/-1;">${tr('Sem fotos na galeria.')}</span>`;
     el.querySelectorAll('[data-rmPhoto]').forEach(b=>b.addEventListener('click', ()=>{ showConfirm(tr('Apagar esta foto?'), ()=>{ S.crianca.fotos=S.crianca.fotos.filter(f=>f.id!==b.dataset.rmphoto); save(); renderGallery(); }); }));
   }
+  function renderAlimentacao(){
+    const c=S.crianca, a=c.alimentacao, water=a.lembretesAgua;
+    const meals=(a.refeicoes||[]).filter(x=>x.data===foodHistoryDay).sort((x,y)=>y.ts-x.ts);
+    const waters=(c.hidratacao||[]).filter(x=>x.ml>0&&inRange(x.ts,...todayRange())).sort((x,y)=>y.ts-x.ts);
+    const recipes=[
+      {name:lx('Curgete e batata','Courgette et pomme de terre','Courgette and potato'),foods:lx('Curgete + batata','Courgette + pomme de terre','Courgette + potato'),steps:lx('Cozer até ficar muito macio e esmagar ou triturar até à textura indicada para a Emily.','Cuire jusqu’à tendreté, puis écraser ou mixer à la texture adaptée à Emily.','Cook until very soft, then mash or blend to Emily’s appropriate texture.'),tag:lx('Simples','Simple','Simple')},
+      {name:lx('Batata-doce e lentilha vermelha','Patate douce et lentilles corail','Sweet potato and red lentils'),foods:lx('Batata-doce + lentilha vermelha bem cozida','Patate douce + lentilles corail bien cuites','Sweet potato + well-cooked red lentils'),steps:lx('Cozer separadamente ou juntas com água até tudo ficar muito macio; esmagar. Introduzir a lentilha conforme a orientação da pediatra.','Cuire avec de l’eau jusqu’à tendreté, puis écraser. Introduire les lentilles selon les conseils du pédiatre.','Cook in water until very soft, then mash. Introduce lentils following the pediatrician’s guidance.'),tag:lx('Com leguminosa','Avec légumineuse','With legumes')},
+      {name:lx('Abóbora e ovo bem cozido','Courge et œuf bien cuit','Squash and well-cooked egg'),foods:lx('Abóbora + ovo totalmente cozido','Courge + œuf entièrement cuit','Squash + fully cooked egg'),steps:lx('Cozer a abóbora e o ovo completamente; esmagar uma pequena porção de ovo na preparação. O ovo é alergénico: introduzir de acordo com o plano da pediatra e registar qualquer reação.','Cuire complètement la courge et l’œuf; écraser une petite quantité d’œuf dans la préparation. L’œuf est allergène : suivre le plan du pédiatre et noter toute réaction.','Cook the squash and egg fully; mash a small amount of egg into the dish. Egg is an allergen: follow the pediatrician’s plan and record any reaction.'),tag:lx('Com ovo','Avec œuf','With egg')},
+      {name:lx('Frango, curgete e batata','Poulet, courgette et pomme de terre','Chicken, courgette and potato'),foods:lx('Frango bem cozido + curgete + batata','Poulet bien cuit + courgette + pomme de terre','Fully cooked chicken + courgette + potato'),steps:lx('Cozer o frango completamente e os vegetais até ficarem muito macios; triturar ou esmagar à textura adequada. Confirmar a introdução e a porção com a pediatra.','Cuire complètement le poulet et les légumes jusqu’à tendreté ; mixer ou écraser à la texture adaptée. Vérifier l’introduction et la portion avec le pédiatre.','Cook the chicken fully and vegetables until very soft; mash or blend to an appropriate texture. Confirm introduction and portion with the pediatrician.'),tag:lx('Com proteína animal','Avec protéine animale','With animal protein')}
+    ];
+    const recipesHtml=recipes.map((r,i)=>`<div class="med-row" style="align-items:flex-start;"><div class="body"><b>${r.name}</b> <span class="muted">· ${r.tag}</span><div class="meta" style="margin-top:4px;">${r.foods}<br>${r.steps}</div><button class="btn ghost" type="button" data-recipe="${i}" style="margin-top:8px;">${lx('Usar no registo','Ajouter au journal','Use in meal log')}</button></div></div>`).join('');
+    document.getElementById('main').innerHTML=`${pageTitle(lx('Alimentação','Alimentation','Food'),ICONS.bottle)}
+      <div class="card"><div class="section-label">${lx('Hoje · refeições','Aujourd’hui · repas','Today · meals')}</div>
+        <p class="muted">${lx('Regista alimentos, textura, aceitação e reações observadas. O leite materno ou fórmula continua importante nesta fase.','Note les aliments, la texture, l’acceptation et les réactions observées. Le lait maternel ou infantile reste important à cette étape.','Log foods, texture, acceptance and observed reactions. Breast milk or formula remains important at this stage.')}</p>
+        <div class="form-row"><div style="flex:1;"><label>${lx('Refeição','Repas','Meal')}</label><select id="mealType"><option>${lx('Pequeno-almoço','Petit-déjeuner','Breakfast')}</option><option>${lx('Almoço','Déjeuner','Lunch')}</option><option>${lx('Jantar','Dîner','Dinner')}</option><option>${lx('Lanche','Collation','Snack')}</option><option>${lx('Prova de alimento','Découverte d’un aliment','Food tasting')}</option></select></div></div>
+        <div class="form-row"><div style="flex:1;"><label>${lx('Data','Date','Date')}</label><input type="date" id="mealDate" value="${todayISO()}"></div><div style="flex:1;"><label>${lx('Hora','Heure','Time')}</label><input type="time" id="mealTime" value="${new Date().toTimeString().slice(0,5)}"></div></div>
+        <div class="form-row"><div style="flex:1;"><label>${lx('Alimentos/ingredientes','Aliments/ingrédients','Foods/ingredients')}</label><input type="text" id="mealFoods" placeholder="${lx('ex.: curgete, batata','ex. : courgette, pomme de terre','e.g. courgette, potato')}"></div></div>
+        <div class="form-row"><div style="flex:1;"><label>${lx('Textura','Texture','Texture')}</label><select id="mealTexture"><option>${lx('Puré liso','Purée lisse','Smooth puree')}</option><option>${lx('Esmagado','Écrasé','Mashed')}</option><option>${lx('Pedaços macios seguros','Morceaux tendres adaptés','Soft age-appropriate pieces')}</option><option>${lx('Outra','Autre','Other')}</option></select></div><div style="flex:1;"><label>${lx('Aceitação','Acceptation','Acceptance')}</label><select id="mealAccept"><option>${lx('Provou','A goûté','Tried it')}</option><option>${lx('Aceitou bem','Bien accepté','Accepted well')}</option><option>${lx('Recusou','A refusé','Refused')}</option></select></div></div>
+        <textarea id="mealNotes" placeholder="${lx('Notas ou reação observada (opcional)','Notes ou réaction observée (facultatif)','Notes or observed reaction (optional)')}"></textarea>
+        <button class="btn wide" id="saveMeal" type="button">${ICONS.check} ${lx('Guardar refeição','Enregistrer le repas','Save meal')}</button>
+        <div class="form-row" style="margin-top:16px;"><div style="flex:1;"><label>${lx('Ver refeições de','Voir les repas du','View meals for')}</label><input type="date" id="mealHistoryDate" value="${foodHistoryDay}"></div></div>
+        <div class="section-label">${foodHistoryDay===todayISO()?lx('Registos de hoje','Journal du jour','Today’s log'):new Date(foodHistoryDay+'T00:00:00').toLocaleDateString(localeTag())}</div>
+        ${meals.length?meals.map(m=>`<div class="med-row"><span class="body"><b>${safeText(m.tipo)}</b> · ${new Date(m.ts).toLocaleTimeString(localeTag(),{hour:'2-digit',minute:'2-digit'})}<br>${safeText(m.alimentos)} · ${safeText(m.textura)} · ${safeText(m.aceitacao)}${m.nota?`<br><span class="muted">${safeText(m.nota)}</span>`:''}</span><button class="log-del" type="button" data-rmMeal="${m.id}" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join(''):`<p class="muted">${lx('Ainda não há refeições registadas hoje.','Aucun repas enregistré aujourd’hui.','No meals logged today yet.')}</p>`}
+      </div>
+      <div class="card"><div class="section-label">${lx('Água · registo de hoje','Eau · journal du jour','Water · today’s log')}</div>
+        <p class="muted">${lx('Sem meta de mililitros. Regista apenas o que foi oferecido e aceite, conforme a orientação da pediatra.','Pas d’objectif en millilitres. Note simplement ce qui a été proposé et accepté, selon les conseils du pédiatre.','No millilitre target. Log only what was offered and accepted, following the pediatrician’s guidance.')}</p>
+        <div class="counter-row"><span><b>${hidrTotalToday(c)} ml</b> ${lx('registados hoje','enregistrés aujourd’hui','logged today')}</span></div>
+        <div class="form-row"><div style="flex:1;"><label>${lx('Quantidade oferecida (ml)','Quantité proposée (ml)','Amount offered (ml)')}</label><input id="waterMl" type="number" min="1" max="500" value="30" inputmode="numeric"></div><button class="btn" id="addWater" type="button" style="align-self:end;">${ICONS.check} ${lx('Registar água','Noter l’eau','Log water')}</button></div>
+        ${waters.length?waters.slice(0,5).map(w=>`<div class="med-row"><span class="body">${safeText(w.ml)} ml · ${new Date(w.ts).toLocaleTimeString(localeTag(),{hour:'2-digit',minute:'2-digit'})}</span><button class="log-del" type="button" data-rmWater="${w.id}" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join(''):`<p class="muted">${lx('Sem água registada hoje.','Aucune eau enregistrée aujourd’hui.','No water logged today.')}</p>`}
+      </div>
+      <div class="card"><div class="section-label">${lx('Lembretes para oferecer água','Rappels pour proposer de l’eau','Water offer reminders')}</div>
+        <div class="alert info">${ICONS.note}<span>${lx('Ativa apenas se a pediatra confirmou que a Emily já deve receber água. Antes dos 6 meses, a recomendação geral da OMS é não oferecer água; segue a indicação individual da pediatra. Os alertas funcionam apenas com a app aberta.','À activer uniquement si le pédiatre a confirmé qu’Emily peut déjà boire de l’eau. Avant 6 mois, la recommandation générale de l’OMS est de ne pas donner d’eau ; suivez les conseils individuels du pédiatre. Les rappels fonctionnent uniquement lorsque l’application est ouverte.','Enable only if the pediatrician has confirmed Emily should be offered water. Before 6 months, WHO’s general recommendation is no water; follow the pediatrician’s individual advice. Reminders work only while the app is open.')}</span></div>
+        <label style="display:flex;align-items:flex-start;gap:8px;font-weight:600;"><input type="checkbox" id="waterConfirmed" ${water.confirmadoPediatra?'checked':''} style="width:auto;">${lx('A pediatra confirmou que já pode receber água','Le pédiatre a confirmé qu’elle peut boire de l’eau','The pediatrician confirmed she can have water')}</label>
+        <label style="display:flex;align-items:flex-start;gap:8px;font-weight:600;margin-top:8px;"><input type="checkbox" id="waterEnabled" ${water.ativado?'checked':''} ${water.confirmadoPediatra?'':'disabled'} style="width:auto;">${lx('Ativar alertas enquanto a app está aberta','Activer les rappels lorsque l’application est ouverte','Enable reminders while the app is open')}</label>
+        <div class="form-row"><div style="flex:1;"><label>${lx('Começar','Début','Start')}</label><input type="time" id="waterStart" value="${water.inicio}"></div><div style="flex:1;"><label>${lx('Terminar','Fin','End')}</label><input type="time" id="waterEnd" value="${water.fim}"></div></div>
+        <div class="form-row"><div style="flex:1;"><label>${lx('Intervalo escolhido pela família','Intervalle choisi par la famille','Family-chosen interval')}</label><select id="waterInterval"><option value="60" ${water.intervaloMin==60?'selected':''}>60 ${lx('min','min','min')}</option><option value="90" ${water.intervaloMin==90?'selected':''}>90 ${lx('min','min','min')}</option><option value="120" ${water.intervaloMin==120?'selected':''}>2 ${lx('horas','heures','hours')}</option><option value="180" ${water.intervaloMin==180?'selected':''}>3 ${lx('horas','heures','hours')}</option></select></div></div>
+        <button class="btn wide" id="saveWaterReminders" type="button">${ICONS.check} ${lx('Guardar lembretes','Enregistrer les rappels','Save reminders')}</button>
+      </div>
+      <div class="card"><div class="section-label">${lx('Ideias de receitas','Idées de recettes','Recipe ideas')}</div>
+        <p class="muted">${lx('Ideias simples para adaptar à fase e textura que a pediatra indicou. Oferece sem sal, açúcar ou mel; confirma sempre os alimentos novos e alergénios com a orientação clínica.','Idées simples à adapter à l’étape et à la texture conseillées par le pédiatre. Sans sel, sucre ni miel ; vérifiez les nouveaux aliments et allergènes selon les conseils cliniques.','Simple ideas to adapt to the stage and texture advised by the pediatrician. No salt, sugar or honey; check new foods and allergens against clinical advice.')}</p>
+        ${recipesHtml}
+        <p class="muted" style="margin-top:12px;">${lx('Para variar, alterna vegetais e fontes adequadas de ferro/proteína (por exemplo, leguminosas, ovo, carne ou peixe conforme o plano). Não há meta de proteína a atingir. A OMS/UNICEF recomendam alimentação complementar segura e variada a partir de cerca de 6 meses, mantendo o leite; para a Emily, prevalecem o plano da pediatra e o livro que te deu.','Pour varier, alternez légumes et sources adaptées de fer/protéines (légumineuses, œuf, viande ou poisson selon les conseils). Aucun objectif protéique n’est fixé. L’OMS/UNICEF recommande une alimentation complémentaire sûre et variée dès environ 6 mois, tout en poursuivant le lait ; pour Emily, le plan du pédiatre et le livret priment.','For variety, alternate vegetables with suitable iron/protein sources (such as legumes, egg, meat or fish, following the plan). There is no protein target to meet. WHO/UNICEF recommend safe, varied complementary foods from around 6 months while continuing milk; Emily’s pediatrician plan and booklet take priority.')}</p>
+        <a href="https://www.who.int/news-room/fact-sheets/detail/infant-and-young-child-feeding" target="_blank" rel="noopener noreferrer">${lx('Fonte: OMS · Alimentação de lactentes e crianças pequenas','Source : OMS · Alimentation du nourrisson et du jeune enfant','Source: WHO · Infant and young child feeding')}</a>
+      </div>`;
+    document.getElementById('saveMeal').addEventListener('click',()=>{
+      const foods=document.getElementById('mealFoods').value.trim();
+      if(!showFieldErrors(foods?[]:[['mealFoods',lx('Indica os alimentos.','Indique les aliments.','Enter the foods.')]])) return;
+      const ts=new Date(`${document.getElementById('mealDate').value}T${document.getElementById('mealTime').value||'12:00'}`).getTime();
+      if(!Number.isFinite(ts)||ts>Date.now()+FUTURE_TOL_MS){showAlert(msgFuturo());return;}
+      a.refeicoes=a.refeicoes||[]; a.refeicoes.unshift({id:uid(),ts,data:ymdLocal(new Date(ts)),tipo:document.getElementById('mealType').value,alimentos:foods,textura:document.getElementById('mealTexture').value,aceitacao:document.getElementById('mealAccept').value,nota:document.getElementById('mealNotes').value.trim()});foodHistoryDay=ymdLocal(new Date(ts));save();playChime();renderAlimentacao();
+    });
+    document.getElementById('mealHistoryDate').addEventListener('change',e=>{foodHistoryDay=e.target.value||todayISO();renderAlimentacao();});
+    document.querySelectorAll('[data-rmMeal]').forEach(b=>b.addEventListener('click',()=>showConfirm(lx('Apagar este registo de refeição?','Supprimer ce repas ?','Delete this meal record?'),()=>{a.refeicoes=a.refeicoes.filter(m=>m.id!==b.dataset.rmmeal);save();renderAlimentacao();})));
+    document.getElementById('addWater').addEventListener('click',()=>{
+      const n=Number(document.getElementById('waterMl').value);
+      if(!Number.isFinite(n)||n<1||n>500){showAlert(lx('Indica um valor entre 1 e 500 ml.','Indique une valeur entre 1 et 500 ml.','Enter a value between 1 and 500 ml.'));return;}
+      c.hidratacao=c.hidratacao||[]; c.hidratacao.push({id:uid(),ts:Date.now(),ml:n}); save(); renderAlimentacao(); renderReminders();
+    });
+    document.querySelectorAll('[data-rmWater]').forEach(b=>b.addEventListener('click',()=>showConfirm(lx('Apagar este registo de água?','Supprimer ce relevé d’eau ?','Delete this water entry?'),()=>{c.hidratacao=c.hidratacao.filter(w=>w.id!==b.dataset.rmwater);save();renderAlimentacao();renderReminders();})));
+    document.querySelectorAll('[data-recipe]').forEach(b=>b.addEventListener('click',()=>{const recipe=recipes[Number(b.dataset.recipe)];document.getElementById('mealFoods').value=recipe.foods;document.getElementById('mealType').value=lx('Prova de alimento','Découverte d’un aliment','Food tasting');document.getElementById('mealFoods').focus();}));
+    const saveWater=()=>{const start=document.getElementById('waterStart').value||'09:00',end=document.getElementById('waterEnd').value||'19:00',enabled=document.getElementById('waterConfirmed').checked&&document.getElementById('waterEnabled').checked;if(enabled&&start>=end){showAlert(lx('A hora de terminar deve ser posterior à hora de começar.','L’heure de fin doit être après l’heure de début.','End time must be later than start time.'));return;}water.confirmadoPediatra=document.getElementById('waterConfirmed').checked;water.ativado=enabled;water.inicio=start;water.fim=end;water.intervaloMin=Number(document.getElementById('waterInterval').value)||120;water.ultimoAlerta=0;document.getElementById('waterEnabled').disabled=!water.confirmadoPediatra;save();renderAlimentacao();renderReminders();};
+    document.getElementById('waterConfirmed').addEventListener('change',()=>{const checked=document.getElementById('waterConfirmed').checked;document.getElementById('waterEnabled').disabled=!checked;if(!checked)document.getElementById('waterEnabled').checked=false;});
+    document.getElementById('saveWaterReminders').addEventListener('click',saveWater);
+  }
+
   function renderDocGrid(){
     const el = document.getElementById('docGrid'); if(!el) return;
     const c=S.crianca;
@@ -3504,6 +3600,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
   function fmtInt(n){ return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' '); }
   // Valor de formulário: vazio em vez de "undefined"/"null" quando o campo nunca foi preenchido.
   function fv(v){ return v==null ? '' : v; }
+  function safeText(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   // Número para mostrar, com a vírgula/ponto do idioma e sem zeros a mais (6,45 · 8 · 7,5). fixed=true → casas fixas (1,0).
   function fmtNum(v, maxD, fixed){ const lang=(S.settings&&S.settings.lang)||'pt';
     return new Intl.NumberFormat(lang==='en'?'en-GB':lang==='fr'?'fr-FR':'pt-PT', {minimumFractionDigits:fixed?maxD:0, maximumFractionDigits:maxD, useGrouping:false}).format(+v); }
@@ -4043,6 +4140,7 @@ nav.tabbar{ position:sticky; bottom:0; display:flex; background:var(--surface); 
     if(activeTab!=='resumo') resumoWeekOffset=0;
     if(activeTab==='inicio') renderInicio();
     else if(activeTab==='perfil') renderPerfil();
+    else if(activeTab==='alimentacao') renderAlimentacao();
     else if(activeTab==='mamadas') renderMamadas();
     else if(activeTab==='fraldas') renderFraldas();
     else if(activeTab==='sono') renderSono();

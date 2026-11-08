@@ -2695,14 +2695,17 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
     const f=ts=>new Date(ts).toLocaleDateString(localeTag(),{weekday:'short',day:'numeric',month:'short'})+' · '+hhmm(ts);
     return `<div class="section-label" style="margin-top:10px;">${lx('Doses registadas (últimos 7 dias)','Doses enregistrées (7 derniers jours)','Logged doses (last 7 days)')}</div>
       ${list.length ? list.map(d=>`<div class="med-row"><span class="body"><b>${d.nome}</b>${d.dose?(' — '+d.dose):''}<br><span class="muted">${f(d.ts)}${d.acimaDoMax?' · '+lx('acima do máximo','au-dessus du maximum','above maximum'):''}${d.antesDoIntervalo?' · '+lx('antes do intervalo','avant l\'intervalle','before interval'):''}</span></span>
-        <button class="dose-btn" data-doseEdit="${d.id}" type="button" aria-label="${lx('Corrigir hora','Corriger l\'heure','Fix time')}">${ICONS.edit}</button>
+        <button class="dose-btn" data-doseEdit="${d.id}" type="button" aria-label="${lx('Editar registo da dose','Modifier le relevé de dose','Edit dose record')}">${ICONS.edit} <span>${lx('Editar','Modifier','Edit')}</span></button>
         <button class="log-del" data-doseDel="${d.id}" type="button" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join('') : `<span class="muted">${lx('Nenhuma dose registada.','Aucune dose enregistrée.','No doses logged.')}</span>`}`;
   }
   function showDoseEditor(id){
     const d=(S.doses||[]).find(x=>x.id===id); if(!d) return;
-    showOverlay(`<div class="voice-panel" id="dosePanel"><div class="voice-card" style="text-align:left;">
-      <h2 style="margin:0 0 10px;">${ICONS.pill} ${d.nome}</h2>
-      <div class="form-row"><div style="flex:1;"><label>${tr('Data')}</label><input type="date" id="doseDate" value="${localISO(d.ts)}"></div><div style="flex:1;"><label>${tr('Hora')}</label><input type="time" id="doseTime" value="${hhmm(d.ts)}"></div></div>
+    const esc=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    showOverlay(`<div class="voice-panel" id="dosePanel"><div class="voice-card" role="dialog" aria-modal="true" aria-labelledby="doseEditTitle" style="text-align:left;max-height:85vh;overflow-y:auto;">
+      <h2 id="doseEditTitle" style="margin:0 0 10px;">${ICONS.pill} ${esc(d.nome)}</h2>
+      <div class="form-row"><div style="flex:1;"><label for="doseAmount">${lx('Dose administrada','Dose administrée','Dose given')}</label><input type="text" id="doseAmount" value="${esc(d.dose)}" placeholder="${lx('Ex.: 2,5 ml','Ex. : 2,5 ml','E.g. 2.5 ml')}" autocomplete="off"></div></div>
+      <div class="form-row"><div style="flex:1;"><label for="doseDate">${tr('Data')}</label><input type="date" id="doseDate" value="${localISO(d.ts)}"></div><div style="flex:1;"><label for="doseTime">${tr('Hora')}</label><input type="time" id="doseTime" value="${hhmm(d.ts)}"></div></div>
+      <p class="muted" style="font-size:var(--fs-xs);margin:8px 0 0;">${lx('Aqui estás apenas a corrigir o registo. Confirma sempre a dose indicada na prescrição ou pelo profissional de saúde.','Ici, tu corriges uniquement le relevé. Vérifie toujours la dose prescrite ou indiquée par un professionnel de santé.','This only corrects the record. Always follow the prescribed dose or a health professional’s instructions.')}</p>
       <button class="btn wide" id="doseSave" type="button" style="margin-top:10px;">${tr('Guardar alterações')}</button>
       <button class="btn ghost wide" id="doseCancel" type="button" style="margin-top:8px;">${tr('Cancelar')}</button>
     </div></div>`);
@@ -2712,8 +2715,12 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
     document.getElementById('doseSave').addEventListener('click', ()=>{
       clearFieldErrors(panel);
       const ts=dateTimeToTs(document.getElementById('doseDate').value, document.getElementById('doseTime').value, false);
-      if(!showFieldErrors(ts<=Date.now()+FUTURE_TOL_MS ? [] : [['doseTime', msgFuturo()]])) return;
-      d.ts=ts; save(); closeOverlay(); rerenderMeds();
+      const amount=document.getElementById('doseAmount').value.trim();
+      const errs=[];
+      if(!amount) errs.push(['doseAmount',lx('Indica a dose que foi administrada.','Indique la dose administrée.','Enter the dose that was given.')]);
+      if(!(ts<=Date.now()+FUTURE_TOL_MS)) errs.push(['doseTime',msgFuturo()]);
+      if(!showFieldErrors(errs)) return;
+      d.dose=amount; d.ts=ts; save(); closeOverlay(); rerenderMeds();
     });
   }
   // Validação comum ao criar e editar um medicamento: nome obrigatório, intervalo mínimo > 0 h, máximo diário 1–24 ou vazio.

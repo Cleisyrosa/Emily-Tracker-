@@ -1944,6 +1944,57 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
       if(!S.running.sleepStart){ S.running.sleepStart=Date.now(); save(); toast=tr('Sono iniciado.'); } else toast=tr('Já havia um sono em curso.');
     } else if(low.includes('acordou')||low.includes('terminou')){
       if(S.running.sleepStart){ stopSleep(); toast=tr('Sono terminado.'); } else toast=tr('Não havia sono em curso.');
+    } else if (/\\b(comeu|provou|experimentou)\\b/i.test(text)) {
+      // Alimentação por voz: cria apenas um rascunho editável. Nunca guarda automaticamente.
+      const mealWords = low;
+      let foods = text
+        .replace(/^\\s*(?:a\\s+)?(?:emily\\s+)?/i,'')
+        .replace(/^\\s*(?:comeu|provou|experimentou)\\s+/i,'')
+        .replace(/\\s+(?:ao|à|no|na)\\s+(?:lanche|jantar|almoço|almoco|pequeno-almoço|pequeno almoco|pequeno\\s+almoço|pequeno\\s+almoco).*$/i,'')
+        .replace(/\\s+(?:hoje|ontem).*$/i,'')
+        .trim();
+      if(!foods) foods=text.trim();
+      stopVoice();
+      activeTab='alimentacao'; openForm=null; editId=null; render();
+      const disclosure=document.querySelector('.food-form-disclosure');
+      if(disclosure) disclosure.open=true;
+      const foodField=document.getElementById('mealFoods');
+      if(foodField) foodField.value=foods;
+      const typeField=document.getElementById('mealType');
+      if(typeField){
+        const wanted=/lanche/.test(mealWords)?'lanche':/jantar/.test(mealWords)?'jantar':/almoço|almoco/.test(mealWords)?'almoço':/pequeno.?almoço|pequeno.?almoco|café da manhã/.test(mealWords)?'pequeno-almoço':'';
+        if(wanted){
+          const opt=[...typeField.options].find(o=>o.textContent.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().includes(wanted.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'')));
+          if(opt) typeField.value=opt.value;
+        }
+      }
+      const formatField=document.getElementById('mealFormat');
+      if(formatField){
+        if(/pur[eé]|papa/.test(mealWords)){
+          const format=/pera|maçã|maca|banana|fruta/.test(mealWords)?'papa-fruta':/curgete|courgette|batata|cenoura|ab[oó]bora|legume/.test(mealWords)?'papa-legumes':'refeicao';
+          formatField.value=format;
+        }
+      }
+      const qtyMatch=text.match(/\\b(\\d+(?:[,.]\\d+)?)\\s*(g|gramas?|ml|mililitros?)\\b/i);
+      if(qtyMatch){
+        const q=document.getElementById('mealQuantity'), u=document.getElementById('mealUnit');
+        if(q) q.value=qtyMatch[1].replace(',','.');
+        if(u) u.value=/ml|mililitros?/i.test(qtyMatch[2])?'ml':'g';
+      }
+      showOverlay(`<div class="voice-panel"><div class="voice-card">
+        <h2>${ICONS.mic} ${lx('Rascunho da refeição','Brouillon du repas','Meal draft')}</h2>
+        <p>${lx('Interpretei o que disseste. Revê os campos antes de guardar:','J’ai interprété ton message. Vérifie les champs avant d’enregistrer :','I interpreted what you said. Review the fields before saving:')}</p>
+        <p class="voice-transcript">${safeText(foods)}</p>
+        <p class="muted">${lx('Nada foi guardado. Podes corrigir a refeição e tocar em «Guardar refeição».','Rien n’a été enregistré. Tu peux corriger le repas puis appuyer sur « Enregistrer un repas ».','Nothing has been saved. You can edit the meal and tap “Save meal”.')}</p>
+        <button class="btn wide" id="vReviewMeal" type="button">${lx('Rever registo','Vérifier le repas','Review meal')}</button>
+      </div></div>`);
+      document.getElementById('vReviewMeal').addEventListener('click', ()=>{
+        closeOverlay();
+        const f=document.getElementById('mealFoods');
+        if(f&&f.scrollIntoView) f.scrollIntoView({block:'center',behavior:'smooth'});
+        if(f) f.focus();
+      });
+      return;
     } else {
       toast = tr('Não percebi — tenta novamente.');
     }

@@ -1944,6 +1944,22 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
       if(!S.running.sleepStart){ S.running.sleepStart=Date.now(); save(); toast=tr('Sono iniciado.'); } else toast=tr('Já havia um sono em curso.');
     } else if(low.includes('acordou')||low.includes('terminou')){
       if(S.running.sleepStart){ stopSleep(); toast=tr('Sono terminado.'); } else toast=tr('Não havia sono em curso.');
+    } else if (/\\b(agua|água)\\b/i.test(text) && /\\b(bebeu|tomou|agua|água)\\b/i.test(text)) {
+      // Água por voz: preenche rascunho, sem guardar automaticamente.
+      const amountMatch=text.match(/(\\d+(?:[,.]\\d+)?)\\s*(?:ml|mililitros?)?/i);
+      const amount=amountMatch?Number(amountMatch[1].replace(',','.')):null;
+      if(amount==null||!Number.isFinite(amount)||amount<1||amount>500){
+        stopVoice();showAlert(lx('Diz a quantidade de água, por exemplo: A Emily bebeu 20 ml de água.','Dis la quantité d’eau, par exemple 20 ml.','Say the amount of water, for example 20 ml.'));return;
+      }
+      stopVoice();activeTab='alimentacao';openForm=null;editId=null;render();
+      const waterSection=document.getElementById('waterOffered')?.closest('details');
+      if(waterSection)waterSection.open=true;
+      const offered=document.getElementById('waterOffered'),drank=document.getElementById('waterDrank');
+      if(offered)offered.value=String(amount);
+      if(drank)drank.value=String(amount);
+      showOverlay(`<div class="voice-panel"><div class="voice-card"><h2>${ICONS.mic} ${lx('Rascunho de água','Brouillon eau','Water draft')}</h2><p>${safeText(amount)} ml — ${lx('revê e confirma o registo. Nada foi guardado.','vérifie et confirme. Rien n’est enregistré.','review and confirm. Nothing has been saved.')}</p><button class="btn wide" id="vReviewWater" type="button">${lx('Rever registo','Vérifier','Review')}</button></div></div>`);
+      document.getElementById('vReviewWater').addEventListener('click',()=>{closeOverlay();if(offered)offered.scrollIntoView({block:'center',behavior:'smooth'});});
+      return;
     } else if (/\b(comeu|provou|experimentou)\b/i.test(text)) {
       // Alimentação por voz: cria apenas um rascunho editável. Nunca guarda automaticamente.
       const mealWords = low;

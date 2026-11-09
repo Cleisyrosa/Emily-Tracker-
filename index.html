@@ -2178,10 +2178,15 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
 
   function renderInicio(){
     const [t0,t1]=todayRange();
-    const feed=lastOf(S.mamadas), diaper=lastOf(S.fraldas);
+    const lastMilk=lastOf(S.mamadas);
+    const lastSolid=lastOf((S.crianca.alimentacao && S.crianca.alimentacao.refeicoes)||[]);
+    const feed=lastSolid && (!lastMilk || +lastSolid.ts > +lastMilk.ts) ? lastSolid : lastMilk;
+    const feedIsSolid=!!(feed && feed===lastSolid);
+    const feedDescription=feedIsSolid ? [feed.tipo,feed.alimentos].filter(Boolean).join(' · ') : (feed?feedLabel(feed):tr('sem registos'));
+    const diaper=lastOf(S.fraldas);
     const isSleeping=!!S.running.sleepStart;
     const lastSleep=lastSleepOf(S.sono);
-    const feedsToday=S.mamadas.filter(l=>inRange(l.ts,t0,t1)).length;
+    const feedsToday=S.mamadas.filter(l=>inRange(l.ts,t0,t1)).length + ((S.crianca.alimentacao&&S.crianca.alimentacao.refeicoes)||[]).filter(l=>inRange(l.ts,t0,t1)).length;
     const diapersToday=S.fraldas.filter(l=>inRange(l.ts,t0,t1));
     const xixiToday=diapersToday.filter(d=>d.tipo==='xixi').length, cocoToday=diapersToday.filter(d=>d.tipo==='coco').length;
     // Alinhado com o separador Sono e o Resumo (overlapMinutes, F6/F9): só conta, de cada sessão, os minutos que
@@ -2206,7 +2211,7 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
     const flag = (st, txt) => st ? `<span class="stat-flag">${txt}</span>` : '';
     const cls = st => 'stat' + (st==='warn' ? ' stat-warn' : st==='action' ? ' stat-action' : '');
     html += `<div class="grid2 home-status">
-      <div class="${cls(feedGap)}"><div class="ic feed">${ICONS.bottle}</div><div class="lbl">${tr('Última refeição')}</div><div class="val">${feed?agoStr(feed.ts):'—'}</div><div class="sub">${feed?feedLabel(feed):tr('sem registos')}</div>${(S.mamadas.length||feedGap)?`<div class="stat-foot">${S.mamadas.length?`<span class="sub stat-today">${lx(`${feedsToday} hoje`,`${feedsToday} aujourd'hui`,`${feedsToday} today`)}</span>`:''}${flag(feedGap, lx('A observar','À surveiller','Keep an eye'))}</div>`:''}</div>
+      <div class="${cls(feedGap)}"><div class="ic feed">${ICONS.bottle}</div><div class="lbl">${tr('Última refeição')}</div><div class="val">${feed?agoStr(feed.ts):'—'}</div><div class="sub">${safeText(feedDescription)}</div>${(S.mamadas.length||((S.crianca.alimentacao&&S.crianca.alimentacao.refeicoes)||[]).length||feedGap)?`<div class="stat-foot">${feedsToday?`<span class="sub stat-today">${lx(`${feedsToday} hoje`,`${feedsToday} aujourd'hui`,`${feedsToday} today`)}</span>`:''}${flag(feedGap, lx('A observar','À surveiller','Keep an eye'))}</div>`:''}</div>
       <div class="${cls(wetStatus)}"><div class="ic diaper">${ICONS.drop}</div><div class="lbl">${tr('Última fralda')}</div><div class="val">${diaper?agoStr(diaper.ts):'—'}</div><div class="sub">${diaper?diaperLabel(diaper):tr('sem registos')}</div>${(S.fraldas.length||wetStatus)?`<div class="stat-foot">${S.fraldas.length?`<span class="sub stat-today">${lx(`${xixiToday} xixi · ${cocoToday} cocó hoje`,`${xixiToday} pipi · ${cocoToday} caca aujourd'hui`,`${xixiToday} wet · ${cocoToday} dirty today`)}</span>`:''}${flag(wetStatus, lx('A observar','À surveiller','Keep an eye'))}</div>`:''}</div>
       <div class="stat"><div class="ic sleepc">${ICONS.moon}</div><div class="lbl">${isSleeping?tr('A dormir há'):tr('Sono hoje')}</div><div class="val">${isSleeping? durStr((Date.now()-S.running.sleepStart)/60000) : durStr(sleepMinsToday)}</div><div class="sub">${isSleeping?tr('em curso'):(lastSleep?(tr('último:')+' '+agoStr(lastSleep.fim)):tr('sem registos'))}</div></div>
       <div class="stat stat-link" role="button" tabindex="0" data-go="evolucao"><div class="ic growth">${ICONS.chart}</div><div class="lbl">${tr('Peso atual')}</div><div class="val">${peso?fmtNum(peso,3)+' kg':'—'}</div><div class="sub">${tr('ver em Evolução')}</div></div>

@@ -2152,6 +2152,7 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
     // medicação em losango para se distinguir das fraldas sem nova cor; horas ≥ 12 px.
     const w=600,h=66, cy=39; const evs=[];
     S.mamadas.filter(l=>inRange(l.ts,t0,t0+86400000)).forEach(l=>evs.push({x:l.ts,type:'feed'}));
+    ((S.crianca.alimentacao&&S.crianca.alimentacao.refeicoes)||[]).filter(l=>inRange(l.ts,t0,t0+86400000)).forEach(l=>evs.push({x:l.ts,type:'feed'}));
     S.fraldas.filter(l=>inRange(l.ts,t0,t0+86400000)).forEach(l=>evs.push({x:l.ts,type:'diaper'}));
     S.doses.filter(l=>inRange(l.ts,t0,t0+86400000)).forEach(l=>evs.push({x:l.ts,type:'med'}));
     const sleeps = S.sono.filter(l=>l.inicio<t0+86400000 && l.fim>t0);
@@ -2197,7 +2198,7 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
     let html='';
     const notice = S.settings.demoCleanupNotice;
     if(notice && notice.length) html += `<div class="demo-banner" style="flex-wrap:wrap;">${ICONS.note} <span style="flex:1;min-width:200px;">${demoCleanupText(notice)}</span> <button id="dismissDemoNotice" type="button">${tr('OK')}</button></div>`;
-    if(!S.mamadas.length && !S.fraldas.length && !S.sono.length && !isSleeping){
+    if(!S.mamadas.length && !((S.crianca.alimentacao&&S.crianca.alimentacao.refeicoes)||[]).length && !S.fraldas.length && !S.sono.length && !isSleeping){
       html += `<div class="card"><div class="section-label">${lx('Ainda sem registos','Pas encore d\'enregistrements','No records yet')}</div>
         <p class="muted" style="margin:0;">${lx('Usa as ações rápidas abaixo para registar. Os resumos e gráficos só usam o que registares.','Utilise les actions rapides ci-dessous. Les résumés et graphiques n\'utilisent que ce que tu enregistres.','Use the quick actions below. Summaries and charts only use what you log.')}</p>
         ${exampleHint(tr('Biberão')+' · '+tr('Bebido')+' 140ml · 14:30')}
@@ -2207,7 +2208,7 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
     // Estado do dia primeiro; a atenção aparece no próprio cartão (reforço discreto + selo curto), sem repetir
     // numa caixa separada o que o cartão já diz. A orientação das fraldas (sinais de desidratação) fica logo a seguir às ações.
     const wetStatus = getWetDiaperStatus(xixiToday);
-    const feedGap = getFeedGapStatus(feed);
+    const feedGap = feedIsSolid ? null : getFeedGapStatus(feed);
     const flag = (st, txt) => st ? `<span class="stat-flag">${txt}</span>` : '';
     const cls = st => 'stat' + (st==='warn' ? ' stat-warn' : st==='action' ? ' stat-action' : '');
     html += `<div class="grid2 home-status">
@@ -2961,7 +2962,7 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
         </details>
         <div class="form-row" style="margin-top:16px;"><div style="flex:1;"><label>${lx('Ver refeições de','Voir les repas du','View meals for')}</label><input type="date" id="mealHistoryDate" value="${foodHistoryDay}"></div></div>
         <div class="section-label">${foodHistoryDay===todayISO()?lx('Registos de hoje','Journal du jour','Today’s log'):new Date(foodHistoryDay+'T00:00:00').toLocaleDateString(localeTag())}</div>
-        ${meals.length?meals.map(m=>`<div class="med-row"><span class="body"><b>${safeText(m.tipo)}</b> · ${new Date(m.ts).toLocaleTimeString(localeTag(),{hour:'2-digit',minute:'2-digit'})}<br>${safeText(m.alimentos)} · ${safeText(m.formatoLabel||m.formato||m.textura||'')} · ${safeText(m.aceitacao)}${m.quantidade!=null?` · ${safeText(m.quantidade)} ${safeText(m.unidade||'')}`:''}${m.nota?`<br><span class="muted">${safeText(m.nota)}</span>`:''}</span><button class="log-del" type="button" data-rmMeal="${m.id}" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join(''):`<p class="muted">${lx('Ainda não há refeições registadas hoje.','Aucun repas enregistré aujourd’hui.','No meals logged today yet.')}</p>`}
+        ${meals.length?meals.map(m=>`<div class="med-row"><span class="body"><b>${safeText(m.tipo)}</b> · ${new Date(m.ts).toLocaleTimeString(localeTag(),{hour:'2-digit',minute:'2-digit'})}<br>${safeText(m.alimentos)} · ${safeText(m.formatoLabel||m.formato||m.textura||'')} · ${safeText(m.aceitacao)}${m.quantidade!=null?` · ${safeText(m.quantidade)} ${safeText(m.unidade||'')}`:''}${m.nota?`<br><span class="muted">${safeText(m.nota)}</span>`:''}</span><button class="btn ghost" type="button" data-editMeal="${m.id}" style="padding:6px 10px;">${lx('Editar','Modifier','Edit')}</button><button class="log-del" type="button" data-rmMeal="${m.id}" aria-label="${tr('Apagar')}">${ICONS.trash}</button></div>`).join(''):`<p class="muted">${lx('Ainda não há refeições registadas hoje.','Aucun repas enregistré aujourd’hui.','No meals logged today yet.')}</p>`}
       </div>
       <details class="card food-secondary"><summary>${lx('Água de hoje','Eau du jour','Water today')}</summary><div class="food-secondary-content"><div class="section-label">${lx('Água · registo de hoje','Eau · journal du jour','Water · today’s log')}</div>
         <p class="muted">${lx('Sem meta de mililitros. Se quiseres, regista o que ofereceste e quanto ela bebeu; segue a orientação da pediatra.','Pas d’objectif en millilitres. Si tu le souhaites, note la quantité proposée et bue ; suis les conseils du pédiatre.','No millilitre target. If useful, log what you offered and how much she drank; follow the pediatrician’s guidance.')}</p>
@@ -3021,9 +3022,20 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
       const ts=new Date(`${document.getElementById('mealDate').value}T${document.getElementById('mealTime').value||'12:00'}`).getTime();
       if(!Number.isFinite(ts)||ts>Date.now()+FUTURE_TOL_MS){showAlert(msgFuturo());return;}
       const bottleAdditive= format==='reforco-biberon';
-      a.refeicoes=a.refeicoes||[]; a.refeicoes.unshift({id:uid(),ts,data:ymdLocal(new Date(ts)),tipo:document.getElementById('mealType').value,formato:format,formatoLabel:document.getElementById('mealFormat').selectedOptions[0].textContent+(bottleAdditive?` · ${lx('indicação da pediatra confirmada','conseil du pédiatre confirmé','pediatrician guidance confirmed')}`:''),reforcoOrientadoPediatra:bottleAdditive&&document.getElementById('mealBottleConfirmed').checked,alimentos:foods,quantidade:quantity,unidade:document.getElementById('mealUnit').value,textura:document.getElementById('mealTexture').value,aceitacao:document.getElementById('mealAccept').value,nota:document.getElementById('mealNotes').value.trim(),receitaId:selectedRecipeId||undefined});foodHistoryDay=ymdLocal(new Date(ts));save();playChime();renderAlimentacao();
+      a.refeicoes=a.refeicoes||[]; const editingId=document.getElementById('saveMeal').dataset.editMealId; const previous=editingId?a.refeicoes.find(m=>m.id===editingId):null; const updatedMeal={id:previous?previous.id:uid(),ts,data:ymdLocal(new Date(ts)),tipo:document.getElementById('mealType').value,formato:format,formatoLabel:document.getElementById('mealFormat').selectedOptions[0].textContent+(bottleAdditive?` · ${lx('indicação da pediatra confirmada','conseil du pédiatre confirmé','pediatrician guidance confirmed')}`:''),reforcoOrientadoPediatra:bottleAdditive&&document.getElementById('mealBottleConfirmed').checked,alimentos:foods,quantidade:quantity,unidade:document.getElementById('mealUnit').value,textura:document.getElementById('mealTexture').value,aceitacao:document.getElementById('mealAccept').value,nota:document.getElementById('mealNotes').value.trim(),receitaId:selectedRecipeId||(previous&&previous.receitaId)||undefined}; if(previous)Object.assign(previous,updatedMeal);else a.refeicoes.unshift(updatedMeal);foodHistoryDay=ymdLocal(new Date(ts));save();playChime();renderAlimentacao();
     });
     document.getElementById('mealHistoryDate').addEventListener('change',e=>{foodHistoryDay=e.target.value||todayISO();renderAlimentacao();});
+    document.querySelectorAll('[data-editMeal]').forEach(b=>b.addEventListener('click',()=>{
+      const m=(a.refeicoes||[]).find(x=>x.id===b.dataset.editmeal); if(!m)return;
+      const disclosure=document.querySelector('.food-form-disclosure');if(disclosure)disclosure.open=true;
+      const fields={mealType:m.tipo,mealDate:ymdLocal(new Date(m.ts)),mealTime:hhmm(m.ts),mealFormat:m.formato,mealFoods:m.alimentos,mealQuantity:m.quantidade==null?'':m.quantidade,mealUnit:m.unidade,mealTexture:m.textura,mealAccept:m.aceitacao,mealNotes:m.nota};
+      Object.entries(fields).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&val!=null)el.value=val;});
+      const confirmation=document.getElementById('mealBottleConfirmed');if(confirmation)confirmation.checked=!!m.reforcoOrientadoPediatra;
+      const saveBtn=document.getElementById('saveMeal');saveBtn.textContent=lx('Guardar alterações','Enregistrer les modifications','Save changes');
+      saveBtn.dataset.editMealId=m.id;
+      document.getElementById('mealFormat').dispatchEvent(new Event('change'));
+      if(disclosure)disclosure.scrollIntoView({block:'start',behavior:'smooth'});
+    }));
     document.querySelectorAll('[data-rmMeal]').forEach(b=>b.addEventListener('click',()=>showConfirm(lx('Apagar este registo de refeição?','Supprimer ce repas ?','Delete this meal record?'),()=>{a.refeicoes=a.refeicoes.filter(m=>m.id!==b.dataset.rmmeal);save();renderAlimentacao();})));
     document.getElementById('saveFoodIntro').addEventListener('click',()=>{
       const nome=document.getElementById('foodIntroName').value.trim(),date=document.getElementById('foodIntroDate').value;

@@ -1944,14 +1944,14 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
       if(!S.running.sleepStart){ S.running.sleepStart=Date.now(); save(); toast=tr('Sono iniciado.'); } else toast=tr('Já havia um sono em curso.');
     } else if(low.includes('acordou')||low.includes('terminou')){
       if(S.running.sleepStart){ stopSleep(); toast=tr('Sono terminado.'); } else toast=tr('Não havia sono em curso.');
-    } else if (/\\b(comeu|provou|experimentou)\\b/i.test(text)) {
+    } else if (/\b(comeu|provou|experimentou)\b/i.test(text)) {
       // Alimentação por voz: cria apenas um rascunho editável. Nunca guarda automaticamente.
       const mealWords = low;
       let foods = text
-        .replace(/^\\s*(?:a\\s+)?(?:emily\\s+)?/i,'')
-        .replace(/^\\s*(?:comeu|provou|experimentou)\\s+/i,'')
-        .replace(/\\s+(?:ao|à|no|na)\\s+(?:lanche|jantar|almoço|almoco|pequeno-almoço|pequeno almoco|pequeno\\s+almoço|pequeno\\s+almoco).*$/i,'')
-        .replace(/\\s+(?:hoje|ontem).*$/i,'')
+        .replace(/^\s*(?:a\s+)?(?:emily\s+)?/i,'')
+        .replace(/^\s*(?:comeu|provou|experimentou)\s+/i,'')
+        .replace(/\s+(?:ao|à|no|na)\s+(?:lanche|jantar|almoço|almoco|pequeno-almoço|pequeno almoco|pequeno\s+almoço|pequeno\s+almoco).*$/i,'')
+        .replace(/\s+(?:hoje|ontem).*$/i,'')
         .trim();
       if(!foods) foods=text.trim();
       stopVoice();
@@ -1975,7 +1975,7 @@ nav.tabbar{ position:relative; flex:none; display:flex; background:var(--surface
           formatField.value=format;
         }
       }
-      const qtyMatch=text.match(/\\b(\\d+(?:[,.]\\d+)?)\\s*(g|gramas?|ml|mililitros?)\\b/i);
+      const qtyMatch=text.match(/\b(\d+(?:[,.]\d+)?)\s*(g|gramas?|ml|mililitros?)\b/i);
       if(qtyMatch){
         const q=document.getElementById('mealQuantity'), u=document.getElementById('mealUnit');
         if(q) q.value=qtyMatch[1].replace(',','.');
